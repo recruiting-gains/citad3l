@@ -4,10 +4,10 @@
  */
 import { describe, it, expect, beforeAll } from "vitest";
 import Stripe from "stripe";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { Client, chat, sleep, BASE } from "./helpers";
 
-const prisma = new PrismaClient();
+
 const run = Date.now().toString(36);
 const A = new Client(), B = new Client();
 let aId = "", bId = "";
