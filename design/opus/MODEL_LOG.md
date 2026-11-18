@@ -17,6 +17,7 @@ Called via `design/opus/call_opus.py` → Anthropic Messages API `POST https://a
 | round2a_out | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9VxcjTfZKMfD1mmeCaw | end_turn | 76930 | 7057 | 2026-11-17 19:10:05 CST |
 | round2b_out | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9VxccmWt6ZezNguuhjU | end_turn | 81030 | 7291 | 2026-11-17 19:09:59 CST |
 | round3_out | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9WttfRPPse6CHkp77ce | end_turn | 71025 | 1840 | 2026-11-17 19:21:26 CST |
+| round4_out (dark theme) | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9YGyYqAMo4gW9RKzvCs | end_turn | 51332 | 23345 | 2026-11-17 19:42:30 CST |
 
 Notes
 - `round1_attempt1_thinking_only` and `round1a` hit max_tokens (Opus spent the budget on thinking); round 1 was then split into
