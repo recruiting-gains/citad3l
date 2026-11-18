@@ -10,3 +10,7 @@ evidence/tmp
 .open-next
 .wrangler
 .dev.vars
+# large video masters (kept on the box only) and third-party reference footage
+media-src/raw/
+media-src/loop/
+design/realism-ref/ref.mp4

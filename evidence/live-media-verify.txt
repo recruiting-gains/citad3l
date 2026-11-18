@@ -1,0 +1,41 @@
+# Live media verification — https://citad3l.recruiting-gains.workers.dev — 2026-11-17 20:51 CST
+/ -> 200
+/pricing -> 200
+/models -> 200
+/models/citad3l-v1 -> 200
+/login -> 200
+/robots.txt -> 200
+
+x-robots-tag: noindex, nofollow
+robots meta: <meta name="robots" content="noindex, nofollow, nocache"/>
+
+## Media assets, first deploy (c51796ed): status, type, bytes, range
+(range->200 = Workers Static Assets ignored Range; fixed in the next deploy, see below)
+rook-hero.mp4  HTTP/2 200   video/mp4  3243732B  range->200
+rook-hero.webm  HTTP/2 200   video/webm  2804884B  range->200
+rook.mp4  HTTP/2 200   video/mp4  568061B  range->200
+rook.webm  HTTP/2 200   video/webm  718196B  range->200
+ai.mp4  HTTP/2 200   video/mp4  360342B  range->200
+ai.webm  HTTP/2 200   video/webm  260597B  range->200
+robotics.mp4  HTTP/2 200   video/mp4  148909B  range->200
+robotics.webm  HTTP/2 200   video/webm  137492B  range->200
+cyber.mp4  HTTP/2 200   video/mp4  285012B  range->200
+cyber.webm  HTTP/2 200   video/webm  273494B  range->200
+everyday.mp4  HTTP/2 200   video/mp4  167109B  range->200
+everyday.webm  HTTP/2 200   video/webm  129696B  range->200
+rook-hero-poster.avif  HTTP/2 200   image/avif  33959B  range->200
+rook-poster.jpg  HTTP/2 200   image/jpeg  74555B  range->200
+ai-poster.avif  HTTP/2 200   image/avif  17251B  range->200
+chip-rook.jpg  HTTP/2 200   image/jpeg  6379B  range->200
+
+## /models status pill: shows "Offline" (gray dot), not "Live", while no inference endpoint is configured
+
+## Range fix deploy 5fa5dd3b (20:53 CST): custom-worker.js serves /media/* worker-first with Range
+rook-hero.mp4 full=200 range(0-1)=206 content-range: bytes 0-1/3243732
+rook-hero.webm full=200 range(0-1)=206 content-range: bytes 0-1/2804884
+rook.mp4 full=200 range(0-1)=206 content-range: bytes 0-1/568061
+ai.webm full=200 range(0-1)=206 content-range: bytes 0-1/260597
+cyber.mp4 full=200 range(0-1)=206 content-range: bytes 0-1/285012
+everyday.mp4 full=200 range(0-1)=206 content-range: bytes 0-1/167109
+client JS secret scan:
+(no HIT lines = clean)

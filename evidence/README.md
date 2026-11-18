@@ -14,3 +14,11 @@
 | `screenshots/dark/` | Dark mode: home, pricing, model, chat empty/answer, account — desktop + phone. |
 | `screenshots/side-by-side/` | Reference (left) vs Citad3L (right): home, pricing (top + full), chat, phone home/pricing. |
 | `screenshots/round1`, `round2` | Earlier design iterations sent back to Opus for review. |
+
+## Cinematic media (round 5)
+- **Live screenshots (authoritative):** `screenshots/live/{home,engine,models,model,pricing}_{light,dark}_{desktop,phone}.png` plus `home_reduced-motion_desktop.png`.
+  - Playback state for each one is in `live-media-shots.json`: every in-view clip playing, 0 page errors, and reduced motion mounting 0 videos with 5 posters.
+- **Local dev screenshots:** `screenshots/media/`. The Next dev server's known transient chunk errors sometimes stop hydration, so a few of these show posters instead of playing video. The production build has no such errors.
+- **Live verification:** `live-media-verify.txt` covers route status, noindex, media MIME types and sizes, Range 206 after the fix, and the client JS secret scan.
+- **Demo:** `live_demo.mp4` is a 25.6 s screen recording of the live homepage: scroll, card hover, engine strip, then dark-theme toggle. The H.264 MP4 path was also checked playing in Chrome.
+- **Tests:** `test-run-media.txt` (25/25).

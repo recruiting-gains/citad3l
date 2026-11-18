@@ -114,3 +114,10 @@ npx wrangler deployments list --name citad3l
 npx wrangler rollback --name citad3l          # previous version
 npx wrangler delete citad3l                   # remove the Worker entirely
 ```
+
+## Cinematic media
+
+Every card and emblem image is an original generated video loop, art-directed by Opus 5.5 (`claude-opus-5-5`, see `design/opus/round5/`). The full list is in `design/realism-ref/MEDIA.md`.
+- Component: `components/LoopVideo.tsx`, used via `SlotVideo` in `components/Art.tsx`. It renders the poster first, lazy-mounts the video, pauses it offscreen, and shows the poster only under reduced motion.
+- Files: `public/media/*.{webm,mp4}` plus `*-poster.{avif,jpg}`. Rebuild them with `media-src/encode.sh`.
+- On Cloudflare, `custom-worker.js` (the Worker `main`) wraps the OpenNext worker and serves `/media/*` with HTTP Range (206), which Safari/iOS needs for video.

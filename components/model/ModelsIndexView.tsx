@@ -3,7 +3,7 @@ import type { ProviderInfo } from "@/lib/types";
 import { Rook } from "@/components/Rook";
 import { Footer } from "@/components/Footer";
 import { MockBadge } from "@/components/MockBadge";
-import { RookWireArt } from "@/components/Art";
+import { SlotVideo } from "@/components/Art";
 
 export interface ModelsIndexViewProps { provider: ProviderInfo; signedIn: boolean }
 
@@ -28,8 +28,8 @@ export function ModelsIndexView({ provider, signedIn }: ModelsIndexViewProps) {
         <div className="models-grid">
           <Link href="/models/citad3l-v1" className="media-card">
             <div className="media">
-              <RookWireArt />
-              <span className="media-tag">{provider.mock ? <span className="amber-dot" /> : <span className="live-dot" />}{provider.mock ? "Mock" : "Live"}</span>
+              <SlotVideo slot="rook" eager />
+              <span className="media-tag">{provider.mock ? <span className="amber-dot" /> : provider.offline ? <span className="off-dot" /> : <span className="live-dot" />}{provider.mock ? "Mock" : provider.offline ? "Offline" : "Live"}</span>
             </div>
             <div className="media-meta">
               <span className="media-icon"><Rook size={18} /></span>

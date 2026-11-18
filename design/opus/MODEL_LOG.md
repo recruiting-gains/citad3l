@@ -25,3 +25,5 @@ Notes
 - Two parallel attempts (round1a3 / round1b first runs) stalled with no data for >4 min and were killed/retried; no output was used from them.
 - Round 2 (2a marketing, 2b app) and round 3 (polish) were reviews of side-by-side screenshots of the running build
   (`design/compare/`), returning CSS appendices + find/replace patches that were applied verbatim (`design/opus/apply.py`).
+| round5_out (video art direction) | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9bm8Cd2NG4ukBF6RU82 | end_turn | 7927 | 6418 | 2026-11-17 20:26:08 CST |
+| round5_review_out (video QA review) | claude-opus-5-5 | **claude-opus-5-5** | req_011Ch9dPJaL7SddHku5jXLiM | end_turn | 7146 | 2036 | 2026-11-17 20:46:37 CST |

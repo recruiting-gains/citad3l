@@ -12,6 +12,8 @@ export interface UsageSummary {
 }
 
 export interface ProviderInfo {
+  /** true when no inference endpoint is configured (nothing is served). */
+  offline?: boolean;
   mock: boolean;
   label: string;
   model: string;

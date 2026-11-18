@@ -6,7 +6,7 @@ import type { ProviderInfo } from "@/lib/types";
 import { Rook } from "@/components/Rook";
 import { Footer } from "@/components/Footer";
 import { MockBadge } from "@/components/MockBadge";
-import { RookWireArt } from "@/components/Art";
+import { SlotVideo } from "@/components/Art";
 
 export interface ModelViewProps { provider: ProviderInfo; signedIn: boolean }
 
@@ -26,7 +26,7 @@ export function ModelView({ provider, signedIn }: ModelViewProps) {
       <main className="model-layout" data-collapsed={collapsed}>
         <aside className="model-side" aria-label="Model information" aria-hidden={collapsed} inert={collapsed}>
           <div className="model-side-inner">
-            <div className="model-art"><RookWireArt /></div>
+            <div className="model-art"><SlotVideo slot="rook" eager /></div>
 
             <div>
               <div className="model-head">
@@ -39,7 +39,7 @@ export function ModelView({ provider, signedIn }: ModelViewProps) {
               <div className="pill-row" style={{ marginTop: 14 }}>
                 <span className="pill">Chat</span>
                 <span className="pill">27.8B parameters</span>
-                <span className="pill">{provider.mock ? <span className="amber-dot" /> : <span className="live-dot" />}{provider.mock ? "Mock" : "Live"}</span>
+                <span className="pill">{provider.mock ? <span className="amber-dot" /> : provider.offline ? <span className="off-dot" /> : <span className="live-dot" />}{provider.mock ? "Mock" : provider.offline ? "Offline" : "Live"}</span>
               </div>
             </div>
 
@@ -51,7 +51,7 @@ export function ModelView({ provider, signedIn }: ModelViewProps) {
               <div className="stat-grid">
                 <div className="stat"><div className="stat-label">Downloads</div><div className="stat-value tnum">4.29M</div><div className="stat-note">Hugging Face, Nov 2026</div></div>
                 <div className="stat"><div className="stat-label">Likes</div><div className="stat-value tnum"><IHeart />2.28K</div><div className="stat-note">Hugging Face, Nov 2026</div></div>
-                <div className="stat"><div className="stat-label">Status</div><div className="stat-value stat-value-sm">{provider.mock ? <><span className="amber-dot" />Mock</> : <><span className="live-dot" />Live</>}</div></div>
+                <div className="stat"><div className="stat-label">Status</div><div className="stat-value stat-value-sm">{provider.mock ? <><span className="amber-dot" />Mock</> : provider.offline ? <><span className="off-dot" />Offline</> : <><span className="live-dot" />Live</>}</div></div>
                 <div className="stat"><div className="stat-label">Context</div><div className="stat-value stat-value-sm tnum">262,144 tokens</div></div>
                 <div className="stat span-2"><div className="stat-label">Plans</div><div className="stat-value stat-value-sm">Every plan, same engine</div><div className="stat-note">Max adds allowance only. Failed replies are never charged.</div></div>
               </div>

@@ -30,7 +30,7 @@ export function providerInfo(): ProviderInfo {
   try {
     return getProvider().info;
   } catch {
-    return { mock: false, label: "Inference not configured", model: ENGINE_NAME };
+    return { mock: false, offline: true, label: "Inference not configured", model: ENGINE_NAME };
   }
 }
 

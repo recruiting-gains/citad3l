@@ -6,7 +6,7 @@ import type { ProviderInfo } from "@/lib/types";
 import { Rook } from "@/components/Rook";
 import { Footer } from "@/components/Footer";
 import { MockBadge } from "@/components/MockBadge";
-import { HeroChips, RadarArt, RoboticsArt, ShieldArt, TerminalArt, RookWireArt, ArtGlyphs } from "@/components/Art";
+import { HeroChips, SlotVideo, ArtGlyphs } from "@/components/Art";
 
 export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo }
 
@@ -31,10 +31,10 @@ const tiles: { title: string; sub: string; href?: string; icon: ReactNode; badge
 ];
 
 const featured: { title: string; desc: string; tag: string; art: ReactNode; icon: ReactNode; prompt: string }[] = [
-  { title: "Strategic briefings", desc: "Turn a fast-moving field into a clear assessment: what changed, why it matters, what to watch next.", tag: "AI advancement", art: <RadarArt />, icon: <ArtGlyphs.GlyphAI />, prompt: "/chat" },
-  { title: "Robotics", desc: "Kinematics, control loops, sensor fusion and the state of embodied AI, explained at your depth.", tag: "Robotics", art: <RoboticsArt />, icon: <ArtGlyphs.GlyphRobot />, prompt: "/chat" },
-  { title: "AI security", desc: "Threat-model an agent, reason about prompt injection, and harden the systems you ship.", tag: "Cybersecurity", art: <ShieldArt />, icon: <ArtGlyphs.GlyphShield />, prompt: "/chat" },
-  { title: "Everyday work", desc: "Writing, code review, study plans and research summaries. The practical side of the same engine.", tag: "General", art: <TerminalArt />, icon: <Rook size={18} />, prompt: "/chat" },
+  { title: "Strategic briefings", desc: "Turn a fast-moving field into a clear assessment: what changed, why it matters, what to watch next.", tag: "AI advancement", art: <SlotVideo slot="ai" eager />, icon: <ArtGlyphs.GlyphAI />, prompt: "/chat" },
+  { title: "Robotics", desc: "Kinematics, control loops, sensor fusion and the state of embodied AI, explained at your depth.", tag: "Robotics", art: <SlotVideo slot="robotics" eager />, icon: <ArtGlyphs.GlyphRobot />, prompt: "/chat" },
+  { title: "AI security", desc: "Threat-model an agent, reason about prompt injection, and harden the systems you ship.", tag: "Cybersecurity", art: <SlotVideo slot="cyber" eager />, icon: <ArtGlyphs.GlyphShield />, prompt: "/chat" },
+  { title: "Everyday work", desc: "Writing, code review, study plans and research summaries. The practical side of the same engine.", tag: "General", art: <SlotVideo slot="everyday" />, icon: <Rook size={18} />, prompt: "/chat" },
 ];
 
 const plans = [
@@ -101,7 +101,7 @@ export function HomeView({ signedIn, provider }: HomeViewProps) {
               <Link key={f.title} href={f.prompt} className="media-card">
                 <div className="media">
                   {f.art}
-                  <span className="media-tag">{f.tag}</span>
+                  <span className="media-tag"><span className="media-dot" />{f.tag}</span>
                 </div>
                 <div className="media-meta">
                   <span className="media-icon">{f.icon}</span>
@@ -124,7 +124,7 @@ export function HomeView({ signedIn, provider }: HomeViewProps) {
             </div>
           </div>
           <div className="model-strip">
-            <div className="model-strip-art"><RookWireArt /></div>
+            <div className="model-strip-art"><SlotVideo slot="rookHero" /></div>
             <div className="model-strip-body">
               <div className="model-id">
                 <span className="model-mark"><Rook size={24} /></span>

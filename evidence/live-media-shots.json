@@ -1,0 +1,334 @@
+{
+ "pageErrors": [],
+ "media": {
+  "home_light_desktop": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": true,
+    "playing": true,
+    "src": "cyber.webm"
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   }
+  ],
+  "engine_light_desktop": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": true,
+    "playing": true,
+    "src": "cyber.webm"
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook-hero.webm"
+   }
+  ],
+  "models_light_desktop": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "model_light_desktop": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "pricing_light_desktop": [],
+  "home_light_phone": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   }
+  ],
+  "engine_light_phone": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook-hero.webm"
+   }
+  ],
+  "models_light_phone": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "model_light_phone": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "pricing_light_phone": [],
+  "home_dark_desktop": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": true,
+    "playing": true,
+    "src": "cyber.webm"
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   }
+  ],
+  "engine_dark_desktop": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": true,
+    "playing": true,
+    "src": "cyber.webm"
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook-hero.webm"
+   }
+  ],
+  "models_dark_desktop": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "model_dark_desktop": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "pricing_dark_desktop": [],
+  "home_dark_phone": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   }
+  ],
+  "engine_dark_phone": [
+   {
+    "label": "Night satellite view of a coas",
+    "mounted": true,
+    "playing": true,
+    "src": "ai.webm"
+   },
+   {
+    "label": "Graphite robot arm hovering ov",
+    "mounted": true,
+    "playing": true,
+    "src": "robotics.webm"
+   },
+   {
+    "label": "Macro of fiber-optic cables ca",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Desk at blue hour with an ambe",
+    "mounted": false,
+    "playing": false,
+    "src": null
+   },
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook-hero.webm"
+   }
+  ],
+  "models_dark_phone": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "model_dark_phone": [
+   {
+    "label": "Glass chess rook glowing with ",
+    "mounted": true,
+    "playing": true,
+    "src": "rook.webm"
+   }
+  ],
+  "pricing_dark_phone": []
+ },
+ "reducedMotion": {
+  "cards": 5,
+  "videosMounted": 0,
+  "postersLoaded": 5
+ }
+}
