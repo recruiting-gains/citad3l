@@ -6,3 +6,4 @@ node_modules
 !.env.example
 evidence/tmp
 *.log
+.next-prod

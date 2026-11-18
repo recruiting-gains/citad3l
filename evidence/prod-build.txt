@@ -1,0 +1,59 @@
+   ▲ Next.js 15.5.29
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 10.0s
+   Linting and checking validity of types ...
+
+   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+   The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+   	- include was updated to add '.next-prod/types/**/*.ts'
+
+   Collecting page data ...
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+   Generating static pages (0/3) ...
+[auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
+ ✓ Generating static pages (3/3)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                    3.32 kB         113 kB
+├ ƒ /_not-found                            158 B         103 kB
+├ ƒ /account                             3.25 kB         108 kB
+├ ƒ /api/account                           158 B         103 kB
+├ ƒ /api/account/export                    158 B         103 kB
+├ ƒ /api/auth/[...nextauth]                158 B         103 kB
+├ ƒ /api/billing/checkout                  158 B         103 kB
+├ ƒ /api/billing/portal                    158 B         103 kB
+├ ƒ /api/chat                              158 B         103 kB
+├ ƒ /api/conversations                     158 B         103 kB
+├ ƒ /api/conversations/[id]                158 B         103 kB
+├ ƒ /api/health                            158 B         103 kB
+├ ƒ /api/projects                          158 B         103 kB
+├ ƒ /api/projects/[id]                     158 B         103 kB
+├ ƒ /api/provider                          158 B         103 kB
+├ ƒ /api/stripe/webhook                    158 B         103 kB
+├ ƒ /api/usage                             158 B         103 kB
+├ ƒ /chat                                  128 B         212 kB
+├ ƒ /chat/[id]                             128 B         212 kB
+├ ƒ /login                               2.33 kB         107 kB
+├ ƒ /models                                161 B         106 kB
+├ ƒ /models/citad3l-v1                   2.24 kB         112 kB
+├ ƒ /pricing                             2.67 kB         113 kB
+└ ƒ /projects                            3.44 kB         106 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-73938ce8a8eac1ad.js       46.6 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.92 kB
+
+
+ƒ  (Dynamic)  server-rendered on demand
+

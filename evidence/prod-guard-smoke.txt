@@ -1,0 +1,14 @@
+# Production-mode guard smoke test (2026-11-17 19:31 CST) — NODE_ENV=production with INFERENCE_PROVIDER=mock and DEMO_LOGIN_ENABLED=true deliberately set
+GET /api/health -> {"ok":true,"db":true,"provider":{"mock":false,"label":"Inference not configured"}}
+GET /api/provider -> {"provider":{"mock":false,"label":"Inference not configured","model":"Citad3L V1"}}
+GET /api/auth/providers -> {}
+POST /api/auth/callback/demo -> HTTP 302 redirect=http://localhost:3211/api/auth/error?error=Configuration
+GET /api/auth/session after demo attempt -> null
+POST /api/chat (no session) -> HTTP 401 {"error":{"code":"unauthorized","message":"Sign in to chat."}}
+GET / -> HTTP 200
+GET /login demo form present? -> 0 matches
+Response headers on / :
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=()

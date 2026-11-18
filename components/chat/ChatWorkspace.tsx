@@ -97,7 +97,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const [banner, setBanner] = useState<Banner | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [input, setInput] = useState("");
-  const [sidebar, setSidebar] = useState<"open" | "closed">("open");
+  // "auto" (SSR default): CSS treats it as open on desktop and closed on phones, avoiding a pre-hydration overlay.
+  const [sidebar, setSidebar] = useState<"open" | "closed" | "auto">("auto");
   const [search, setSearch] = useState("");
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
@@ -203,7 +204,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   useEffect(() => {
     const h = new Date().getHours();
     setGreeting(h < 5 ? "Good evening" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening");
-    if (window.matchMedia("(max-width: 900px)").matches) setSidebar("closed");
+    setSidebar(window.matchMedia("(max-width: 900px)").matches ? "closed" : "open");
     void loadLists();
     if (initialConversationId) void loadConversation(initialConversationId);
     const onPop = () => {

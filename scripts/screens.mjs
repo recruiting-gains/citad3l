@@ -22,8 +22,10 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   const p = await ctx.newPage();
   p.on("pageerror", (e) => errs.push(`${tag} PAGEERR ${p.url()} ${e.message} ${(e.stack||"").slice(0,200)}`));
   p.on("console", (m) => { if (m.type() === "error") errs.push(`${tag} console ${m.text()}`); });
+  // dev-server flake guard: reload a page if it threw during load (errors are still reported)
+  const visit = async (u) => { for (let i = 0; i < 3; i++) { const before = errs.length; await p.goto(BASE + u, { waitUntil: "networkidle" }); await p.waitForTimeout(400); if (errs.length === before) return; errs.push(`${tag} retrying ${u}`); } };
   for (const [n, u] of [["home", "/"], ["pricing", "/pricing"], ["model", "/models/citad3l-v1"], ["models", "/models"], ["login", "/login"]]) {
-    await p.goto(BASE + u, { waitUntil: "networkidle" });
+    await visit(u);
     await shot(p, n); await shot(p, n + "_full", true);
   }
   await login(ctx);
@@ -33,7 +35,7 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   // create a project
   if (tag === "desktop") await p.request.post(BASE + "/api/projects", { data: { name: "AI security brief", instructions: "Act as a defensive security analyst. Be concise." } });
   if (tag === "desktop") await p.request.post(BASE + "/api/projects", { data: { name: "Robotics watch", instructions: "Track humanoid robotics progress." } });
-  await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
+  await visit("/chat");
   const box = p.locator("textarea").first();
   await box.fill("Give me a 3-step plan to harden a home network against AI-assisted attacks.");
   await box.press("Enter");
@@ -41,9 +43,9 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   await shot(p, "chat_streaming");
   await p.waitForTimeout(4000);
   await shot(p, "chat_answer");
-  await p.goto(BASE + "/projects", { waitUntil: "networkidle" });
+  await visit("/projects");
   await shot(p, "projects");
-  await p.goto(BASE + "/account", { waitUntil: "networkidle" });
+  await visit("/account");
   await shot(p, "account");
   // limit reached state: exhaust trial for this user
   await db.query(`UPDATE "Entitlement" e SET "trialUsed"=5 FROM "User" u WHERE u.id=e."userId" AND u.email=$1`, [email]);
