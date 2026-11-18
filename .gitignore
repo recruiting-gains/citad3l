@@ -14,3 +14,14 @@ evidence/tmp
 media-src/raw/
 media-src/loop/
 design/realism-ref/ref.mp4
+# third-party reference material kept on the box only (not for redistribution):
+# frames of Cruz's ref.mp4 (contains a Helsing logo) and frames captured from Sapient/Ghost card videos
+design/realism-ref/refframes/
+design/opus/round5/ref_contact.png
+design/opus/round5/sap_contact.png
+design/realism-ref/sapient/frame_*.png
+design/realism-ref/sapient/frames_contact.png
+design/realism-ref/sapient/card_framing.png
+# misc local
+*.bundle
+.cursor/
