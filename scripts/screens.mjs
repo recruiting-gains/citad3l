@@ -20,7 +20,7 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: mob, hasTouch: mob, deviceScaleFactor: mob ? 2 : 1 });
   const shot = async (p, name, full = false) => { await p.waitForTimeout(600); await p.screenshot({ path: `${out}/${pre}${name}_${tag}.png`, fullPage: full }); };
   const p = await ctx.newPage();
-  p.on("pageerror", (e) => errs.push(`${tag} PAGEERR ${e.message}`));
+  p.on("pageerror", (e) => errs.push(`${tag} PAGEERR ${p.url()} ${e.message} ${(e.stack||"").slice(0,200)}`));
   p.on("console", (m) => { if (m.type() === "error") errs.push(`${tag} console ${m.text()}`); });
   for (const [n, u] of [["home", "/"], ["pricing", "/pricing"], ["model", "/models/citad3l-v1"], ["models", "/models"], ["login", "/login"]]) {
     await p.goto(BASE + u, { waitUntil: "networkidle" });
