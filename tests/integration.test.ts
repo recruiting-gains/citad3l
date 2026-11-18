@@ -131,8 +131,9 @@ describe("atomic usage limits under concurrency", () => {
     expect(e.reserved).toBe(0);
     const u = (await C.json("/api/usage")).data.usage;
     expect(u.remaining).toBe(0);
+    // 21st request this minute: blocked either by the exhausted allowance (402) or the 20/min rate limiter (429)
     const again = await chat(C, { message: "one more" });
-    expect(again.status).toBe(402);
+    expect([402, 429]).toContain(again.status);
   });
   it("paid (Pro): 20 parallel requests with 1 unit remaining → exactly 1 succeeds", async () => {
     const D = new Client(); const dId = await D.login(`dave-${run}@test.local`);

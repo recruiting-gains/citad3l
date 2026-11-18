@@ -1,4 +1,4 @@
-export const BASE = process.env.BASE_URL ?? "http://localhost:3210";
+export const BASE = process.env.CITAD3L_URL ?? "http://localhost:3210";
 
 export class Client {
   cookies = new Map<string, string>();

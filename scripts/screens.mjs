@@ -1,7 +1,7 @@
 // Screenshots of the local build (desktop 1440 + phone 390). Usage: node scripts/screens.mjs [outDir] [prefix]
 import { chromium } from "playwright-core";
 import pg from "pg";
-const BASE = process.env.BASE_URL ?? "http://localhost:3210";
+const BASE = process.env.CITAD3L_URL ?? "http://localhost:3210";
 const out = process.argv[2] ?? "evidence/screenshots";
 const pre = process.argv[3] ?? "";
 const email = `review-${Date.now().toString(36)}@citad3l.local`;

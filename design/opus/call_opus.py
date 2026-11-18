@@ -20,7 +20,7 @@ hdr = {"x-api-key": os.environ["ANTHROPIC_API_KEY"], "anthropic-version": "2023-
 for att in range(3):
     try:
         req = urllib.request.Request("https://api.anthropic.com/v1/messages", json.dumps(body).encode(), hdr)
-        resp = urllib.request.urlopen(req, timeout=240)
+        resp = urllib.request.urlopen(req, timeout=900)
         rid = resp.headers.get("request-id")
         model, usage, stop, text = None, {}, None, []
         for raw in resp:

@@ -1248,4 +1248,40 @@
   .art-sweep, .art-blink, .art-flow, .art-scan, .art-float, .art-pulse, .stream-caret, .skeleton::after { animation: none !important; }
   .art-blink { opacity: 0.8; }
   .spinner { animation: spin 1.6s linear infinite !important; }
+}/* ---- appended from app/extra-a3.css (Opus) ---- */
+/* Art motion for components/Art.tsx. Append to globals.css. */
+@layer components {
+  .art-sweep { transform-box: view-box; transform-origin: 160px 100px; animation: art-rotate 6s linear infinite; }
+  .art-blink { animation: art-blink 2.4s ease-in-out infinite; }
+  .art-blink.d2 { animation-delay: 0.8s; }
+  .art-blink.d3 { animation-delay: 1.6s; }
+  .art-flow { stroke-dasharray: 6 10; animation: art-flow 2.8s linear infinite; }
+  .art-scan { animation: art-scan 5s var(--ease) infinite; }
+  .art-swing { transform-box: fill-box; transform-origin: 0% 100%; animation: art-swing 5s ease-in-out infinite alternate; }
+  .art-caret { animation: art-blink 1s steps(2, start) infinite; }
+  .checkout-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 20px; padding: 10px 14px; border-radius: var(--r-md);
+    background: var(--surface-3); border: 1px solid var(--line-2); font-size: var(--t-13); color: var(--fg-2);
+  }
+  @keyframes art-rotate { to { transform: rotate(360deg); } }
+  @keyframes art-blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+  @keyframes art-flow { to { stroke-dashoffset: -32; } }
+  @keyframes art-scan { 0% { transform: translateY(-20px); } 100% { transform: translateY(220px); } }
+  @keyframes art-swing { from { transform: rotate(-6deg); } to { transform: rotate(8deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .art-sweep, .art-blink, .art-flow, .art-scan, .art-swing, .art-caret { animation: none !important; }
+  }
+}
+
+/* ---- appended from round1a3a extra (Opus) ---- */
+@layer components {
+  @media (max-width: 860px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-grid > :first-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .nav-inner { padding: 0 16px; }
+    .footer-bottom { flex-direction: column; align-items: flex-start; }
+  }
 }
