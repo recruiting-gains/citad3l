@@ -1,0 +1,10 @@
+# GPU inference image for Citad3L V1 (llama.cpp server, CUDA). Template — not built or provisioned.
+FROM ghcr.io/ggml-org/llama.cpp:server-cuda
+ENV MODEL_REPO=huihui-ai/Huihui-Qwen3.8-27B-abliterated-GGUF \
+    MODEL_FILE=Huihui-Qwen3.8-27B-abliterated-Q4_K.gguf \
+    CTX=32768 PARALLEL=4
+# Downloads the GGUF on first start into /models (mount a volume), then serves an OpenAI-compatible API.
+ENTRYPOINT ["/bin/sh", "-c", "\
+  [ -f /models/$MODEL_FILE ] || curl -L --fail -o /models/$MODEL_FILE https://huggingface.co/$MODEL_REPO/resolve/main/$MODEL_FILE && \
+  exec /app/llama-server -m /models/$MODEL_FILE --alias citad3l-v1 --host 0.0.0.0 --port 8080 \
+    -c $CTX --parallel $PARALLEL -ngl 999 --jinja --api-key $LLAMA_API_KEY"]
