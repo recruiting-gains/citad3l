@@ -2,14 +2,8 @@
    - Environments: .env
 
    Creating an optimized production build ...
- ✓ Compiled successfully in 10.0s
+ ✓ Compiled successfully in 4.1s
    Linting and checking validity of types ...
-
-   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
-   The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
-
-   	- include was updated to add '.next-prod/types/**/*.ts'
-
    Collecting page data ...
 [auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
 [auth] DEMO_LOGIN_ENABLED=true ignored: demo login is refused when NODE_ENV=production
@@ -27,7 +21,7 @@
 Route (app)                                 Size  First Load JS
 ┌ ƒ /                                    3.32 kB         113 kB
 ├ ƒ /_not-found                            158 B         103 kB
-├ ƒ /account                             3.25 kB         108 kB
+├ ƒ /account                             5.02 kB         110 kB
 ├ ƒ /api/account                           158 B         103 kB
 ├ ƒ /api/account/export                    158 B         103 kB
 ├ ƒ /api/auth/[...nextauth]                158 B         103 kB
@@ -57,3 +51,4 @@ Route (app)                                 Size  First Load JS
 
 ƒ  (Dynamic)  server-rendered on demand
 
+build exit 0

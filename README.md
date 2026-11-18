@@ -45,6 +45,7 @@ npx vitest run tests/guards.test.ts                       # unit: prod guards, S
 npm run dev &                                             # integration tests need the dev server + Postgres
 npx vitest run tests/integration.test.ts                  # isolation, streaming, stop/retry, concurrency, webhooks, deletion
 node scripts/screens.mjs                                  # screenshots → evidence/screenshots
+node scripts/keyboard.mjs && node scripts/theme-check.mjs # keyboard + theme checks (dark screenshots)
 ```
 
 ## Connect real services
@@ -64,11 +65,20 @@ fly deploy                                # release_command runs prisma migrate 
 Multi-instance note: the per-minute rate limiter is in-process; usage limits/concurrency are enforced in Postgres and are
 safe across instances. Move the rate limiter to Postgres/Redis before scaling out.
 
+## Theme
+White (default) and black themes on every page. Toggle in the top nav (desktop + phone) and Light/Dark/System in Account → Appearance.
+Choice is stored in `localStorage["citad3l-theme"]`; first visit follows `prefers-color-scheme`. An inline script in `app/layout.tsx`
+sets `data-theme` before first paint (no flash). Dark palette designed by Opus 5.5 (`app/globals.css`, section `round4-dark`).
+
+## Brand asset
+The owner's original rook PNG was not available on the box during this build, so `components/Rook.tsx` is an original SVG rook
+drawn by Opus. To use the owned rook: add it as `public/brand/rook.png` and swap the SVG for `<img src="/brand/rook.png">` in `Rook.tsx`.
+
 ## Privacy
 No prompt or response content is logged by the app. Users can export (`/api/account/export`) or delete their account
 (cascades all data; cancels Stripe subscription first when billing is configured).
 
 ## Design
 Frontend creative direction and component code by **Anthropic Claude Opus 5.5** (`claude-opus-5-5`, called via the
-Anthropic Messages API; see `design/opus/` for raw prompts/outputs and returned model ids). Visual reference screenshots in
+Anthropic Messages API via `design/opus/call_opus.py`; raw prompts/outputs in `design/opus/`, returned model ids in `design/opus/MODEL_LOG.md`). Visual reference screenshots in
 `design/reference/`. Code, copy and art are original.

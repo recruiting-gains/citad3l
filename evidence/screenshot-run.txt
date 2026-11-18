@@ -1,0 +1,7 @@
+{
+ "email": "review-mwlglc1z@citad3l.local",
+ "errors": [
+  "phone PAGEERR http://localhost:3210/login Invalid or unexpected token ",
+  "phone retrying /login"
+ ]
+}

@@ -1,0 +1,9 @@
+PASS  first visit with OS dark → data-theme=dark already at DOMContentLoaded (pre-hydration, no flash)  — {"dcl":"dark","bg":"rgb(11, 11, 11)","ls":null}
+PASS  body background is dark at DOMContentLoaded  — rgb(11, 11, 11)
+PASS  first visit with OS light → light
+PASS  nav toggle switches to dark and stores preference  — {"theme":"dark","ls":"dark","meta":"#0b0b0b"}
+PASS  preference persists across navigation/reload
+PASS  toggle works from keyboard (Enter) back to light
+PASS  no uncaught page errors during dark screenshots
+
+ALL PASSED (2026-11-18T01:44:53.512Z)
