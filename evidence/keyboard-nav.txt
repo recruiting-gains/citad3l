@@ -1,0 +1,12 @@
+PASS  first Tab focuses skip link  — {"tag":"A","text":"Skip to content","cls":"skip-link","label":null}
+PASS  skip link becomes visible on focus
+PASS  Tab reaches primary nav links  — Citad3L | Explore | Chat | Models | Projects | Search chats | Projects | Pricing | Log in | Get started | Start chatting | See plans
+PASS  Tab reaches Get started
+PASS  focused element has a visible focus style  — solid/none
+PASS  Shift+Enter inserts newline (does not send)
+PASS  Enter sends message
+PASS  Esc stops streaming  — Stopped — not charged.
+PASS  phone menu opens via keyboard (aria-expanded=true)
+PASS  Esc closes phone menu
+
+ALL PASSED (2026-11-18T01:21:32.424Z)

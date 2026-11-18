@@ -1,6 +1,7 @@
 
 const config = {
   output: "standalone",
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   devIndicators: false,
   async headers() {

@@ -27,6 +27,7 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
     await shot(p, n); await shot(p, n + "_full", true);
   }
   await login(ctx);
+  await db.query(`UPDATE "User" SET name='Cruz' WHERE email=$1`, [email]);
   await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
   await shot(p, "chat_empty");
   // create a project

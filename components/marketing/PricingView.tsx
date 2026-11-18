@@ -85,9 +85,9 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured }:
   return (
     <>
       <main className="page-main">
-        <section className="hero container">
+        <section className="hero pricing-hero container">
           <h1 className="display hero-title">
-            One strategic <HeroChips /> engine, every plan, a price that scales with you.
+            Every plan, one <HeroChips /> engine. A price that scales with you.
           </h1>
           <p className="hero-sub">Same model and features on every plan. Pick an allowance, change or cancel any time from your account.</p>
           <div className="hero-ctas">
@@ -165,7 +165,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured }:
           </div>
         </section>
 
-        <section className="section-lg container" aria-labelledby="faq-title">
+        <section className="section-lg faq-section container" aria-labelledby="faq-title">
           <h2 id="faq-title" className="section-title" style={{ textAlign: "center", marginBottom: 28 }}>Questions</h2>
           <div className="faq">
             {faqs.map((f) => (
