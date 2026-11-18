@@ -40,8 +40,7 @@ const IUp = () => <Ic size={16} sw={1.8}><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" /
 const IDown = () => <Ic size={14}><path d="M8 3v10M3.5 8.5L8 13l4.5-4.5" /></Ic>;
 const IChev = () => <Ic size={12}><path d="M4 6l4 4 4-4" /></Ic>;
 const IClose = () => <Ic size={13}><path d="M4 4l8 8M12 4l-8 8" /></Ic>;
-const IChat = () => <Ic size={15}><path d="M2.5 4A1.5 1.5 0 0 1 4 2.5h8A1.5 1.5 0 0 1 13.5 4v6A1.5 1.5 0 0 1 12 11.5H6.5L3.5 14v-2.5A1.5 1.5 0 0 1 2.5 10z" /></Ic>;
-const IBot = () => <Ic size={15}><rect x="2.5" y="4.5" width="11" height="8.5" rx="2.5" /><path d="M8 2v2.5M6 8.5v.5M10 8.5v.5" /></Ic>;
+
 const ISpark = () => <Ic><path d="M8 1.5v4M8 10.5v4M1.5 8h4M10.5 8h4M3.5 3.5l2.3 2.3M10.2 10.2l2.3 2.3M12.5 3.5l-2.3 2.3M5.8 10.2l-2.3 2.3" /></Ic>;
 const IArm = () => <Ic><path d="M3 14h6M5 14V11l5-5M10 6l3 1.5M10 6L8.5 3" /><circle cx="5" cy="11" r="1" /><circle cx="10" cy="6" r="1" /></Ic>;
 const IShield = () => <Ic><path d="M8 1.8l5 2v4c0 3.2-2.2 5.3-5 6.4-2.8-1.1-5-3.2-5-6.4v-4z" /><path d="M6 8l1.5 1.5L10.5 6.5" /></Ic>;
@@ -591,7 +590,10 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const usageCls = limitHit ? " is-out" : usage.limit > 0 && usage.remaining / usage.limit <= 0.2 ? " is-low" : "";
 
   /* ---------- render pieces ---------- */
-  const composer = (
+  const limitPlaceholder =
+    usage.plan === "trial" ? "Trial replies used — see plans to keep chatting" : "Monthly allowance used — resets on your billing date";
+
+  const renderComposer = () => (
     <div className={`composer${limitHit ? " is-disabled" : ""}${input.length > MAX_CHARS ? " is-over" : ""}`}>
       <label className="sr-only" htmlFor="citadel-composer">Message Citad3L</label>
       <textarea
@@ -599,7 +601,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         ref={taRef}
         className="composer-input"
         rows={showEmpty ? 2 : 1}
-        placeholder={limitHit ? "You've used this period's allowance" : showEmpty ? "Ask anything — strategy, code, research…" : "Reply to Citad3L…"}
+        placeholder={limitHit ? limitPlaceholder : showEmpty ? "Ask anything — strategy, code, research…" : "Reply to Citad3L…"}
         value={input}
         disabled={limitHit}
         onChange={(e) => setInput(e.target.value)}
@@ -613,16 +615,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       />
       <div className="composer-bar">
         <div className="composer-left">
-          <div className="seg" role="group" aria-label="Mode">
-            <button type="button" className="seg-btn" aria-pressed="true">
-              <IChat />
-              <span className="seg-label">Chat</span>
-            </button>
-            <button type="button" className="seg-btn" disabled title="Agents — coming soon">
-              <IBot />
-              <span className="seg-label">Agents</span>
-            </button>
-          </div>
+          {projectChip}
         </div>
         <div className="composer-right">
           <span className="engine-pill" title="Huihui-Qwen3.8-27B-abliterated by huihui-ai, served by Citad3L">
@@ -820,10 +813,10 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             <div className="side-section">
               <div className="side-section-head">Recents</div>
               {!convsLoaded ? (
-                <div className="skel-stack" style={{ padding: "8px 10px" }}>
-                  <div className="skeleton skel-line w-80" />
-                  <div className="skeleton skel-line w-60" />
-                  <div className="skeleton skel-line w-80" />
+                <div className="side-skel" aria-label="Loading chats">
+                  <div className="skeleton" />
+                  <div className="skeleton" />
+                  <div className="skeleton" />
                 </div>
               ) : groups.length === 0 ? (
                 <div className="side-empty">{search ? "No chats match your search." : "Your chats show up here."}</div>
@@ -921,12 +914,11 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               </p>
               {bannerEl && <div style={{ width: "100%", marginTop: 20 }}>{bannerEl}</div>}
               {limitHit && <div style={{ width: "100%", marginTop: 20 }}><LimitReached usage={usage} /></div>}
-              {composer}
+              {renderComposer()}
               <div className="chat-empty-meta">
-                {projectChip}
+                <MockBadge provider={provider} />
                 <div className="row">
                   {charCount}
-                  <MockBadge provider={provider} />
                   <span className={`usage-chip${usageCls}`}>{usageText}</span>
                 </div>
               </div>
@@ -996,16 +988,15 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                 <div className="composer-dock-inner">
                   {bannerEl}
                   {limitHit && <LimitReached usage={usage} />}
-                  {composer}
+                  {renderComposer()}
                   <div className="composer-meta">
-                    {projectChip}
+                    <MockBadge provider={provider} />
                     <span className="spacer" />
                     {charCount}
-                    <MockBadge provider={provider} />
-                    <span className={`usage-chip${usageCls}`}>{usageText}</span>
+                    <span className={`usage-chip${usageCls}`} title="Failed or stopped replies aren't charged">{usageText}</span>
                   </div>
                   <div className="composer-hint">
-                    <span className="kbd">Enter</span> to send · <span className="kbd">Shift</span>+<span className="kbd">Enter</span> for a new line · <span className="kbd">Esc</span> to stop. Failed or stopped replies aren&apos;t charged.
+                    <span className="kbd">Enter</span> to send · <span className="kbd">Shift</span>+<span className="kbd">Enter</span> new line · <span className="kbd">Esc</span> to stop
                   </div>
                 </div>
               </div>

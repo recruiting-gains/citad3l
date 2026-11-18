@@ -23,7 +23,7 @@ const IArrow = () => <svg {...sv} width={14} height={14}><path d="M5 12h14M13 6l
 
 const tiles: { title: string; sub: string; href?: string; icon: ReactNode; badge?: "new" | "soon" }[] = [
   { title: "Chat", sub: "Ask anything, think out loud", href: "/chat", icon: <IChat /> },
-  { title: "Model", sub: "One engine, fully documented", href: "/models/citad3l-v1", icon: <ICube />, badge: "new" },
+  { title: "Model", sub: "One engine, documented", href: "/models/citad3l-v1", icon: <ICube />, badge: "new" },
   { title: "Projects", sub: "Instructions that persist", href: "/projects", icon: <IFolder /> },
   { title: "Usage", sub: "Allowance at a glance", href: "/account", icon: <IGauge /> },
   { title: "Account", sub: "Plan, billing, your data", href: "/account", icon: <IUser /> },

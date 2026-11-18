@@ -30,8 +30,8 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
   await shot(p, "chat_empty");
   // create a project
-  await p.request.post(BASE + "/api/projects", { data: { name: "AI security brief", instructions: "Act as a defensive security analyst. Be concise." } });
-  await p.request.post(BASE + "/api/projects", { data: { name: "Robotics watch", instructions: "Track humanoid robotics progress." } });
+  if (tag === "desktop") await p.request.post(BASE + "/api/projects", { data: { name: "AI security brief", instructions: "Act as a defensive security analyst. Be concise." } });
+  if (tag === "desktop") await p.request.post(BASE + "/api/projects", { data: { name: "Robotics watch", instructions: "Track humanoid robotics progress." } });
   await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
   const box = p.locator("textarea").first();
   await box.fill("Give me a 3-step plan to harden a home network against AI-assisted attacks.");

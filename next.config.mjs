@@ -2,6 +2,7 @@
 const config = {
   output: "standalone",
   poweredByHeader: false,
+  devIndicators: false,
   async headers() {
     return [{ source: "/(.*)", headers: [
       { key: "X-Content-Type-Options", value: "nosniff" },

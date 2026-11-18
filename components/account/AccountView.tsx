@@ -144,7 +144,7 @@ export function AccountView({ userLabel, email, usage, billingConfigured, provid
   };
 
   return (
-    <main className="container account-page page-main">
+    <main className="page-wrap account-page page-main">
       <header className="page-head">
         <h1 className="page-title">Account</h1>
         <p className="page-sub">Your plan, allowance and data.</p>
@@ -183,7 +183,7 @@ export function AccountView({ userLabel, email, usage, billingConfigured, provid
               <div className="account-card-sub">Current plan</div>
               <div className="account-plan" style={{ marginTop: 6 }}>
                 <span className="account-plan-name">{PLAN_NAMES[usage.plan]}</span>
-                <StatusBadge status={usage.status} />
+                {usage.plan !== "trial" && <StatusBadge status={usage.status} />}
               </div>
             </div>
             <div className="btn-row">
@@ -193,12 +193,12 @@ export function AccountView({ userLabel, email, usage, billingConfigured, provid
                 </button>
               )}
               {usage.plan === "trial" && (
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => checkout("pro")} disabled={busy !== null}>
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => checkout("pro")} disabled={busy !== null || !billingConfigured}>
                   {busy === "pro" && <span className="spinner" />} Upgrade to Pro
                 </button>
               )}
               {usage.plan !== "max" && (
-                <button type="button" className={`btn btn-sm ${usage.plan === "trial" ? "btn-outline" : "btn-primary"}`} onClick={() => checkout("max")} disabled={busy !== null}>
+                <button type="button" className={`btn btn-sm ${usage.plan === "trial" ? "btn-outline" : "btn-primary"}`} onClick={() => checkout("max")} disabled={busy !== null || !billingConfigured}>
                   {busy === "max" && <span className="spinner" />} {usage.plan === "trial" ? "Go Max" : "Upgrade to Max"}
                 </button>
               )}

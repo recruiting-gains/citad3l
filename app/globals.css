@@ -1285,3 +1285,190 @@
     .footer-bottom { flex-direction: column; align-items: flex-start; }
   }
 }
+
+/* ---- integration glue (not Opus): accessible skip link ---- */
+.skip-link { position: absolute; left: 8px; top: -48px; z-index: 100; padding: 8px 14px; border-radius: 999px; background: var(--fg); color: var(--bg); font-size: 13px; transition: top .15s; }
+.skip-link:focus { top: 8px; }
+
+/* ---- app/round2-marketing.css (Opus design round) ---- */
+/* Round 2 — marketing likeness pass */
+
+/* Tailwind v4 ships its own .container utility in the utilities layer, which beats ours. Re-assert ours. */
+@layer utilities {
+  .container {
+    width: 100%;
+    max-width: calc(var(--container) + var(--gutter) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .container.container-narrow { max-width: calc(1024px + var(--gutter) * 2); }
+}
+
+@layer components {
+  :root { --nav-h: 52px; --gutter: 30px; --display: clamp(44px, 3.6vw + 24px, 76px); }
+  @media (max-width: 640px) { :root { --gutter: 16px; } }
+
+  /* Skip link: hidden until focused, whatever class the layout gives it */
+  body > a[href^="#"]:first-child:not(:focus),
+  .skip-link:not(:focus) {
+    position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  body > a[href^="#"]:first-child:focus {
+    position: fixed; left: 8px; top: 8px; z-index: 200; padding: 8px 14px;
+    border-radius: 999px; background: var(--fg); color: var(--bg); font-size: 13px;
+  }
+
+  /* Nav */
+  .nav-inner { padding: 0 20px; gap: 14px; }
+  .nav-brand { font-size: 17px; gap: 7px; }
+  .nav-links { gap: 0; margin-left: 4px; }
+  .nav-link { height: 30px; padding: 0 10px; font-size: 13.5px; }
+  .nav-text { height: 30px; font-size: 13.5px; }
+  .nav-right, .nav-desktop { gap: 4px; }
+  .nav .btn-sm { height: 30px; padding: 0 12px; font-size: 13px; }
+  .nav .icon-btn { width: 32px; height: 32px; }
+
+  /* Hero */
+  .hero { padding: 0; padding-block: 88px 64px; }
+  .display { font-size: var(--display); line-height: 1.02; letter-spacing: -0.035em; }
+  .hero-title { max-width: 980px; }
+  .hero-sub { max-width: 720px; margin-top: 22px; font-size: 18px; }
+  .hero-ctas { margin-top: 30px; gap: 8px; }
+  .hero-ctas .btn-lg { height: 44px; padding: 0 22px; font-size: 15.5px; }
+  .hero-note { margin-top: 16px; }
+
+  /* Tiles */
+  .tile-grid { gap: 12px; }
+  .tile { min-height: 0; height: 112px; padding: 14px 14px 16px; border-radius: 10px; }
+  .tile-badge { top: 12px; right: 12px; }
+  .tile-title { padding-top: 0; font-size: 14px; }
+  .tile-sub {
+    margin-top: 6px; font-size: 12.5px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+
+  /* Sections */
+  .section-lg { padding-block: 72px; }
+  .section-title { font-size: 28px; letter-spacing: -0.03em; }
+  .section-head { margin-bottom: 16px; }
+  .round-btn { width: 32px; height: 32px; }
+
+  /* Media cards */
+  .carousel { gap: 14px; grid-auto-columns: calc((100% - 28px) / 3); }
+  .media, .media-card { border-radius: 10px; }
+  .media-tag { top: 10px; left: 10px; height: 22px; font-size: 11.5px; }
+  .media-card { gap: 12px; }
+  .media-meta { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; }
+  .media-icon { width: 28px; height: 28px; border-radius: 8px; }
+  .media-title { font-size: 13.5px; }
+  .media-desc { margin-top: 2px; font-size: 12.5px; }
+  .models-grid { gap: 14px; }
+
+  .model-strip, .step, .plan-mini { border-radius: 12px; }
+
+  /* Pricing */
+  .pricing-grid { gap: 12px; }
+  .plan-card { padding: 20px; border-radius: 16px; }
+  .plan-blurb { margin-top: 10px; }
+  .plan-price { margin-top: 14px; }
+  .plan-amount { font-size: 36px; }
+  .plan-cta { margin-top: 16px; }
+  .plan-cta .btn-lg { height: 40px; font-size: 14px; }
+  .plan-section { margin-top: 22px; }
+  .plan-row { padding: 9px 0; font-size: 12.5px; }
+  .pricing-head-title { font-size: 16px; }
+
+  /* Model detail */
+  .model-side-inner { gap: 18px; padding: 20px; }
+  .model-title { font-size: 24px; }
+  .stat-label { font-size: 12.5px; }
+
+  @media (max-width: 1200px) { .tile { height: 104px; } }
+
+  @media (max-width: 640px) {
+    .hero { padding-block: 48px 40px; }
+    .display { font-size: 44px; line-height: 1.04; }
+    .hero-sub { font-size: 17px; }
+    .hero-ctas .btn { flex: 0 0 auto; }
+    .tile { height: 128px; padding: 16px; border-radius: 14px; }
+    .tile-sub { font-size: 14px; white-space: normal; }
+    .carousel { grid-auto-columns: 86%; }
+  }
+}
+
+/* ---- app/round2-app.css (Opus design round) ---- */
+/* Skip link: hidden until focused, whatever class it carries */
+body > a[href="#main"]:not(:focus),
+body > a[href="#content"]:not(:focus),
+body > a[href="#main-content"]:not(:focus),
+.skip-link:not(:focus) {
+  position: absolute !important; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; top: 0; left: 0;
+}
+
+@layer components {
+  /* page wrapper that Tailwind's .container can't override */
+  .page-wrap { width: 100%; margin-inline: auto; padding-inline: var(--gutter); max-width: calc(1376px + var(--gutter) * 2); }
+  .page-wrap.account-page { max-width: calc(880px + var(--gutter) * 2); }
+
+  /* ---- chat empty state ---- */
+  .chat-empty { padding-top: clamp(28px, 7vh, 80px); }
+  .chat-emblem { width: 64px; height: 64px; }
+  .chat-greeting { margin-top: 20px; }
+  .chat-greeting-sub { margin-top: 8px; font-size: var(--t-base); color: var(--fg-3); }
+  .chat-empty .composer { margin-top: 24px; }
+  .chat-empty-meta { padding: 10px 6px 0; }
+
+  /* ---- composer ---- */
+  .composer { gap: 12px; padding: 16px 12px 12px 18px; border-color: transparent; }
+  .composer:focus-within { border-color: var(--line-2); }
+  .composer .project-chip { height: 34px; padding: 0 12px; border: 1px solid var(--line-2); background: transparent; }
+  .composer button.project-chip:hover { background: var(--surface-2); }
+  .composer .project-chip.is-set { background: var(--surface-2); border-color: transparent; }
+  .engine-pill { background: #e6e6e6; }
+  .send-btn:disabled { background: #e2e2e2; color: var(--fg-3); }
+  .composer-meta { flex-wrap: nowrap; padding: 0 4px; }
+  .composer-dock { padding-bottom: 18px; }
+  .composer-dock-inner { gap: 8px; }
+  .composer-hint { line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- sidebar ---- */
+  .side-skel { display: flex; flex-direction: column; gap: 12px; padding: 10px 10px 4px; overflow: hidden; }
+  .side-skel .skeleton { height: 10px; border-radius: 6px; }
+  .side-skel .skeleton:nth-child(1) { width: 78%; }
+  .side-skel .skeleton:nth-child(2) { width: 56%; }
+  .side-skel .skeleton:nth-child(3) { width: 68%; }
+  .side-empty { padding: 4px 10px; font-size: var(--t-sm); }
+  .side-foot { padding-bottom: 4px; }
+
+  /* ---- projects ---- */
+  .project-card { border-radius: var(--r-lg); padding: 18px 18px 16px; min-height: 176px; }
+  .project-actions { opacity: 0.55; transition: opacity var(--dur-1); }
+  .project-card:hover .project-actions, .project-card:focus-within .project-actions { opacity: 1; }
+  .project-new { border-radius: var(--r-lg); min-height: 176px; }
+
+  /* ---- account ---- */
+  .account-card { border-radius: var(--r-xl); }
+
+  @media (hover: none) { .composer-hint { display: none; } }
+
+  @media (max-width: 640px) {
+    .chat-empty { padding-top: 20px; }
+    .chat-greeting { font-size: 30px; margin-top: 14px; }
+    .composer { gap: 10px; padding: 12px 10px 10px 14px; }
+    .composer-input { min-height: 24px; }
+    .composer .project-chip { height: 32px; max-width: 132px; padding: 0 10px; }
+    .engine-pill { height: 32px; }
+    .send-btn, .stop-btn { width: 34px; height: 34px; }
+    .composer-meta { gap: 6px; }
+    .composer-meta .badge-mock, .composer-meta .usage-chip,
+    .chat-empty-meta .badge-mock, .chat-empty-meta .usage-chip { height: 22px; padding: 0 8px; font-size: var(--t-xs); }
+    .chat-empty-meta { flex-wrap: wrap; justify-content: flex-start; padding: 8px 2px 0; }
+    .composer-hint { display: none; }
+    .composer-dock { padding-bottom: 10px; }
+  }
+}
+/* ---- integration glue: nav desktop/phone switch is CSS-only (no hydration flash) ---- */
+.nav-burger { display: none !important; }
+@media (max-width: 860px) { .nav-burger { display: inline-grid !important; } .nav-desktop { display: none !important; } }

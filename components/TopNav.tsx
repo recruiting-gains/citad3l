@@ -103,7 +103,7 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
           <span>Citad3L</span>
         </Link>
 
-        {!isPhone && (
+        {(
           <nav className="nav-links" aria-label="Primary">
             {LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="nav-link" aria-current={l.match(pathname) ? "page" : undefined}>
@@ -117,7 +117,7 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
           <Link href="/chat" className="icon-btn nav-icon" aria-label="Search chats">
             <SearchIcon />
           </Link>
-          {!isPhone ? (
+          <>
             <div className="nav-desktop">
               <Link href="/projects" className="icon-btn nav-icon" aria-label="Projects">
                 <FolderIcon />
@@ -142,12 +142,10 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
                 </>
               )}
             </div>
-          ) : (
             <button
               ref={burgerRef}
               type="button"
-              className="icon-btn nav-icon"
-              style={{ display: "inline-grid" }}
+              className="icon-btn nav-icon nav-burger"
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               aria-controls="nav-sheet"
@@ -155,7 +153,7 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
             >
               <MenuIcon open={open} />
             </button>
-          )}
+          </>
         </div>
       </div>
 
