@@ -1,0 +1,37 @@
+
+ RUN  v5.1.0 /workspace/citad3l
+
+ ✓ tests/integration.test.ts > auth + guards > rejects unauthenticated API calls 1003ms
+ ✓ tests/integration.test.ts > auth + guards > provider endpoint reports MOCK explicitly 320ms
+ ✓ tests/integration.test.ts > auth + guards > rejects oversized messages (8,000 char limit) 58ms
+ ✓ tests/integration.test.ts > streaming chat (mock provider) > streams meta → deltas → done and persists both messages 1955ms
+ ✓ tests/integration.test.ts > streaming chat (mock provider) > interruption: aborting mid-stream marks the reply stopped and does NOT charge 11642ms
+ ✓ tests/integration.test.ts > streaming chat (mock provider) > provider failure is not charged 237ms
+ ✓ tests/integration.test.ts > history, projects, cross-user isolation > creates a project and a chat inside it; project instructions are owned 1919ms
+ ✓ tests/integration.test.ts > history, projects, cross-user isolation > user B cannot read, modify, delete, or post into A's resources 1431ms
+ ✓ tests/integration.test.ts > history, projects, cross-user isolation > export contains only own data; delete conversation works 563ms
+ ✓ tests/integration.test.ts > atomic usage limits under concurrency > trial: 20 parallel requests with 1 reply remaining → exactly 1 succeeds 1739ms
+ ✓ tests/integration.test.ts > atomic usage limits under concurrency > paid (Pro): 20 parallel requests with 1 unit remaining → exactly 1 succeeds 1677ms
+ ✓ tests/integration.test.ts > atomic usage limits under concurrency > Max allowance is 2.5× Pro 121ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > rejects bad / missing signatures 635ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > checkout.session.completed → Pro active; duplicate replay is idempotent 28ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > subscription.updated: period set, then cancel_at_period_end keeps access 52ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > invoice.payment_failed → past_due blocks new replies; invoice.paid (new period) restores and resets 1507ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > subscription.deleted → falls back to trial pool 37ms
+ ✓ tests/integration.test.ts > Stripe webhooks (TEST mode, locally signed payloads) > checkout without Stripe keys returns billing_not_configured; success/cancel return pages render 1778ms
+ ✓ tests/integration.test.ts > account deletion > deletes the user and cascades data 2011ms
+stderr | tests/guards.test.ts > production guards > Stripe live keys are refused
+[stripe] refusing non-test key: this build only supports Stripe TEST mode
+
+ ✓ tests/guards.test.ts > production guards > mock provider is refused when NODE_ENV=production 9ms
+ ✓ tests/guards.test.ts > production guards > mock is used in development only when no endpoint / explicitly requested 1ms
+ ✓ tests/guards.test.ts > production guards > demo login is refused when NODE_ENV=production even if DEMO_LOGIN_ENABLED=true 1ms
+ ✓ tests/guards.test.ts > production guards > Stripe live keys are refused 71ms
+ ✓ tests/guards.test.ts > production guards > Max allowance = 2.5x Pro and configurable 1ms
+ ✓ tests/guards.test.ts > OpenAI-compatible adapter against local stub > streams tokens from INFERENCE_BASE_URL with bearer key 224ms
+
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  19:31:07
+   Duration  30.08s (tests 100%)
+

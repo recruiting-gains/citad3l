@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Rook } from "@/components/Rook";
+import { ThemeToggle, ThemeSegment } from "@/components/ThemeToggle";
 
 function SearchIcon() {
   return (
@@ -114,6 +115,7 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
         )}
 
         <div className="nav-right">
+          <ThemeToggle />
           <Link href="/chat" className="icon-btn nav-icon" aria-label="Search chats">
             <SearchIcon />
           </Link>
@@ -177,6 +179,10 @@ export function TopNav({ signedIn, userLabel }: TopNavProps) {
                 <ChevronIcon />
               </Link>
             )}
+            <div className="sheet-theme">
+              <span id="sheet-theme-label">Theme</span>
+              <ThemeSegment size="sm" labelledBy="sheet-theme-label" />
+            </div>
             {!signedIn && (
               <div className="sheet-actions">
                 <Link href="/login" className="btn btn-secondary">Log in</Link>

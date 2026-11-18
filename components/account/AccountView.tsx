@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ThemeSegment } from "@/components/ThemeToggle";
 import { signOut } from "next-auth/react";
 import type { ProviderInfo, UsageSummary } from "@/lib/types";
 import { MockBadge } from "@/components/MockBadge";
@@ -237,6 +238,22 @@ export function AccountView({ userLabel, email, usage, billingConfigured, provid
           <div className="row" style={{ marginTop: 18, flexWrap: "wrap" }}>
             <span className="tiny">Engine: Citad3L V1</span>
             <MockBadge provider={provider} />
+          </div>
+        </section>
+
+        <section className="account-card" aria-labelledby="appearance-title">
+          <div className="account-card-head">
+            <div>
+              <div className="account-card-title" id="appearance-title">Appearance</div>
+              <div className="account-card-sub">White or black. System follows your device setting.</div>
+            </div>
+          </div>
+          <div className="account-row">
+            <div>
+              <div className="account-row-label">Theme</div>
+              <div className="account-row-desc">Saved on this device.</div>
+            </div>
+            <ThemeSegment labelledBy="appearance-title" />
           </div>
         </section>
 

@@ -1508,3 +1508,228 @@ body > a[href="#main-content"]:not(:focus),
     .footer-giant { height: 0.66em; }
   }
 }
+/* ---- integration glue: restore list markers removed by Tailwind preflight ---- */
+.md ul { list-style: disc; } .md ol { list-style: decimal; } .md li::marker { color: var(--fg-3); }
+
+/* ---- app/round4-dark.css (Opus design round) ---- */
+/* Round 4 — dark theme. Unlayered on purpose: beats @layer base/components/utilities. */
+
+/* ---------- 1. Tokens ---------- */
+:root[data-theme="light"] { color-scheme: light; }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0b0b;
+  --fg: #ededed;
+  --fg-2: #a8a8a8;
+  --fg-3: #8f8f8f;
+  --fg-4: #5a5a5a;
+  --line: #1f1f1f;
+  --line-2: #2a2a2a;
+  --line-3: #3a3a3a;
+  --surface: #1c1c1c;
+  --surface-2: #242424;
+  --surface-3: #141414;
+  --elev: #151515;
+
+  --ink: #ececec;
+  --ink-2: #dedede;
+  --ink-3: #cfcfcf;
+  --ink-line: #d4d4d4;
+  --on-ink: #0b0b0b;
+  --on-ink-2: #5c5c5c;
+
+  --live: #22c55e;
+  --ok-fg: #4ade80;
+  --ok-bg: #0f2417;
+  --amber-fg: #f5c46b;
+  --amber-bg: #2a1f08;
+  --amber-line: #6a4e17;
+  --amber-solid: #f0a83a;
+  --danger: #ff6b55;
+  --danger-fg: #ffb4a6;
+  --danger-bg: #2a1210;
+  --danger-line: #5c2a22;
+
+  --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 16px 48px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- 2. Base ---------- */
+:root[data-theme="dark"] ::selection { background: rgba(255, 255, 255, 0.18); }
+
+/* ---------- 3. Nav + sheet ---------- */
+:root[data-theme="dark"] .nav { background: rgba(11, 11, 11, 0.86); }
+:root[data-theme="dark"] .sheet-backdrop { background: rgba(0, 0, 0, 0.55); }
+:root[data-theme="dark"] .nav-avatar,
+:root[data-theme="dark"] .avatar-lg { color: var(--on-ink); }
+
+/* ---------- 4. Buttons + badges ---------- */
+:root[data-theme="dark"] .btn-inverse { background: #141414; color: #ededed; }
+:root[data-theme="dark"] .btn-inverse:hover:not(:disabled) { background: #262626; }
+:root[data-theme="dark"] .btn-danger { background: #c8371f; color: #fff; }
+:root[data-theme="dark"] .btn-danger:hover:not(:disabled) { background: #b02e18; }
+:root[data-theme="dark"] .badge-new { color: var(--on-ink); }
+:root[data-theme="dark"] .badge-dark { background: #2e2e2e; color: #ededed; }
+:root[data-theme="dark"] .badge-soon { background: transparent; }
+:root[data-theme="dark"] .badge-mock { border-color: var(--amber-line); }
+:root[data-theme="dark"] .live-dot { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25); }
+
+/* ---------- 5. Hero chip tiles + emblems ---------- */
+:root[data-theme="dark"] .chip-tile { background: #161616; border-color: var(--line-2); }
+:root[data-theme="dark"] .model-cta-mark,
+:root[data-theme="dark"] .state-emblem,
+:root[data-theme="dark"] .auth-emblem { background: #161616; border-color: var(--line-2); }
+
+/* ---------- 6. Media / art ---------- */
+:root[data-theme="dark"] .media::after,
+:root[data-theme="dark"] .model-art::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+:root[data-theme="dark"] .media-tag { background: rgba(10, 10, 10, 0.62); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+:root[data-theme="dark"] a.tile:hover,
+:root[data-theme="dark"] .project-card:hover,
+:root[data-theme="dark"] .project-card:focus-within { box-shadow: none; }
+
+/* ---------- 7. Pricing: Pro inverts to a light card ---------- */
+:root[data-theme="dark"] .plan-card.is-highlight .text-2,
+:root[data-theme="dark"] .plan-card.is-highlight .text-3,
+:root[data-theme="dark"] .plan-card.is-highlight .tiny { color: var(--on-ink-2); }
+:root[data-theme="dark"] .plan-card.is-highlight .usage-dots i { background: #c4c4c4; }
+:root[data-theme="dark"] .plan-card.is-highlight .usage-dots i.on { background: #141414; }
+:root[data-theme="dark"] .plan-card.is-highlight .plan-note { background: #fff4dc; color: #8a5300; border-color: #f2d08a; }
+:root[data-theme="dark"] .plan-card.is-highlight .pill,
+:root[data-theme="dark"] .plan-card.is-highlight .plan-mult,
+:root[data-theme="dark"] .plan-card.is-highlight .badge-dark { background: #d9d9d9; color: #141414; }
+:root[data-theme="dark"] .plan-card.is-highlight .btn-secondary { background: #d9d9d9; color: #141414; }
+:root[data-theme="dark"] .plan-card.is-highlight .btn-secondary:hover:not(:disabled) { background: #cdcdcd; }
+:root[data-theme="dark"] .plan-card.is-highlight :focus-visible { outline-color: #0b0b0b; }
+:root[data-theme="dark"] .plan-mini.is-highlight :focus-visible { outline-color: #0b0b0b; }
+
+/* ---------- 8. Footer ---------- */
+:root[data-theme="dark"] .footer-giant { color: #1a1a1a; }
+
+/* ---------- 9. Composer ---------- */
+:root[data-theme="dark"] .composer-dock { background: linear-gradient(to bottom, rgba(11, 11, 11, 0), #0b0b0b 28px); }
+:root[data-theme="dark"] .composer:focus-within { background: #1f1f1f; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04); }
+:root[data-theme="dark"] .engine-pill { background: #262626; }
+:root[data-theme="dark"] .engine-pill-mark { background: #383838; color: var(--fg); }
+:root[data-theme="dark"] .send-btn,
+:root[data-theme="dark"] .stop-btn { color: var(--on-ink); }
+:root[data-theme="dark"] .send-btn:disabled { background: #262626; color: var(--fg-3); }
+:root[data-theme="dark"] .composer .project-chip.is-set,
+:root[data-theme="dark"] .composer button.project-chip:hover { background: #2a2a2a; }
+
+/* ---------- 10. Elevated surfaces: menus, dialogs, jump pill ---------- */
+:root[data-theme="dark"] .menu { background: var(--elev); border-color: var(--line-2); }
+:root[data-theme="dark"] .menu-item:hover,
+:root[data-theme="dark"] .menu-item:focus-visible { background: var(--surface-2); }
+:root[data-theme="dark"] .dialog { background: var(--elev); box-shadow: var(--shadow-pop); }
+:root[data-theme="dark"] .dialog-backdrop { background: rgba(0, 0, 0, 0.6); }
+:root[data-theme="dark"] .jump-latest { background: var(--elev); }
+:root[data-theme="dark"] .jump-latest:hover { background: var(--surface-2); }
+:root[data-theme="dark"] .limit-card { background: var(--elev); }
+:root[data-theme="dark"] .chat-shell[data-sidebar="open"] .chat-scrim { background: rgba(0, 0, 0, 0.55); }
+@media (max-width: 900px) {
+  :root[data-theme="dark"] .chat-sidebar { background: var(--elev); }
+}
+
+/* ---------- 11. Forms ---------- */
+:root[data-theme="dark"] .input:focus,
+:root[data-theme="dark"] .textarea:focus,
+:root[data-theme="dark"] .select:focus { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1); }
+:root[data-theme="dark"] .side-search input:focus { background: var(--surface-3); }
+
+/* ---------- 12. Toasts ---------- */
+:root[data-theme="dark"] .toast { background: #1f1f1f; color: #ededed; box-shadow: var(--shadow-pop); border: 1px solid #2e2e2e; }
+:root[data-theme="dark"] .toast-close { color: #9a9a9a; }
+:root[data-theme="dark"] .toast-close:hover { background: #2e2e2e; color: #fff; }
+
+/* ---------- 13. Skeletons ---------- */
+:root[data-theme="dark"] .skeleton::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent); }
+
+/* ---------- 14. Banners / notices ---------- */
+:root[data-theme="dark"] .banner-offline { background: #1c1c1c; border-color: var(--line-2); color: var(--fg-2); }
+:root[data-theme="dark"] .banner-offline strong { color: var(--fg); }
+:root[data-theme="dark"] .banner-offline .btn-secondary { background: #2e2e2e; color: var(--fg); }
+:root[data-theme="dark"] .notice-ok { border-color: #1f4a2e; }
+
+/* ---------- 15. Markdown ---------- */
+:root[data-theme="dark"] .md :not(pre) > code { background: var(--surface); border-color: var(--line-2); }
+:root[data-theme="dark"] .md th { background: var(--surface-3); }
+
+/* ---------- 16. Code blocks ---------- */
+:root[data-theme="dark"] .code-block { background: #111418; border-color: #232a33; }
+:root[data-theme="dark"] .code-head { background: #171b22; border-bottom-color: #232a33; }
+:root[data-theme="dark"] .code-copy:hover { background: #262e3a; }
+
+/* ---------- 17. Auth ---------- */
+:root[data-theme="dark"] .auth-page { background: radial-gradient(1200px 500px at 50% -10%, #171717, #0b0b0b 70%); }
+:root[data-theme="dark"] .auth-card { background: var(--elev); }
+:root[data-theme="dark"] .demo-box { background: #1a1408; }
+
+/* ---------- 18. Theme toggle (nav) ---------- */
+.theme-toggle {
+  position: relative; display: inline-grid; place-items: center; flex: none;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 999px;
+  background: transparent; color: var(--fg);
+  transition: background-color var(--dur-1), color var(--dur-1);
+}
+.theme-toggle:hover { background: var(--surface); }
+.theme-toggle:active { transform: scale(0.94); }
+.theme-toggle svg {
+  grid-area: 1 / 1;
+  transition: opacity 200ms var(--ease), transform 320ms var(--ease);
+}
+.theme-toggle .theme-icon-moon { opacity: 1; transform: none; }
+.theme-toggle .theme-icon-sun { opacity: 0; transform: rotate(-60deg) scale(0.6); }
+:root[data-theme="dark"] .theme-toggle .theme-icon-moon { opacity: 0; transform: rotate(45deg) scale(0.6); }
+:root[data-theme="dark"] .theme-toggle .theme-icon-sun { opacity: 1; transform: none; }
+
+/* ---------- 19. Theme segment (Account + phone sheet) ---------- */
+.theme-segment {
+  display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+  border-radius: 999px; border: 1px solid var(--line-2); background: transparent;
+}
+.theme-segment-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px;
+  border: 0; border-radius: 999px; background: transparent;
+  font-size: var(--t-13); font-weight: 450; color: var(--fg-2); white-space: nowrap;
+  transition: background-color var(--dur-1), color var(--dur-1);
+}
+.theme-segment-btn:hover { color: var(--fg); }
+.theme-segment-btn[aria-checked="true"] { background: var(--surface-2); color: var(--fg); }
+.theme-segment-btn:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; border-radius: 999px; }
+.theme-segment-btn svg { flex: none; }
+.theme-segment-sm .theme-segment-btn { height: 28px; padding: 0 10px; font-size: 12.5px; gap: 5px; }
+
+.sheet-theme {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 50px; padding: 0 4px 0 12px; margin-top: 4px;
+  font-size: var(--t-lg); color: var(--fg);
+}
+@media (max-width: 380px) {
+  .sheet-theme .theme-segment-btn span { display: none; }
+  .sheet-theme .theme-segment-btn { padding: 0 10px; }
+}
+
+/* ---------- 20. Theme switch transition (only while html.theme-anim) ---------- */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, outline-color, text-decoration-color !important;
+  transition-duration: 200ms !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0s !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-anim,
+  html.theme-anim *,
+  html.theme-anim *::before,
+  html.theme-anim *::after { transition: none !important; }
+  .theme-toggle svg { transition: none !important; }
+}

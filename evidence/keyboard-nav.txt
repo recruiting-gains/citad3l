@@ -9,4 +9,4 @@ PASS  Esc stops streaming  — Stopped — not charged.
 PASS  phone menu opens via keyboard (aria-expanded=true)
 PASS  Esc closes phone menu
 
-ALL PASSED (2026-11-18T01:21:32.424Z)
+ALL PASSED (2026-11-18T01:31:45.444Z)

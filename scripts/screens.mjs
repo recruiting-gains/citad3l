@@ -49,12 +49,12 @@ for (const [w, h, tag, mob] of [[1440, 900, "desktop", false], [390, 844, "phone
   await shot(p, "account");
   // limit reached state: exhaust trial for this user
   await db.query(`UPDATE "Entitlement" e SET "trialUsed"=5 FROM "User" u WHERE u.id=e."userId" AND u.email=$1`, [email]);
-  await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
+  await visit("/chat");
   await p.locator("textarea").first().fill("One more question?").catch(() => {});
   await p.locator("textarea").first().press("Enter").catch(() => {});
   await p.waitForTimeout(1500);
   await shot(p, "limit_reached");
-  await p.goto(BASE + "/account", { waitUntil: "networkidle" });
+  await visit("/account");
   await shot(p, "account_limit");
   await db.query(`UPDATE "Entitlement" e SET "trialUsed"=0 FROM "User" u WHERE u.id=e."userId" AND u.email=$1`, [email]);
   await ctx.close();
