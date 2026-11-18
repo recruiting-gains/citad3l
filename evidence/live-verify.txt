@@ -1,0 +1,47 @@
+# Live verification — https://citad3l.recruiting-gains.workers.dev — 2026-11-17 19:57 CST
+/ -> 200
+/pricing -> 200
+/models -> 200
+/models/citad3l-v1 -> 200
+/login -> 200
+/terms -> 200
+/privacy -> 200
+/robots.txt -> 200
+/chat -> 307
+/projects -> 307
+/account -> 307
+/api/health -> 503
+/api/provider -> 200
+/api/usage -> 401
+/api/conversations -> 401
+
+## Headers on /
+content-type: text/html; charset=utf-8
+permissions-policy: camera=(), microphone=(), geolocation=()
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-robots-tag: noindex, nofollow
+
+## robots meta
+<meta name="robots" content="noindex, nofollow, nocache"/>
+
+## /chat redirect
+location: /login?next=/chat
+
+## login notice
+Sign-in isn&#x27;t open in this public preview yet, so chat, projects and account are unavailable for now.
+
+## /api/provider
+{"provider":{"mock":false,"label":"Inference not configured","model":"Citad3L V1"}}
+## /api/health
+{"ok":false,"db":false,"provider":{"mock":false,"label":"Inference not configured"}}
+## POST /api/chat (anon)
+{"error":{"code":"unauthorized","message":"Sign in to chat."}} HTTP 401
+## demo login callback
+HTTP 302 -> https://citad3l.recruiting-gains.workers.dev/api/auth/error?error=Configuration
+## /api/auth/providers
+{}
+## Secret scan of all client JS/CSS served (chunks referenced by pages)
+scanned 16 client files, secret-pattern hits: 0
+{"pageErrors":[]}

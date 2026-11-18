@@ -7,3 +7,6 @@ node_modules
 evidence/tmp
 *.log
 .next-prod
+.open-next
+.wrangler
+.dev.vars

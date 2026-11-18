@@ -155,7 +155,12 @@ export function LoginView({ demoEnabled, providers, next }: Props) {
           </>
         )}
 
-        {nothing && <div className="notice notice-warn">No sign-in providers are configured.</div>}
+        {nothing && (
+          <div className="notice notice-warn" role="status">
+            Sign-in isn&apos;t open in this public preview yet, so chat, projects and account are unavailable for now.{" "}
+            <a href="/models/citad3l-v1">See the engine</a> or <a href="/pricing">view plans</a>.
+          </div>
+        )}
         {error && <p className="field-error" role="alert">{error}</p>}
 
         <p className="auth-foot">

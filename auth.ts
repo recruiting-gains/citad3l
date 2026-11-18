@@ -65,9 +65,13 @@ export const providerList = providers
 
 /** Returns the signed-in user's id, verifying the user row still exists (deleted accounts are logged out). */
 export async function requireUserId(): Promise<string | null> {
-  const s = await auth();
-  const id = s?.user?.id;
-  if (!id) return null;
-  const u = await prisma.user.findUnique({ where: { id }, select: { id: true } });
-  return u?.id ?? null;
+  try {
+    const s = await auth();
+    const id = s?.user?.id;
+    if (!id) return null;
+    const u = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+    return u?.id ?? null;
+  } catch {
+    return null; // database/auth unavailable → APIs answer 401 instead of crashing
+  }
 }

@@ -10,7 +10,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:dev": "prisma migrate dev",
     "test": "vitest run",
-    "stub": "node scripts/stub-openai.mjs"
+    "stub": "node scripts/stub-openai.mjs",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

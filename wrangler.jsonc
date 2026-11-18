@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "citad3l",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  // Non-secret config. Secrets (AUTH_SECRET, later DATABASE_URL, INFERENCE_API_KEY, Stripe) via `wrangler secret put`.
+  "vars": {
+    "AUTH_TRUST_HOST": "true",
+    "APP_URL": "https://citad3l.recruiting-gains.workers.dev",
+    "INFERENCE_PROVIDER": "openai",
+    "PRO_MONTHLY_UNITS": "600"
+  }
+}

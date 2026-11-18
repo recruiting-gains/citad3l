@@ -82,3 +82,35 @@ No prompt or response content is logged by the app. Users can export (`/api/acco
 Frontend creative direction and component code by **Anthropic Claude Opus 5.5** (`claude-opus-5-5`, called via the
 Anthropic Messages API via `design/opus/call_opus.py`; raw prompts/outputs in `design/opus/`, returned model ids in `design/opus/MODEL_LOG.md`). Visual reference screenshots in
 `design/reference/`. Code, copy and art are original.
+
+## Cloudflare Workers deployment (public preview)
+
+Live: https://citad3l.recruiting-gains.workers.dev (workers.dev only, no custom domain or DNS; `noindex` set by both the meta tag and the `X-Robots-Tag` header, and robots.txt disallows everything).
+
+Built with `@opennextjs/cloudflare` (`open-next.config.ts`, `wrangler.jsonc`, worker name `citad3l`, free plan features only).
+
+```bash
+mv .env /tmp/citad3l.env.aside   # keep dev secrets/flags out of the bundle
+npm run cf:build                  # opennextjs-cloudflare build
+npx opennextjs-cloudflare deploy
+mv /tmp/citad3l.env.aside .env && rm -rf .next   # the build overwrites .next; restart `npm run dev`
+```
+
+Secrets are set only with `wrangler secret put` (never in wrangler.jsonc). Currently set: `AUTH_SECRET` (random, never printed).
+
+**Works live:** home, pricing, models, model page, login, terms, privacy, robots.txt, both themes, noindex.
+**Gated (by design):** chat, projects and account redirect to `/login`, which says sign-in isn't open yet. APIs return 401. `/api/health` returns 503 `db:false`. Demo login and the mock provider are refused in production.
+
+### Turning chat on
+1. **Database:** a hosted Postgres URL (Neon free tier, for example; or Cloudflare Hyperdrive in front of any Postgres). Run `DATABASE_URL=... npx prisma migrate deploy`, then `npx wrangler secret put DATABASE_URL`. The Prisma client uses the `@prisma/adapter-pg` driver adapter (no Rust engine). Under real load on Workers, create a client per request or use Hyperdrive.
+2. **Sign-in:** at least one provider. Options are `AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET`, `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`, or `AUTH_RESEND_KEY` + `AUTH_EMAIL_FROM`. Set the OAuth callback to `https://citad3l.recruiting-gains.workers.dev/api/auth/callback/<provider>`.
+3. **Inference:** an OpenAI-compatible endpoint serving Huihui-Qwen3.8-27B-abliterated-GGUF (see `inference/`). Set `INFERENCE_BASE_URL` and `INFERENCE_MODEL` as secrets, plus `INFERENCE_API_KEY` if the endpoint needs one.
+4. **Billing (optional, TEST mode only):** `STRIPE_SECRET_KEY` (sk_test_), `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MAX`. On Workers the webhook route must switch to `stripe.webhooks.constructEventAsync` (Web Crypto) before you enable it.
+5. Redeploy.
+
+### Rollback / removal
+```bash
+npx wrangler deployments list --name citad3l
+npx wrangler rollback --name citad3l          # previous version
+npx wrangler delete citad3l                   # remove the Worker entirely
+```

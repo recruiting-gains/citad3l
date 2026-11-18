@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: "Citad3L — Strategic AI",
   description: "Citad3L is a strategic AI assistant for everyday questions, writing, code and research — with a sharp interest in AI advancement, robotics and AI security.",
   icons: { icon: "/brand/rook-mark.svg" },
+  // Preview: noindex until launch (also sent as X-Robots-Tag header)
+  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 

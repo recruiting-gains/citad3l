@@ -7,6 +7,8 @@ const config = {
   async headers() {
     return [{ source: "/(.*)", headers: [
       { key: "X-Content-Type-Options", value: "nosniff" },
+      // Preview: keep out of search engines until launch
+      { key: "X-Robots-Tag", value: "noindex, nofollow" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "X-Frame-Options", value: "DENY" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
