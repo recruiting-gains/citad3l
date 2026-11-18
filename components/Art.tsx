@@ -1,9 +1,9 @@
 import { LoopVideo } from "@/components/LoopVideo";
 
 /* ----- Cinematic media slots (generated originals; see media-src/ and design/opus/round5) ----- */
-type Slot = { name: string; alt: string; position: string };
+type Slot = { name: string; alt: string; position: string; mobileName?: string };
 export const MEDIA: Record<"rookHero" | "rook" | "ai" | "robotics" | "cyber" | "everyday", Slot> = {
-  rookHero: { name: "rook-hero", alt: "Glass chess rook glowing with flowing blue and cyan light around an amber core on a dark slab", position: "50% 50%" },
+  rookHero: { name: "rook-hero", mobileName: "rook", alt: "Glass chess rook glowing with flowing blue and cyan light around an amber core on a dark slab", position: "50% 50%" },
   rook: { name: "rook", alt: "Glass chess rook glowing with flowing blue and cyan light around an amber core on a dark slab", position: "50% 45%" },
   ai: { name: "ai", alt: "Night satellite view of a coastline with a cyan radar sweep and tracking boxes marking vessels", position: "50% 40%" },
   robotics: { name: "robotics", alt: "Graphite robot arm hovering over a metal part as cyan scan lines map it in a dark lab", position: "55% 30%" },
@@ -13,7 +13,7 @@ export const MEDIA: Record<"rookHero" | "rook" | "ai" | "robotics" | "cyber" | "
 
 export function SlotVideo({ slot, eager, className }: { slot: keyof typeof MEDIA; eager?: boolean; className?: string }) {
   const m = MEDIA[slot];
-  return <LoopVideo name={m.name} alt={m.alt} position={m.position} eager={eager} className={className} />;
+  return <LoopVideo name={m.name} mobileName={m.mobileName} alt={m.alt} position={m.position} eager={eager} className={className} />;
 }
 
 /* ----- Hero glyph chips ----- */

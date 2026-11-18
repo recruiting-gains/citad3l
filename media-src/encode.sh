@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 OUT=../public/media
 enc() { # name src width crf_x264 crf_vp9
   local n=$1 src=$2 w=$3 cx=$4 cv=$5
-  ffmpeg -v error -y -i "$src" -vf "scale=$w:-2:flags=lanczos,format=yuv420p" -an -c:v libx264 -profile:v high -preset veryslow -crf $cx -g 48 -movflags +faststart "$OUT/$n.mp4"
+  ffmpeg -v error -y -i "$src" -vf "scale=$w:-2:flags=lanczos,format=yuv420p" -an -c:v libx264 -profile:v main -level:v 4.0 -preset veryslow -crf $cx -g 48 -bf 2 -refs 3 -movflags +faststart "$OUT/$n.mp4"
   ffmpeg -v error -y -i "$src" -vf "scale=$w:-2:flags=lanczos,format=yuv420p" -an -c:v libvpx-vp9 -b:v 0 -crf $cv -row-mt 1 -deadline good -cpu-used 2 -g 48 "$OUT/$n.webm"
   ffmpeg -v error -y -i "$src" -vf "select=eq(n\,0),scale=$( [ $w -gt 1280 ] && echo 1280 || echo $w ):-2:flags=lanczos" -frames:v 1 -q:v 3 "$OUT/$n-poster.jpg"
   python3 -c "from PIL import Image; Image.open('$OUT/$n-poster.jpg').save('$OUT/$n-poster.avif', quality=55)"

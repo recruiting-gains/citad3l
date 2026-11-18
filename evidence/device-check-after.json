@@ -1,0 +1,994 @@
+{
+ "webkit-iphone13/light/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 3713463,
+  "loadMs": 436,
+  "ttfbMs": 168,
+  "fcpMs": 291,
+  "domContentLoadedMs": 274,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "webkit-iphone13/light/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 231,
+  "ttfbMs": 76,
+  "fcpMs": 143,
+  "domContentLoadedMs": 129,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "webkit-iphone13/light/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [
+   "Load request cancelled /media/rook.mp4?v=2"
+  ],
+  "http4xx5xx": [],
+  "bytes": 1301465,
+  "loadMs": 279,
+  "ttfbMs": 33,
+  "fcpMs": 248,
+  "domContentLoadedMs": 236,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 1.5,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ },
+ "webkit-iphone13/dark/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 3116816,
+  "loadMs": 696,
+  "ttfbMs": 156,
+  "fcpMs": 245,
+  "domContentLoadedMs": 229,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "webkit-iphone13/dark/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 233,
+  "ttfbMs": 83,
+  "fcpMs": 163,
+  "domContentLoadedMs": 150,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "webkit-iphone13/dark/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 704818,
+  "loadMs": 190,
+  "ttfbMs": 50,
+  "fcpMs": 149,
+  "domContentLoadedMs": 138,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 390,
+  "vw": 390,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 3.8,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ },
+ "chrome-desktop/light/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 4269360,
+  "loadMs": 301,
+  "ttfbMs": 119,
+  "fcpMs": 252,
+  "domContentLoadedMs": 240,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "ai.mp4?v=2",
+    "playing": true,
+    "t": 3.6,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "robotics.mp4?v=2",
+    "playing": true,
+    "t": 3.6,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "cyber.mp4?v=2",
+    "playing": true,
+    "t": 3.9,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "cyber",
+    "playing": true,
+    "src": "cyber.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "everyday",
+    "playing": false,
+    "src": null,
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "cyber",
+    "playing": true,
+    "src": "cyber.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "everyday",
+    "playing": false,
+    "src": null,
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook-hero.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "chrome-desktop/light/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 324,
+  "ttfbMs": 60,
+  "fcpMs": 192,
+  "domContentLoadedMs": 168,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "chrome-desktop/light/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 704818,
+  "loadMs": 349,
+  "ttfbMs": 160,
+  "fcpMs": 244,
+  "domContentLoadedMs": 234,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 3.9,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ },
+ "chrome-desktop/dark/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 4269360,
+  "loadMs": 554,
+  "ttfbMs": 257,
+  "fcpMs": 452,
+  "domContentLoadedMs": 413,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "ai.mp4?v=2",
+    "playing": true,
+    "t": 3.4,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "robotics.mp4?v=2",
+    "playing": true,
+    "t": 3.9,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "cyber.mp4?v=2",
+    "playing": true,
+    "t": 3.6,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "cyber",
+    "playing": true,
+    "src": "cyber.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "everyday",
+    "playing": false,
+    "src": null,
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "cyber",
+    "playing": true,
+    "src": "cyber.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "everyday",
+    "playing": false,
+    "src": null,
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook-hero.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "chrome-desktop/dark/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 220,
+  "ttfbMs": 47,
+  "fcpMs": 168,
+  "domContentLoadedMs": 125,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "chrome-desktop/dark/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 704818,
+  "loadMs": 521,
+  "ttfbMs": 161,
+  "fcpMs": 344,
+  "domContentLoadedMs": 315,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 1440,
+  "vw": 1440,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 3.9,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ },
+ "chrome-pixel7/light/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 1278422,
+  "loadMs": 431,
+  "ttfbMs": 99,
+  "fcpMs": 220,
+  "domContentLoadedMs": 216,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "ai.mp4?v=2",
+    "playing": true,
+    "t": 4,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "robotics.mp4?v=2",
+    "playing": true,
+    "t": 4,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "chrome-pixel7/light/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 398,
+  "ttfbMs": 189,
+  "fcpMs": 332,
+  "domContentLoadedMs": 284,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "chrome-pixel7/light/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 704818,
+  "loadMs": 388,
+  "ttfbMs": 62,
+  "fcpMs": 276,
+  "domContentLoadedMs": 259,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 4,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ },
+ "chrome-pixel7/dark/home": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 1278422,
+  "loadMs": 702,
+  "ttfbMs": 168,
+  "fcpMs": 404,
+  "domContentLoadedMs": 385,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [
+   {
+    "slot": "ai",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "ai.mp4?v=2",
+    "playing": true,
+    "t": 3.6,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "robotics",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "robotics.mp4?v=2",
+    "playing": true,
+    "t": 3.6,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "cyber",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "everyday",
+    "inView": false,
+    "posterShown": false,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   },
+   {
+    "slot": "rook-hero",
+    "inView": false,
+    "posterShown": true,
+    "videoMounted": false,
+    "src": null,
+    "playing": false,
+    "t": null,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false,
+  "videos_featured": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ],
+  "videos_engine": [
+   {
+    "slot": "ai",
+    "playing": true,
+    "src": "ai.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "robotics",
+    "playing": true,
+    "src": "robotics.mp4?v=2",
+    "failed": false
+   },
+   {
+    "slot": "rook-hero",
+    "playing": true,
+    "src": "rook.mp4?v=2",
+    "failed": false
+   }
+  ]
+ },
+ "chrome-pixel7/dark/pricing": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 98182,
+  "loadMs": 583,
+  "ttfbMs": 302,
+  "fcpMs": 456,
+  "domContentLoadedMs": 446,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [],
+  "horizontalOverflow": false
+ },
+ "chrome-pixel7/dark/model": {
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failed": [],
+  "http4xx5xx": [],
+  "bytes": 704818,
+  "loadMs": 312,
+  "ttfbMs": 53,
+  "fcpMs": 136,
+  "domContentLoadedMs": 113,
+  "cls": 0,
+  "hydrated": true,
+  "docWidth": 412,
+  "vw": 412,
+  "videos": [
+   {
+    "slot": "rook",
+    "inView": true,
+    "posterShown": true,
+    "videoMounted": true,
+    "src": "rook.mp4?v=2",
+    "playing": true,
+    "t": 4,
+    "err": null,
+    "failedClass": false
+   }
+  ],
+  "horizontalOverflow": false
+ }
+}

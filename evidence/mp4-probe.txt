@@ -1,0 +1,6 @@
+public/media/ai.mp4 337049B h264,Main,960,540,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0
+public/media/cyber.mp4 291779B h264,Main,960,540,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0
+public/media/everyday.mp4 171449B h264,Main,960,540,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0
+public/media/robotics.mp4 157760B h264,Main,960,540,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0
+public/media/rook-hero.mp4 3284084B h264,Main,1920,1080,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0
+public/media/rook.mp4 599241B h264,Main,1280,720,yuv420p,40 atoms=ftyp,moov,free,mdat audio=0

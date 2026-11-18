@@ -1,0 +1,19 @@
+webkit-iphone13/light/home         load=372ms ttfb=149 fcp=292 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/light/pricing      load=266ms ttfb=139 fcp=214 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/light/model        load=175ms ttfb=29 fcp=131 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+webkit-iphone13/dark/home          load=333ms ttfb=128 fcp=219 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/dark/pricing       load=166ms ttfb=28 fcp=116 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/dark/model         load=320ms ttfb=224 fcp=284 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-desktop/light/home          load=624ms ttfb=54 fcp=220 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster
+chrome-desktop/light/pricing       load=261ms ttfb=134 fcp=192 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-desktop/light/model         load=248ms ttfb=123 fcp=180 cls=0 errs=0 cons=0 failed=1 4xx=0 overflow=false vids(inView)=rook:play
+    - net::ERR_ABORTED /pricing?_rsc=6wzrpsbauXEcHnKR
+chrome-desktop/dark/home           load=259ms ttfb=155 fcp=248 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster
+chrome-desktop/dark/pricing        load=171ms ttfb=51 fcp=104 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-desktop/dark/model          load=202ms ttfb=30 fcp=132 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-pixel7/light/home           load=305ms ttfb=161 fcp=284 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/light/pricing        load=243ms ttfb=125 fcp=180 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/light/model          load=193ms ttfb=32 fcp=128 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-pixel7/dark/home            load=499ms ttfb=389 fcp=448 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/dark/pricing         load=310ms ttfb=130 fcp=208 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/dark/model           load=315ms ttfb=169 fcp=240 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play

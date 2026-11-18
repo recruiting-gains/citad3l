@@ -22,3 +22,10 @@
 - **Live verification:** `live-media-verify.txt` covers route status, noindex, media MIME types and sizes, Range 206 after the fix, and the client JS secret scan.
 - **Demo:** `live_demo.mp4` is a 25.6 s screen recording of the live homepage: scroll, card hover, engine strip, then dark-theme toggle. The H.264 MP4 path was also checked playing in Chrome.
 - **Tests:** `test-run-media.txt` (25/25).
+
+## iOS / Safari fix (deploy 718332f0, 2026-11-17 ~21:35 CST)
+- `device-check-before.txt` and `device-check-after.txt` are live checks in WebKit (iPhone 13 profile), Chrome desktop and Chrome Pixel 7, light and dark, on home, pricing and model. They record page errors, console errors, failed requests, 4xx/5xx, TTFB, FCP, load time, CLS, overflow and video playback. Raw data is in `device-check-*.json`; screenshots are in `screenshots/device/{before,after}_*`.
+- `fallback-check.txt`: WebKit with all video requests blocked keeps the poster with no errors; reduced motion shows the poster only.
+- `mp4-probe.txt`: every MP4 is H.264 Main@4.0, yuv420p, moov before mdat (faststart), no audio.
+- `live-ios-fix-verify.txt`: routes, noindex, Range 206 and the served MP4 profile.
+- WebKit on Linux needed extra libraries that apt couldn't fetch (the proxy blocks the Debian mirror). They were extracted from Debian .debs into the Playwright WebKit bundle. Run with `GIO_EXTRA_MODULES=/home/box/.cache/wkgio GST_PLUGIN_PATH=/home/box/.cache/wkgst/usr/lib/x86_64-linux-gnu/gstreamer-1.0`.

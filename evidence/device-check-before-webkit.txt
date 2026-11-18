@@ -1,0 +1,10 @@
+webkit-iphone13/light/home         load=553ms ttfb=240 fcp=341 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/light/pricing      load=200ms ttfb=66 fcp=129 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/light/model        load=150ms ttfb=48 fcp=110 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:stall(,err=null)
+webkit-iphone13/dark/home          load=427ms ttfb=250 fcp=337 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/dark/pricing       load=150ms ttfb=26 fcp=104 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/dark/model         load=211ms ttfb=110 fcp=174 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:stall(,err=null)
+chrome-desktop/light/home          load=448ms ttfb=267 fcp=416 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster
+chrome-desktop/light/pricing       load=178ms ttfb=29 fcp=140 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-desktop/light/model         load=179ms ttfb=30 fcp=104 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-desktop/dark/home           load=239ms ttfb=101 fcp=224 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster

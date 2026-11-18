@@ -1,0 +1,17 @@
+# Live check after iOS fix — deploy d0836db8 — 2026-11-17 21:25 CST
+/ -> 200 0.513186s
+/pricing -> 200 0.534474s
+/models -> 200 0.088340s
+/models/citad3l-v1 -> 200 0.087494s
+/login -> 200 0.080198s
+/terms -> 200 0.065077s
+/robots.txt -> 200 0.056607s
+/media/rook-brand-missing.mp4 -> 404 0.055263s
+/brand/rook-mark.svg -> 200 0.046344s
+x-robots-tag: x-robots-tag: noindex, nofollow
+rook-hero.mp4?v=2 full=200/3284084 range0-1=206 content-type: video/mp4 content-range: bytes 0-1/3284084 
+rook.mp4?v=2 full=200/599241 range0-1=206 content-type: video/mp4 content-range: bytes 0-1/599241 
+ai.mp4?v=2 full=200/337049 range0-1=206 content-type: video/mp4 content-range: bytes 0-1/337049 
+ai.webm?v=2 full=200/260597 range0-1=206 content-type: video/webm content-range: bytes 0-1/260597 
+served ai.mp4 profile: Main,40
+HTML:  (videos are client-mounted; see LoopVideo)

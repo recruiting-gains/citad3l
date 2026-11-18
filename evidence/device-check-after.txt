@@ -1,0 +1,31 @@
+webkit-iphone13/light/home         load=436ms ttfb=168 fcp=291 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+webkit-iphone13/light/pricing      load=231ms ttfb=76 fcp=143 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/light/model        load=279ms ttfb=33 fcp=248 cls=0 errs=0 cons=0 failed=1 4xx=0 overflow=false vids(inView)=rook:play
+    - Load request cancelled /media/rook.mp4?v=2
+webkit-iphone13/dark/home          load=696ms ttfb=156 fcp=245 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+webkit-iphone13/dark/pricing       load=233ms ttfb=83 fcp=163 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+webkit-iphone13/dark/model         load=190ms ttfb=50 fcp=149 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-desktop/light/home          load=301ms ttfb=119 fcp=252 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) cyber:play(cyber.mp4?v=2) everyday:poster
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) cyber:play(cyber.mp4?v=2) everyday:poster rook-hero:play(rook-hero.mp4?v=2)
+chrome-desktop/light/pricing       load=324ms ttfb=60 fcp=192 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-desktop/light/model         load=349ms ttfb=160 fcp=244 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-desktop/dark/home           load=554ms ttfb=257 fcp=452 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=ai:play robotics:play cyber:play everyday:poster
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) cyber:play(cyber.mp4?v=2) everyday:poster
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) cyber:play(cyber.mp4?v=2) everyday:poster rook-hero:play(rook-hero.mp4?v=2)
+chrome-desktop/dark/pricing        load=220ms ttfb=47 fcp=168 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-desktop/dark/model          load=521ms ttfb=161 fcp=344 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-pixel7/light/home           load=431ms ttfb=99 fcp=220 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+chrome-pixel7/light/pricing        load=398ms ttfb=189 fcp=332 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/light/model          load=388ms ttfb=62 fcp=276 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play
+chrome-pixel7/dark/home            load=702ms ttfb=168 fcp=404 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+    featured: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+    engine: ai:play(ai.mp4?v=2) robotics:play(robotics.mp4?v=2) rook-hero:play(rook.mp4?v=2)
+chrome-pixel7/dark/pricing         load=583ms ttfb=302 fcp=456 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=
+chrome-pixel7/dark/model           load=312ms ttfb=53 fcp=136 cls=0 errs=0 cons=0 failed=0 4xx=0 overflow=false vids(inView)=rook:play

@@ -22,12 +22,14 @@ const MEDIA_HEADERS = {
 };
 
 async function serveMedia(request, env) {
-  const asset = await env.ASSETS.fetch(new Request(new URL(request.url).toString(), { method: "GET" }));
+  const range = request.headers.get("Range");
+  const asset = await env.ASSETS.fetch(new Request(new URL(request.url).toString(), { method: "GET", headers: range ? { Range: range } : {} }));
   if (!asset.ok) return asset;
   const headers = new Headers(asset.headers);
   for (const [k, v] of Object.entries(MEDIA_HEADERS)) headers.set(k, v);
+  // If the assets layer honoured the Range itself, pass its 206 straight through (no buffering).
+  if (asset.status === 206) return new Response(request.method === "HEAD" ? null : asset.body, { status: 206, headers });
 
-  const range = request.headers.get("Range");
   const m = range && /^bytes=(\d*)-(\d*)$/.exec(range.trim());
   if (!m) {
     if (request.method === "HEAD") return new Response(null, { status: 200, headers });
