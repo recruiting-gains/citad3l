@@ -13,15 +13,20 @@ evidence/tmp
 # large video masters (kept on the box only) and third-party reference footage
 media-src/raw/
 media-src/loop/
-design/realism-ref/ref.mp4
 # third-party reference material kept on the box only (not for redistribution):
-# frames of Cruz's ref.mp4 (contains a Helsing logo) and frames captured from Sapient/Ghost card videos
-design/realism-ref/refframes/
+# frames of the private reference clip and of reference-site card videos
 design/opus/round5/ref_contact.png
 design/opus/round5/sap_contact.png
-design/realism-ref/sapient/frame_*.png
-design/realism-ref/sapient/frames_contact.png
-design/realism-ref/sapient/card_framing.png
 # misc local
 *.bundle
 .cursor/
+# reference-site material (screenshots, comparisons, notes) kept on the box only, never published
+design/reference/
+design/compare/
+evidence/screenshots/side-by-side/
+design/opus/img/
+# design/realism-ref: only our own notes and screenshots are published
+design/realism-ref/*
+!design/realism-ref/MEDIA.md
+!design/realism-ref/video-style-notes.md
+!design/realism-ref/before_*.jpg

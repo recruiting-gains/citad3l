@@ -8,7 +8,7 @@
 - First frames: Grok Imagine stills (`media-src/stills/`).
 - Clips: image-to-video using the same still as first and last frame for a seamless loop, 720p. The hero rook clip is 1080p image-to-video, ping-ponged.
 
-**Originality.** Every clip is an original generation. Nothing from thesapientdirective.com, and nothing from `ref.mp4` (which carries a Helsing logo), is used.
+**Originality.** Every clip is an original generation. No third-party footage, frames or images are used, including the owner's private reference clip.
 
 **Review.** Every clip was reviewed frame by frame (`media-src/qa/*_contact.png`). Rejected takes:
 - `robotics_v1`: gripper morphed into a multi-finger claw.

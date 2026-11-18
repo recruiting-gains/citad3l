@@ -12,7 +12,6 @@
 | `screenshot-run.txt` | Screenshot run log (the dev server occasionally throws a transient "Invalid or unexpected token" chunk error on first load; the script reloads and reports it — not reproducible on the production build). |
 | `screenshots/` | Final light-mode desktop (1440) + phone (390): home, pricing, models, model, login, chat empty/streaming/answer, projects, account, limit-reached, account at limit. |
 | `screenshots/dark/` | Dark mode: home, pricing, model, chat empty/answer, account — desktop + phone. |
-| `screenshots/side-by-side/` | Reference (left) vs Citad3L (right): home, pricing (top + full), chat, phone home/pricing. |
 | `screenshots/round1`, `round2` | Earlier design iterations sent back to Opus for review. |
 
 ## Cinematic media (round 5)

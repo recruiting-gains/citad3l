@@ -80,8 +80,7 @@ No prompt or response content is logged by the app. Users can export (`/api/acco
 
 ## Design
 Frontend creative direction and component code by **Anthropic Claude Opus 5.5** (`claude-opus-5-5`, called via the
-Anthropic Messages API via `design/opus/call_opus.py`; raw prompts/outputs in `design/opus/`, returned model ids in `design/opus/MODEL_LOG.md`). Visual reference screenshots in
-`design/reference/`. Code, copy and art are original.
+Anthropic Messages API via `design/opus/call_opus.py`; raw prompts/outputs in `design/opus/`, returned model ids in `design/opus/MODEL_LOG.md`). Code, copy and art are original. Citad3L is an independent project, not affiliated with or endorsed by any other site or product; reference-site screenshots used during design are not included in this repository.
 
 ## Cloudflare Workers deployment (public preview)
 
