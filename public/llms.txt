@@ -1,0 +1,33 @@
+# Citad3L
+
+> Citad3L is a private, less-filtered AI chat app at https://citad3l.io, founded by Cruz Garza. You can chat with text models, generate images, and make short video clips. Adult text chat between adults is allowed. The only hard lines are no sexual content involving minors and nothing about bombs or explosives. Image mode keeps a safety filter and will not produce explicit nude or sexual images.
+
+This file is a plain summary for AI tools and search engines. Everything here is also stated on the public pages linked below.
+
+## Models
+
+- Citad3L V1: the default, best all-round chat model. Supports web search and extended thinking for signed-in users, and can look at uploaded images.
+- Citad3L Fast: a cheaper, quicker chat model for short tasks. Can look at uploaded images.
+- Citad3L Image: generates images from a written prompt (or type /image followed by a prompt in chat). Pro and Max. Keeps a safety filter and will not produce explicit nude or sexual images.
+- Citad3L Private: encrypted chat in a verified secure enclave (text only, signed-in).
+- Swarm mode: V1 plans, up to three Fast workers answer parts in parallel, V1 writes the reply (signed-in).
+- Citad3L Video: 5-second 720p clips with sound (Max plan).
+
+## Plans
+
+- Free: try Citad3L with no card. Guests get five successful replies without an account; failed or stopped replies never count.
+- Pro: $20 per month (25 replies every 5 hours, up to 150 a week), adds Citad3L Image.
+- Max: $50 per month, 2.5x the Pro allowance, plus Citad3L Video.
+- Paid plans are not open to the public yet. Join the early-access list on the pricing page to hear when they are.
+
+## Sign-in
+
+- Enter your email and Citad3L sends a 6-digit code. There are no passwords.
+- Signed-in users can export or delete their data from their account.
+
+## Links
+
+- Home: https://citad3l.io/
+- FAQ: https://citad3l.io/faq
+- Pricing: https://citad3l.io/pricing
+- Sign in: https://citad3l.io/login

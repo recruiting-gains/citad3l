@@ -1,0 +1,9 @@
+// Test-only: real ComputerHub DO under `wrangler dev --local` (see tests/computer-hub.test.ts).
+{
+  "name": "citad3l-hub-test",
+  "main": "hub-worker.js",
+  "compatibility_date": "2026-11-01",
+  "durable_objects": { "bindings": [{ "name": "COMPUTER_HUB", "class_name": "ComputerHub" }] },
+  "migrations": [{ "tag": "v1-computer-hub", "new_sqlite_classes": ["ComputerHub"] }],
+  "vars": { "OWNER_EMAIL": "owner@test.local" }
+}

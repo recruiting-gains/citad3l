@@ -1,0 +1,98 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "citad3l",
+  "main": "custom-worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+    // Worker sets long cache headers for media, hashed JS/CSS, and icons (see custom-worker.js).
+    "run_worker_first": [
+      "/media/*",
+      "/_next/static/*",
+      "/favicon.ico",
+      "/favicon.svg",
+      "/favicon-32.png",
+      "/apple-touch-icon.png",
+      "/icon-192.png",
+      "/icon-512.png",
+      "/maskable-512.png",
+      "/app-icon-512.png",
+      "/mock-image.svg",
+      "/manifest.webmanifest"
+    ],
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "workers_dev": true,
+  "preview_urls": false,
+  // Custom domains: www is attached so the Worker can 301 it to the apex (see custom-worker.js).
+  "routes": [
+    { "pattern": "citad3l.io", "custom_domain": true },
+    { "pattern": "www.citad3l.io", "custom_domain": true }
+  ],
+  "observability": { "enabled": true },
+  // Non-secret config. Secrets via `wrangler secret put` (never in this file): AUTH_SECRET, DATABASE_URL, sign-in keys,
+  // Stripe, the inference provider (PROVIDER_BASE_URL, PROVIDER_API_KEY or PROVIDER_API_KEY_VAR, PROVIDER_WIRE, MODEL_IDS),
+  // Hermes (HERMES_ROUTES, HERMES_BRAIN_LABELS) and the owner/admin accounts (CITAD3L_OWNER_EMAIL, CITAD3L_ADMIN_EMAILS).
+  // Do not set INFERENCE_PROVIDER=compatible here: that skips the configured provider.
+  // Requires an onboarded sending domain (workers.dev cannot be verified). Binding is unused until then.
+  // AUTH_EMAIL_FROM is not a secret. Email Sending itself needs Workers Paid + a verified domain.
+  "send_email": [{ "name": "EMAIL" }],
+  // Neon Postgres via Hyperdrive (config "citad3l-neon", origin = Neon direct endpoint). lib/db.ts prefers this binding.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "0e60b104d3ee4f3e9abfa209c78aeb86" }],
+  // Generated images (images/{user}/{msg}) AND videos (videos/{user}/{msg}); private bucket, served only through
+  // /api/images and /api/videos after an owner check. BLOCKED 2026-11-19: the account must enable R2 in the
+  // Cloudflare dashboard first (API error 10042). Then: npx wrangler r2 bucket create citad3l-images, and uncomment.
+  // Adding this binding before the bucket exists makes `wrangler deploy` fail (see notes/r2-images-deploy.md).
+  // "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "citad3l-images" }],
+  // @computer relay (admins only, one hub per user Mac control). SQLite-backed so it works on the Workers Free plan.
+  "durable_objects": { "bindings": [{ "name": "COMPUTER_HUB", "class_name": "ComputerHub" }] },
+  "migrations": [{ "tag": "v1-computer-hub", "new_sqlite_classes": ["ComputerHub"] }],
+  "vars": {
+    "AUTH_TRUST_HOST": "true",
+    "APP_URL": "https://citad3l.io",
+    "AUTH_EMAIL_FROM": "Citad3L <login@citad3l.io>",
+    "CITAD3L_VIDEO_ENABLED": "true",
+    // Only the hard lines (CSAM, bombs/explosives) are filtered: keyword pass + Fast classifier on input, keyword pass on output.
+    // Images also keep provider safe_mode on (CITAD3L_IMAGE_SAFE_MODE).
+    "CITAD3L_ALLOW_ADULT": "true",
+    "CITAD3L_IMAGE_SAFE_MODE": "true",
+    "CITAD3L_FILTER_LLM": "true",
+    "PRO_MONTHLY_UNITS": "600",
+    // Stripe LIVE prices (acct "Citad3L", 2026-11-21; test-mode were price_1UdRch3l…/price_1UdRcj3l… in the sandbox). Keys are secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.
+    "STRIPE_PRICE_PRO": "price_1UeKXF3x58WVlPfp1VjW5IFF",
+    "STRIPE_PRICE_MAX": "price_1UeKX83x58WVlPfpzxdJLbDj",
+    // Stripe key mode: "test" (only sk_test_ keys work) or "live" (only sk_live_ keys work). Launch: set "live" together
+    // with the live STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET secrets and the live price ids above.
+    "STRIPE_MODE": "live",
+    // Checkout gate: "admins" (admin accounts only), "all", or "off". "all" only opens checkout when STRIPE_MODE is "live".
+    // Flip to "all" only when the owner says go.
+    "BILLING_ENABLED": "all",
+    // Public launch (2026-11-21): Private + Swarm for any account, Image for Pro/Max, Video for Max (lib/access.ts).
+    // Kill switch: "admins" puts all four back to admin-only.
+    "PUBLIC_FEATURES": "all",
+    // Spend guards (lib/spend-guard.ts). PROVIDER_MONTHLY_BUDGET_USD must match the provider key's monthly cap ($20 as of
+    // 2026-11-21); 30-day global ceilings: Video = 50% of it / $1.60 (6 clips), Image = 25% / $0.10 (50 images).
+    // Daily caps reset 00:00 UTC. Raise the budget here together with the provider cap.
+    "PROVIDER_MONTHLY_BUDGET_USD": "20",
+    "VIDEO_MAX_USD_PER_CLIP": "1.6",
+    "VIDEO_MAX_PER_DAY": "2",
+    "VIDEO_MAX_GLOBAL_DAY": "2",
+    "IMAGE_MAX_PER_USER_DAY": "10",
+    "IMAGE_MAX_GLOBAL_DAY": "20",
+    "SWARM_MAX_PER_USER_DAY": "20",
+    "SWARM_MAX_GLOBAL_DAY": "400",
+    // Security (security/edge.mjs): extra origins allowed to POST to /api/* besides APP_URL go in ALLOWED_ORIGINS (unset = none).
+    // CSP rollout: "report-only" (default) -> "enforce" once no violations show in logs; "off" to drop.
+    "CITAD3L_CSP": "report-only",
+    // Turnstile is ON when both exist: the public site key below and the TURNSTILE_SECRET_KEY secret
+    // (widget "Citad3L", managed, citad3l.io + www). CITAD3L_TURNSTILE=off forces it off.
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGIfKkEUJrFUymjr",
+    // @computer per-task caps (the vision model id is the "computer" key of the MODEL_IDS secret). Admins only, one hub per user.
+    "COMPUTER_MAX_STEPS": "25",
+    "COMPUTER_MAX_USD_PER_TASK": "0.25",
+    "COMPUTER_MAX_RUNS_PER_DAY": "100"
+  }
+}

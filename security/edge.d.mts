@@ -1,0 +1,9 @@
+type Env = Record<string, string | undefined>;
+export function allowedOrigins(env?: Env): Set<string>;
+export function csrfBlockReason(request: Request, env?: Env): string | null;
+export const TURNSTILE_ORIGIN: string;
+export function contentSecurityPolicy(opts?: { enforce?: boolean }): string;
+export function securityHeaders(env?: Env, url?: URL): Record<string, string>;
+export function withSecurityHeaders(res: Response, env: Env, url: URL): Response;
+export function bodyLimitFor(pathname: string): number;
+export function capRequestBody(request: Request): { request: Request; response?: undefined } | { response: Response; request?: undefined };

@@ -1,0 +1,62 @@
+node_modules
+.next
+.local
+.env
+.env.*
+!.env.example
+evidence/tmp
+*.log
+.next-prod
+.next-lineup-check
+.open-next
+.wrangler
+.dev.vars
+# large video masters (kept on the box only) and third-party reference footage
+media-src/raw/
+media-src/loop/
+# third-party reference material kept on the box only (not for redistribution):
+# frames of the private reference clip and of reference-site card videos
+design/rounds/
+# misc local
+*.bundle
+.cursor/
+# reference-site material (screenshots, comparisons, notes) kept on the box only, never published
+design/reference/
+design/compare/
+evidence/screenshots/side-by-side/
+# design/realism-ref: only our own notes and screenshots are published
+design/realism-ref/*
+!design/realism-ref/MEDIA.md
+!design/realism-ref/video-style-notes.md
+!design/realism-ref/before_*.jpg
+
+# throwaway Next dist dir used for local sign-in screenshots
+.next-signin/
+
+.next-gap/
+.secrets/
+
+# python bytecode (mac helper)
+__pycache__/
+
+# private operations folder (never public)
+/ops/
+
+# kept local only (vendor/model names; removed from the public repo 2026-11-24)
+/inference/
+notes/2026-11-20-hermes.md
+wrangler.preview.jsonc
+fly.toml
+design/realism-ref/MEDIA.md
+evidence/README.md
+evidence/test-run-*.txt
+notes/
+tools/mac-helper/README.md
+tsconfig.tsbuildinfo
+
+# local-only dev artifacts (screenshots, QA sheets, verification logs)
+/shots/
+/evidence/
+/media-src/qa/
+design/realism-ref/before_*.jpg
+/media-src/stills/

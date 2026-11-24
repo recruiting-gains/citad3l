@@ -1,0 +1,52 @@
+// Keyboard navigation sanity checks (real browser, dev server). Output → evidence/keyboard-nav.txt
+import { chromium } from "playwright-core";
+import fs from "node:fs";
+const BASE = process.env.CITAD3L_URL ?? "http://localhost:3210";
+const out = []; let fails = 0;
+const check = (name, ok, extra = "") => { out.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  — " + extra : ""}`); if (!ok) fails++; };
+const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"] });
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+const p = await ctx.newPage();
+const active = () => p.evaluate(() => { const e = document.activeElement; return { tag: e?.tagName, text: (e?.textContent || "").trim().slice(0, 40), cls: e?.className?.toString().slice(0, 60), label: e?.getAttribute("aria-label") }; });
+await p.goto(BASE + "/", { waitUntil: "networkidle" });
+await p.keyboard.press("Tab");
+let a = await active();
+check("first Tab focuses skip link", /skip/i.test(a.text), JSON.stringify(a));
+const vis = await p.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return r.top >= 0 && r.height > 0; });
+check("skip link becomes visible on focus", vis);
+const seen = [];
+for (let i = 0; i < 12; i++) { await p.keyboard.press("Tab"); a = await active(); seen.push(a.text || a.label); }
+check("Tab reaches primary nav links", ["Explore", "Chat", "Models", "Projects"].every((l) => seen.includes(l)), seen.join(" | "));
+check("Tab reaches Get started", seen.some((s) => /Get started/.test(s || "")));
+const ring = await p.evaluate(() => getComputedStyle(document.activeElement).outlineStyle + "/" + getComputedStyle(document.activeElement).boxShadow);
+check("focused element has a visible focus style", !/^none\/none$/.test(ring), ring);
+// login via demo + chat keyboard flow
+const csrf = await (await p.request.get(BASE + "/api/auth/csrf")).json();
+await p.request.post(BASE + "/api/auth/callback/demo", { form: { csrfToken: csrf.csrfToken, email: `kbd-${Date.now()}@test.local`, callbackUrl: BASE + "/chat" } });
+await p.goto(BASE + "/chat", { waitUntil: "networkidle" });
+const ta = p.locator("textarea").first();
+await ta.focus();
+await p.keyboard.type("Line one");
+await p.keyboard.press("Shift+Enter");
+await p.keyboard.type("Line two [[mock-slow]]");
+check("Shift+Enter inserts newline (does not send)", (await ta.inputValue()).includes("\n"));
+await p.keyboard.press("Enter");
+await p.waitForTimeout(1200);
+check("Enter sends message", (await p.locator(".msg-user").count()) === 1);
+await p.keyboard.press("Escape");
+await p.waitForTimeout(1500);
+const status = await p.locator(".msg-status").allInnerTexts();
+check("Esc stops streaming", status.some((s) => /stopped/i.test(s)), status.join(" | "));
+// mobile menu keyboard
+const m = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
+const mp = await m.newPage();
+await mp.goto(BASE + "/", { waitUntil: "networkidle" });
+const burger = mp.locator('button[aria-controls="nav-sheet"]');
+await burger.focus(); await mp.keyboard.press("Enter"); await mp.waitForTimeout(300);
+check("phone menu opens via keyboard (aria-expanded=true)", (await burger.getAttribute("aria-expanded")) === "true");
+await mp.keyboard.press("Escape"); await mp.waitForTimeout(300);
+check("Esc closes phone menu", (await burger.getAttribute("aria-expanded")) === "false");
+await b.close();
+out.push(`\n${fails ? fails + " FAILED" : "ALL PASSED"} (${new Date().toISOString()})`);
+fs.writeFileSync("evidence/keyboard-nav.txt", out.join("\n") + "\n");
+console.log(out.join("\n"));

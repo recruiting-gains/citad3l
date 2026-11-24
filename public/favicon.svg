@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Citad3L">
+  <rect width="32" height="32" fill="#000"/>
+  <g transform="translate(4 4)" fill="#f4f4f4" fill-rule="evenodd">
+    <path d="M5 2h3v2.5h2.5V2h3v2.5H16V2h3v6l-2 2v7.5l1.5 1.5H5.5L7 17.5V10L5 8V2Zm6 9.5v4h2v-4a1 1 0 0 0-2 0ZM4 20.5h16V22H4v-1.5Z"/>
+  </g>
+</svg>
