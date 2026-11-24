@@ -29,11 +29,19 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "What's not allowed?",
-    a: "Two hard lines across the app: no sexual content involving minors, and nothing about bombs or explosives. Adult text chat between adults is allowed. Image mode keeps a safety filter and will not produce explicit nude or sexual images.",
+    a: "Two hard lines across the app: no sexual content involving minors, and nothing about bombs or explosives. Adult text chat between adults is allowed. Image mode keeps a safety filter and will not produce explicit nude or sexual images. If a message is blocked, we tell you why and you can try different wording. We do not automatically pause or suspend an account just because a message was blocked.",
   },
   {
     q: "How much does it cost?",
     a: "Free lets you try Citad3L with a few messages, and a free account adds Citad3L Private and Swarm mode. Pro is $20 a month (25 replies every 5 hours, up to 150 a week) and adds Citad3L Image. Max is $50 a month, at 2.5× those windows, and adds Citad3L Video and per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
+  },
+  {
+    q: "Is there a public API?",
+    a: "Not yet. Citad3L is a chat app in the browser. There is no public API today, and we have not set a date for one.",
+  },
+  {
+    q: "How do usage caps work?",
+    a: "Guests get 5 free messages, one time, with no account. A free account keeps that same 5-message try and unlocks Private and Swarm. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week, plus Image (up to 10 images a day). Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus Video (up to 2 clips a day) and per-model settings. Each image or video clip also uses 1 reply of your allowance. Failed or stopped replies do not count. Swarm uses 4 replies of your allowance. Caps do not roll over.",
   },
   {
     q: "How do I sign in?",

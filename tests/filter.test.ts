@@ -150,3 +150,32 @@ describe("content filter — minor + sexual proximity (hard line)", () => {
     expect(checkText("how to make tatp").allowed).toBe(false);
   });
 });
+
+describe("refusal copy and no auto-pause", () => {
+  const internals = [/classifier/i, /keyword/i, /regex/i, /fail-closed/i, /token/i, /\bllm\b/i, /moderation endpoint/i];
+
+  it("explains the category and how to rephrase, without filter internals", () => {
+    expect(REFUSAL.csam).toMatch(/sexual content involving a minor/i);
+    expect(REFUSAL.csam).toMatch(/try wording/i);
+    expect(REFUSAL.explosives).toMatch(/bombs or explosives/i);
+    expect(REFUSAL.explosives).toMatch(/rephrasing/i);
+    expect(REFUSAL.adult_sexual).toMatch(/sexually explicit/i);
+    expect(REFUSAL.adult_sexual).toMatch(/rephrasing/i);
+    expect(REFUSAL.check_failed).toMatch(/wasn't sent/i);
+    expect(REFUSAL.check_failed).toMatch(/try sending it again/i);
+    expect(REFUSAL.check_failed).not.toMatch(/isn't allowed/i);
+    for (const msg of Object.values(REFUSAL)) {
+      for (const re of internals) expect(msg).not.toMatch(re);
+    }
+  });
+
+  it("filter modules never auto-ban or pause an account", () => {
+    const { readFileSync } = require("node:fs") as typeof import("node:fs");
+    const path = require("node:path") as typeof import("node:path");
+    for (const rel of ["lib/filter.ts", "lib/filter-llm.ts", "lib/filter-log.ts"]) {
+      const src = readFileSync(path.resolve(import.meta.dirname, "..", rel), "utf8");
+      expect(src, rel).not.toMatch(/setBanned/);
+      expect(src, rel).not.toMatch(/bannedAt/);
+    }
+  });
+});

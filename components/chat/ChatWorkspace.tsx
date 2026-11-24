@@ -13,6 +13,7 @@ import { ModelSettingsModal } from "@/components/chat/ModelSettingsModal";
 import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
 import { timeOfDayGreeting, formatGreeting, type Greeting } from "@/lib/greeting";
 import { UsageMeters } from "@/components/UsageMeter";
+import { relevantLimitHit, usageLine } from "@/lib/usage-display";
 import type { SkillRequest } from "@/lib/types";
 import { planRetry, rerouteFromChatError, routeOutgoing } from "@/lib/computer/chat-guard";
 import { createGate, createSyncEngine, mergeRemote, nextSyncDelay, sameMessages } from "@/lib/sync";
@@ -160,7 +161,6 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const name = firstName(userLabel);
-  const limitHit = usage.limit > 0 && usage.remaining <= 0;
 
   /* toasts */
   const toast = useCallback((kind: Toast["kind"], text: string) => {
@@ -444,6 +444,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const videoReady = isVideoReady(selectedModel) && signedIn;
   const swarmAvailable = isSwarmAvailable(selectedModel) && signedIn;
   const hermesReady = selectedModel?.modality === "agent" && signedIn && hermesEnabled;
+  const composerMode = videoReady ? "video" as const : imageReady ? "image" as const : "chat" as const;
+  const limitHit = relevantLimitHit(usage, { mode: composerMode, swarm: swarm && swarmAvailable });
   const allowImageUpload = modelAllowsImageUpload(selectedModel) && signedIn;
   // Paperclip: signed-in users on V1/Fast (images + files) and Video (one starting-frame image). Private and Image stay text-only.
   const caps = signedIn ? attachCaps(selectedModel) : { images: false, files: false };
@@ -576,6 +578,15 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       const id = liveRef.current;
       if (u) setUsage(u);
       if (code === "content_policy") {
+        // Fail-closed check: the message was not sent. Put the draft back so "try again" is honest.
+        const retryable = message.startsWith("We couldn't finish the safety check");
+        if (retryable && !retryId) {
+          setInput(text);
+          if (atts.length) setAttachments(atts);
+          setMessages((ms) => ms.filter((m) => m.id !== id && m.id !== userTmp));
+          toast("warn", message);
+          return;
+        }
         patchLive((m) => ({ ...m, content: message, status: "complete" }));
         setErr(id, null);
         return;
@@ -1027,12 +1038,13 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const showEmpty = !conversationId && messages.length === 0 && !loading && !loadError;
 
-  const usageText = usage.unlimited
-    ? "Unlimited"
-    : usage.guest || usage.plan === "trial"
-      ? `${usage.remaining} of ${usage.limit} free messages left`
-      : `${usage.remaining.toLocaleString()} of ${usage.limit.toLocaleString()} ${usage.unitLabel} left`;
-  const usageCls = limitHit ? " is-out" : usage.limit > 0 && usage.remaining / usage.limit <= 0.2 ? " is-low" : "";
+  const usageText = usageLine(usage, { mode: composerMode, swarm: swarm && swarmAvailable });
+  const usageLow = composerMode === "image" && usage.image
+    ? usage.image.limit > 0 && usage.image.remaining / usage.image.limit <= 0.2
+    : composerMode === "video" && usage.video
+      ? usage.video.limit > 0 && usage.video.remaining / usage.video.limit <= 0.2
+      : usage.limit > 0 && usage.remaining / usage.limit <= 0.2;
+  const usageCls = limitHit ? " is-out" : usageLow ? " is-low" : "";
 
   /* ---------- render pieces ---------- */
   const limitPlaceholder =
@@ -1312,8 +1324,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       );
     }
     const live = m.status === "streaming";
-    const refused = m.content.startsWith("This request isn't allowed.");
-    const canRetry = !refused && !streaming && (m.id === lastAssistantId || m.status === "error" || m.status === "stopped");
+    const checkFailed = m.content.startsWith("We couldn't finish the safety check");
+    const refused = m.content.startsWith("This message was blocked") || m.content.startsWith("This request isn't allowed.");
+    const canRetry = (checkFailed || !refused) && !streaming && (m.id === lastAssistantId || m.status === "error" || m.status === "stopped" || checkFailed);
     return (
       <div key={m.id} className={`msg msg-assistant${isLast ? " is-last" : ""}`}>
         <div className="msg-head">
@@ -1607,7 +1620,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                     <MockBadge provider={provider} />
                     <span className="spacer" />
                     {charCount}
-                    <span className={`usage-chip${usageCls}`} title="Failed or stopped replies aren't charged">{usageText}</span>
+                    <span className={`usage-chip${usageCls}`} title="Failed or stopped replies aren't charged. This is your remaining allowance before you send.">{usageText}</span>
                   </div>
                   <div className="composer-hint">
                     <span className="kbd">Enter</span> to send · <span className="kbd">Shift</span>+<span className="kbd">Enter</span> new line · <span className="kbd">Esc</span> to stop

@@ -1,5 +1,6 @@
 import "server-only";
-import { limitDurable, type RateLimitRule } from "./ratelimit";
+import { limitDurable, peekDurable, type RateLimitRule } from "./ratelimit";
+import type { UsageMeter } from "./types";
 
 /**
  * Daily spend guards so one account (or a rush of new ones) can't drain the shared provider key. Two layers per costly
@@ -81,4 +82,26 @@ export async function spendGuard(kind: SpendKind, userId: string, opts: { admin?
     }
   }
   return null;
+}
+
+const LABELS: Record<SpendKind, string> = { image: "Images today", video: "Video clips today", swarm: "Swarm today" };
+
+/**
+ * Read today's per-user spend count without incrementing. Used by the pre-send usage meter.
+ * Returns null if the count cannot be read, so the UI can hide the meter instead of guessing.
+ */
+export async function spendPeek(kind: SpendKind, userId: string, nowMs = Date.now()): Promise<UsageMeter | null> {
+  if (!userId) return null;
+  const lim = spendLimits(kind);
+  const windowMs = DAY;
+  const used = await peekDurable({ name: `${kind}-user-day`, limit: lim.perUser, windowMs, id: userId }, nowMs);
+  if (used == null) return null;
+  const resetAt = new Date(Math.floor(nowMs / windowMs) * windowMs + windowMs).toISOString();
+  return {
+    used,
+    limit: lim.perUser,
+    remaining: Math.max(0, lim.perUser - used),
+    resetAt,
+    label: LABELS[kind],
+  };
 }

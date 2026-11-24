@@ -79,9 +79,9 @@ Adult text chat between adults is allowed. The only hard lines are no sexual con
 });
 
 describe("FAQ", () => {
-  it("has 10–14 questions covering the required topics", () => {
+  it("has 10–16 questions covering the required topics", () => {
     expect(FAQ_ITEMS.length).toBeGreaterThanOrEqual(10);
-    expect(FAQ_ITEMS.length).toBeLessThanOrEqual(14);
+    expect(FAQ_ITEMS.length).toBeLessThanOrEqual(16);
     const blob = FAQ_ITEMS.map((i) => i.q + " " + i.a).join("\n");
     expect(blob).toMatch(/What is Citad3L/i);
     expect(blob).toMatch(/different/i);
@@ -100,6 +100,10 @@ describe("FAQ", () => {
     expect(blob).toMatch(/Image mode keeps a safety filter/);
     expect(blob).toMatch(/will not produce explicit nude or sexual images/);
     expect(blob).toMatch(/Adult text chat between adults is allowed/);
+    expect(blob).toMatch(/no public API today/i);
+    expect(blob).toMatch(/not end-to-end encrypted from your device/i);
+    expect(blob).toMatch(/25 replies every 5 hours/);
+    expect(blob).toMatch(/do not automatically pause or suspend/i);
     for (const v of VENDORS) expect(blob).not.toContain(v);
   });
 
