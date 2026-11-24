@@ -37,6 +37,24 @@ export function csrfBlockReason(request, env = {}) {
   return null;
 }
 
+/**
+ * Plain-HTTP requests (e.g. Threads/Instagram in-app browsers opening an http:// link) get sent to https.
+ * Without this the page loads over http, the browser sends Origin http://... and every form POST is refused
+ * by csrfBlockReason, Turnstile stalls, and Secure session cookies never stick. 301 for GET/HEAD, 308 otherwise
+ * (keeps the method and body). Returns null when the request is already https or the host is local.
+ */
+export function httpsRedirect(request) {
+  const url = new URL(request.url);
+  if (url.protocol !== "http:") return null;
+  // Browsers never follow redirects on a WebSocket handshake; leave those to the zone's Always Use HTTPS.
+  if ((request.headers.get("upgrade") ?? "").toLowerCase() === "websocket") return null;
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]") return null;
+  url.protocol = "https:";
+  url.port = "";
+  const status = request.method === "GET" || request.method === "HEAD" ? 301 : 308;
+  return new Response(null, { status, headers: { Location: url.toString(), "Cache-Control": "public, max-age=3600" } });
+}
+
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 export function contentSecurityPolicy({ enforce = false } = {}) {
