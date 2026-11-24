@@ -85,6 +85,18 @@ export async function POST(req: Request) {
   const message = body.message.trim();
   if (!body.retryAssistantMessageId && !message && !body.attachments?.length) return jerr(400, "bad_request", "Message is empty.");
 
+  // Keyword hard lines are decided before model resolution, so a blocked message still gets a clear
+  // explanation even if inference is not configured. The later reviewOrKeyword pass also covers
+  // attachments and the optional AI check.
+  if (message) {
+    const early = checkText(message);
+    if (!early.allowed) {
+      const cookie = readGuestCookieHeader(req.headers.get("cookie"));
+      await logFilterRefusal({ userId: userId ?? undefined, guestId: cookie?.id, direction: "input", verdict: early });
+      return jerr(400, "content_policy", early.message);
+    }
+  }
+
   // "@computer …" never goes to a chat model (it would claim it can't and make up results). Retries are checked
   // again below once the original user message is loaded.
   if (computerChatRefusal(message, false)) {
