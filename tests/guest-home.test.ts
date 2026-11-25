@@ -36,7 +36,7 @@ describe("guest try box guardrails", () => {
 
   it("home page copy has no banned words, vendor names or whole-site E2E claims", () => {
     const home = readFileSync("components/marketing/HomeView.tsx", "utf8") + readFileSync("components/marketing/GuestTryBox.tsx", "utf8");
-    expect(home).toContain("AI that answers the question the safe bots dodge.");
+    expect(home).toContain("Private AI. Fast answers.");
     expect(home).toContain("Try it free — no signup");
     expect(home).not.toMatch(/canned refusals/i);
     expect(home).not.toMatch(LEAK_RE);

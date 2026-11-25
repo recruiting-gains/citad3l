@@ -5,6 +5,7 @@ import { resolveMailSender } from "@/lib/mail/sender";
 import { rateLimit } from "@/lib/ratelimit";
 import { clientIpFrom } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { readUtmCookieHeader, utmMetadata } from "@/lib/utm";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
     if (result.error === "not_configured") return jerr(503, "not_configured", "Email sign-in isn't available yet. Try again later.");
     return jerr(503, "send_failed", "We couldn't send a code right now. Try again in a moment.");
   }
+  console.info("[funnel]", JSON.stringify({ event: "signup_code_requested", ...utmMetadata(readUtmCookieHeader(req.headers.get("cookie"))) }));
   // Same success payload whether or not the address has an account.
   return NextResponse.json({ ok: true });
 }

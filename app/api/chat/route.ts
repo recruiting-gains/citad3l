@@ -45,6 +45,7 @@ import {
 import { guestStore } from "@/lib/guest-store";
 import { COMPUTER_CHAT_CODE, computerChatRefusal } from "@/lib/computer/chat-guard";
 import { maybeCreateAutoExports } from "@/lib/exports-r2";
+import { readUtmCookieHeader, utmMetadata } from "@/lib/utm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -471,6 +472,9 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
     return jerr(401, "signup_required", "Free messages are busy right now. Enter your email to keep chatting.", { usage: guestUsageSummary(back.used) });
   }
 
+  if (!cookieIn || cookieIn.used === 0) {
+    console.info("[funnel]", JSON.stringify({ event: "guest_first_message", ...utmMetadata(readUtmCookieHeader(req.headers.get("cookie"))) }));
+  }
   const turns = buildTurns([...guestClipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
 
   const ac = new AbortController();
