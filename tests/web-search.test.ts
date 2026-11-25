@@ -57,7 +57,53 @@ describe("Web search reaches the provider as web_search=on", () => {
   });
   it("chat route passes the resolved skill to the provider", () => {
     const route = readFileSync(new URL("../app/api/chat/route.ts", import.meta.url), "utf8");
-    expect(route).toMatch(/const skills = resolveSkills\(pub, body\.skills, \{ swarm \}\);/);
+    expect(route).toMatch(/const swarmWebSearch = swarm && canUseSwarmWebSearch\(await userEmail\(userId\)\);/);
+    expect(route).toMatch(/const skills = resolveSkills\(pub, body\.skills, \{ swarm, swarmWebSearch \}\);/);
+    expect(route).toMatch(/webSearch: swarmWebSearch,/);
     expect(route).toMatch(/webSearch: skills\.webSearch,/);
+  });
+});
+
+describe("Swarm web search is allowlisted, not site-wide", () => {
+  it("allows only emails listed in SWARM_WEB_SEARCH_EMAILS (case-insensitive, trimmed)", async () => {
+    const saved = process.env.SWARM_WEB_SEARCH_EMAILS;
+    const { canUseSwarmWebSearch, swarmWebSearchEmails } = await import("@/lib/config");
+    try {
+      delete process.env.SWARM_WEB_SEARCH_EMAILS;
+      expect(swarmWebSearchEmails()).toEqual([]);
+      expect(canUseSwarmWebSearch("media@example.test")).toBe(false);
+      expect(canUseSwarmWebSearch(null)).toBe(false);
+
+      process.env.SWARM_WEB_SEARCH_EMAILS = " media@example.test , other@example.test ";
+      expect(canUseSwarmWebSearch("media@example.test")).toBe(true);
+      expect(canUseSwarmWebSearch("Media@Example.Test")).toBe(true);
+      expect(canUseSwarmWebSearch("cruz@example.test")).toBe(false);
+    } finally {
+      if (saved === undefined) delete process.env.SWARM_WEB_SEARCH_EMAILS;
+      else process.env.SWARM_WEB_SEARCH_EMAILS = saved;
+    }
+  });
+
+  it("turns Swarm web search on only when the allowlist flag is set, and never for guests", () => {
+    const v1 = getPublicModel("citad3l-v1");
+    expect(resolveSkills(v1, { webSearch: true }, { swarm: true }).webSearch).toBe(false);
+    expect(resolveSkills(v1, {}, { swarm: true, swarmWebSearch: true }).webSearch).toBe(true);
+    expect(resolveSkills(v1, { thinking: true }, { swarm: true, swarmWebSearch: true }).thinking).toBe(false);
+    expect(resolveSkills(v1, {}, { guest: true, swarm: true, swarmWebSearch: true }).webSearch).toBe(false);
+  });
+
+  it("runSwarm keeps planning offline and only enables search on workers/synthesis when asked", () => {
+    const src = readFileSync(new URL("../lib/inference/swarm.ts", import.meta.url), "utf8");
+    expect(src).toMatch(/webSearch\?: boolean;/);
+    expect(src).toMatch(/const useSearch = opts\.webSearch === true;/);
+    expect(src).toMatch(/getProvider\(\{ modelId: "citad3l-v1", maxTokens: SWARM_PLAN_TOKENS, temperature: 0\.3, thinking: false, webSearch: false \}\)/);
+    expect(src).toMatch(/getProvider\(\{ modelId: "citad3l-v1", maxTokens: SWARM_SYNTH_TOKENS, thinking: false, webSearch: useSearch \}\)/);
+    expect(src).toMatch(/getProvider\(\{ modelId: "citad3l-fast", maxTokens: SWARM_WORKER_TOKENS, thinking: false, webSearch: useSearch \}\)/);
+  });
+
+  it("does not add the Media bot or any email to the admin/owner allowlists", () => {
+    const cfg = readFileSync(new URL("../lib/config.ts", import.meta.url), "utf8");
+    expect(cfg).toMatch(/process\.env\.SWARM_WEB_SEARCH_EMAILS/);
+    expect(cfg).not.toMatch(/adminEmails\(\)\.concat|\.\.\.swarmWebSearchEmails/);
   });
 });

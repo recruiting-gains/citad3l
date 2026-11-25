@@ -76,6 +76,7 @@ vi.mock("@/lib/banned", () => ({ bannedMessage: async () => null }));
 vi.mock("@/lib/ratelimit", () => ({ LIMITS: { chatUserMin: {}, chatUserHour: {} }, rule: () => ({}), rateLimit: () => true, limitDurable: async () => ({ ok: true }) }));
 vi.mock("@/lib/usage", () => ({
   userIsAdmin: async (id: string) => id === "u-owner",
+  userEmail: async (id: string) => (id === "u-owner" ? "owner@example.test" : null),
   getUsage: async () => ({ plan: "max", admin: true, owner: true }),
   reserve: async () => { throw new Error("must not reserve"); },
   settle: async () => undefined,

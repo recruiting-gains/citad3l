@@ -37,6 +37,23 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return adminEmails().includes(email.trim().toLowerCase());
 }
 
+/**
+ * Emails allowed to use web search inside Swarm. Everyone else keeps Swarm search off.
+ * Set as a Worker var (SWARM_WEB_SEARCH_EMAILS, comma-separated). Empty / unset = no one (current default).
+ * Do not put the owner or other admins here unless Cruz asks — this is for Chief of Staff / Media bot runs only.
+ */
+export function swarmWebSearchEmails(): string[] {
+  return (process.env.SWARM_WEB_SEARCH_EMAILS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function canUseSwarmWebSearch(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return swarmWebSearchEmails().includes(email.trim().toLowerCase());
+}
+
 /** 5-hour refresh window for paid plans. */
 export function usageWindowMs(): number {
   return envInt("USAGE_WINDOW_MS", 5 * 60 * 60 * 1000);

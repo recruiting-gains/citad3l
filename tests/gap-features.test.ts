@@ -123,6 +123,7 @@ describe("skills", () => {
     const want = { webSearch: true, thinking: true, coding: true };
     expect(resolveSkills(v1, want, { guest: true })).toEqual({ webSearch: false, thinking: false, coding: true });
     expect(resolveSkills(v1, want, { swarm: true })).toEqual({ webSearch: false, thinking: false, coding: true });
+    expect(resolveSkills(v1, want, { swarm: true, swarmWebSearch: true })).toEqual({ webSearch: true, thinking: false, coding: true });
     expect(resolveSkills(v1, want)).toEqual(want);
     // Guests (home page try box, signed-out chat) run on Fast only.
     expect(isGuestModelId("citad3l-v1")).toBe(false);

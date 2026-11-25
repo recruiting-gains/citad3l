@@ -54,18 +54,28 @@ export class FilterRefusal extends Error {
   }
 }
 
+const WORKER_SYSTEM = "You are a Citad3L Fast worker. Do only this subtask. Be concise and concrete. Do not greet the user.";
+const WORKER_SYSTEM_SEARCH = "You are a Citad3L Fast worker. Do only this subtask. Be concise and concrete. Search the web when the subtask needs current facts, and include sources with real URLs. Do not greet the user or invent links.";
+const SYNTH_SYSTEM = "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts) or fence tag (e.g. ts:src/index.ts). Do not mention the swarm, workers, or that this was planned. Do not invent sources or download URLs.";
+const SYNTH_SYSTEM_SEARCH = "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts) or fence tag (e.g. ts:src/index.ts). Use the workers' findings and your own web search; cite real sources with URLs. Do not mention the swarm, workers, or that this was planned. Do not invent sources, URLs, or download links.";
+
 export async function runSwarm(opts: {
   userMessage: string;
   history: ChatTurn[];
   signal: AbortSignal;
   onStatus?: (s: SwarmStatus) => void;
   onDelta: (text: string) => void;
+  /** Allowlisted callers only (e.g. Media bot). Default off for every other account. */
+  webSearch?: boolean;
 }): Promise<{ text: string; usedWorkers: number; fallback: boolean; continuations: number; truncated: boolean }> {
-  // Per-request cost caps: ≤3 workers (SWARM_MAX_WORKERS), and token caps on every call. Thinking and web
-  // search stay off. Final synthesis allows auto-continuation up to MAX_AUTO_CONTINUATIONS on finish_reason=length.
+  // Per-request cost caps: ≤3 workers (SWARM_MAX_WORKERS), and token caps on every call. Thinking stays off.
+  // Web search stays off unless the caller is allowlisted (SWARM_WEB_SEARCH_EMAILS). When on, Fast workers and
+  // V1 synthesis may search (up to 4 search-enabled calls); planning stays offline so the JSON plan stays reliable.
+  // Final synthesis allows auto-continuation up to MAX_AUTO_CONTINUATIONS on finish_reason=length.
+  const useSearch = opts.webSearch === true;
   const v1Plan = getProvider({ modelId: "citad3l-v1", maxTokens: SWARM_PLAN_TOKENS, temperature: 0.3, thinking: false, webSearch: false });
-  const v1 = getProvider({ modelId: "citad3l-v1", maxTokens: SWARM_SYNTH_TOKENS, thinking: false, webSearch: false });
-  const fast = getProvider({ modelId: "citad3l-fast", maxTokens: SWARM_WORKER_TOKENS, thinking: false, webSearch: false });
+  const v1 = getProvider({ modelId: "citad3l-v1", maxTokens: SWARM_SYNTH_TOKENS, thinking: false, webSearch: useSearch });
+  const fast = getProvider({ modelId: "citad3l-fast", maxTokens: SWARM_WORKER_TOKENS, thinking: false, webSearch: useSearch });
   opts.onStatus?.({ phase: "planning", detail: "Citad3L V1 is planning the swarm." });
 
   let planRaw = "";
@@ -98,7 +108,7 @@ export async function runSwarm(opts: {
       const raw = await completeText(
         fast,
         [
-          { role: "system", content: "You are a Citad3L Fast worker. Do only this subtask. Be concise and concrete. Do not greet the user." },
+          { role: "system", content: useSearch ? WORKER_SYSTEM_SEARCH : WORKER_SYSTEM },
           { role: "user", content: [ctx && `Conversation so far:\n${ctx}`, `Original request:\n${opts.userMessage}`, `Subtask ${i + 1} of ${subtasks.length}:\n${task}`].filter(Boolean).join("\n\n") },
         ],
         opts.signal,
@@ -113,7 +123,7 @@ export async function runSwarm(opts: {
 
   opts.onStatus?.({ phase: "synthesizing", detail: "Citad3L V1 is writing the answer." });
   const synthTurns: ChatTurn[] = [
-    { role: "system", content: "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts) or fence tag (e.g. ts:src/index.ts). Do not mention the swarm, workers, or that this was planned. Do not invent sources or download URLs." },
+    { role: "system", content: useSearch ? SYNTH_SYSTEM_SEARCH : SYNTH_SYSTEM },
     {
       role: "user",
       content: [
