@@ -44,6 +44,7 @@ import {
 } from "@/lib/guest";
 import { guestStore } from "@/lib/guest-store";
 import { COMPUTER_CHAT_CODE, computerChatRefusal } from "@/lib/computer/chat-guard";
+import { maybeCreateAutoExports } from "@/lib/exports-r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -335,7 +336,23 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
             continuations = result.continuations;
             truncated = result.truncated;
           }
-          if (!text.trim()) { outcome = "error"; errMsg = "The engine returned an empty reply."; }
+          if (!text.trim()) {
+            outcome = "error";
+            errMsg = "The engine returned an empty reply.";
+          } else {
+            const exported = await maybeCreateAutoExports({
+              userId,
+              swarm,
+              title: conv.title,
+              userMessage: prompt,
+              assistantText: text,
+            });
+            if (exported) {
+              text += exported.footer;
+              send(c, "delta", { text: exported.footer });
+              send(c, "exports", exported.bundle);
+            }
+          }
         } catch (e) {
           if (e instanceof FilterRefusal) {
             outcome = "refused";

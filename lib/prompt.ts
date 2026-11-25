@@ -24,7 +24,7 @@ export function buildTurns(
   const sysBase = systemPrompt(engineName ?? defaultModel().name);
   const parts = [sysBase];
   if (extras?.coding) {
-    parts.push("The user turned on coding assistance. Prefer complete, runnable code with clear file paths, and only the explanation that is needed. You cannot run commands, edit the user's files, or browse their machine — say so if a step would require that.");
+    parts.push("The user turned on coding assistance. Prefer complete, runnable code with clear file paths, and only the explanation that is needed. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts). You cannot run commands, edit the user's files, or browse their machine — say so if a step would require that.");
   }
   if (projectInstructions?.trim()) {
     parts.push("Project instructions from the user:\n" + projectInstructions.trim());

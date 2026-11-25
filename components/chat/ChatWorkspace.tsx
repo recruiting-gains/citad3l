@@ -143,6 +143,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [continuedMap, setContinuedMap] = useState<Record<string, number>>({});
   const [truncatedMap, setTruncatedMap] = useState<Record<string, boolean>>({});
+  const [exportsMap, setExportsMap] = useState<Record<string, { zip?: { url: string; filename: string; bytes: number }; pdf?: { url: string; filename: string; bytes: number } }>>({});
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [greeting, setGreeting] = useState<Greeting>({ short: "Hello", sub: "" });
@@ -715,6 +717,15 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         }
         if (d.usage) setUsage(d.usage as UsageSummary);
         setStatusLine(null);
+      } else if (ev === "exports") {
+        const id = liveRef.current;
+        if (id) {
+          const zip = d.zip as { url: string; filename: string; bytes: number } | undefined;
+          const pdf = d.pdf as { url: string; filename: string; bytes: number } | undefined;
+          if (zip || pdf) {
+            setExportsMap((prev) => ({ ...prev, [id]: { zip, pdf } }));
+          }
+        }
       } else if (ev === "status") {
         const detail = typeof d.detail === "string" ? d.detail : "";
         if (detail) setStatusLine(detail);
@@ -1010,6 +1021,36 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       toast("ok", "Saved PDF.");
     } catch {
       toast("error", "Couldn't create PDF.");
+    }
+  };
+
+  const createServerExportLinks = async (m: ChatMessage) => {
+    if (!signedIn || exportingId) return;
+    setExportingId(m.id);
+    try {
+      const payload = m.id.startsWith("tmp-")
+        ? { title: title && title !== "New chat" ? title : "Citad3L Answer", markdown: m.content, kind: "both" }
+        : { messageId: m.id, kind: "both" };
+      const r = await fetch("/api/exports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        zip?: { url: string; filename: string; bytes: number };
+        pdf?: { url: string; filename: string; bytes: number };
+        error?: { message?: string };
+      };
+      if (!r.ok) {
+        toast("error", j.error?.message ?? "Couldn't create 24h download links.");
+        return;
+      }
+      setExportsMap((prev) => ({ ...prev, [m.id]: { zip: j.zip, pdf: j.pdf } }));
+      toast("ok", "24-hour download links ready.");
+    } catch {
+      toast("error", "Couldn't create 24h download links.");
+    } finally {
+      setExportingId(null);
     }
   };
 
@@ -1466,6 +1507,43 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                 >
                   <IPdf /> Download PDF
                 </button>
+                {signedIn && (exportsMap[m.id]?.zip || exportsMap[m.id]?.pdf) ? (
+                  <>
+                    {exportsMap[m.id]?.zip && (
+                      <a
+                        className="msg-action"
+                        href={exportsMap[m.id]!.zip!.url}
+                        download={exportsMap[m.id]!.zip!.filename}
+                        data-testid="msg-signed-zip"
+                        title="Signed 24-hour zip link"
+                      >
+                        <IZip /> 24h zip
+                      </a>
+                    )}
+                    {exportsMap[m.id]?.pdf && (
+                      <a
+                        className="msg-action"
+                        href={exportsMap[m.id]!.pdf!.url}
+                        download={exportsMap[m.id]!.pdf!.filename}
+                        data-testid="msg-signed-pdf"
+                        title="Signed 24-hour PDF link"
+                      >
+                        <IPdf /> 24h PDF
+                      </a>
+                    )}
+                  </>
+                ) : signedIn ? (
+                  <button
+                    type="button"
+                    className="msg-action"
+                    onClick={() => void createServerExportLinks(m)}
+                    disabled={exportingId === m.id}
+                    data-testid="msg-create-export-links"
+                    title="Create signed 24-hour zip and PDF download links"
+                  >
+                    <IZip /> {exportingId === m.id ? "Saving…" : "24h links"}
+                  </button>
+                ) : null}
               </>
             )}
             {canRetry && m.status !== "error" && (

@@ -37,4 +37,4 @@ export function resolveSkills(
 }
 
 export const CODING_TOOLS_PROMPT =
-  "The user turned on coding assistance. Prefer complete, runnable code with clear file paths, and only the explanation that is needed. You cannot run commands, edit the user's files, or browse their machine — say so if a step would require that.";
+  "The user turned on coding assistance. Prefer complete, runnable code with clear file paths, and only the explanation that is needed. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts). You cannot run commands, edit the user's files, or browse their machine — say so if a step would require that.";

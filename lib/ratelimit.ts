@@ -198,6 +198,9 @@ export const LIMITS = {
   waitlistIpHour: { name: "waitlist-ip-hour", limit: 5, windowMs: HOUR },
   waitlistIpDay: { name: "waitlist-ip-day", limit: 20, windowMs: DAY },
   billingUser10m: { name: "billing-user-10m", limit: 10, windowMs: 10 * MIN },
+  exportUserMin: { name: "export-user-min", limit: 10, windowMs: MIN },
+  exportUserHour: { name: "export-user-hour", limit: 40, windowMs: HOUR },
+  exportUserDay: { name: "export-user-day", limit: 100, windowMs: DAY },
 } as const satisfies Record<string, Omit<RateLimitRule, "id">>;
 
 export function rule(def: Omit<RateLimitRule, "id">, id: string | null | undefined): RateLimitRule {

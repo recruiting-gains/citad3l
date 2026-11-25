@@ -113,7 +113,7 @@ export async function runSwarm(opts: {
 
   opts.onStatus?.({ phase: "synthesizing", detail: "Citad3L V1 is writing the answer." });
   const synthTurns: ChatTurn[] = [
-    { role: "system", content: "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. Do not mention the swarm, workers, or that this was planned. Do not invent sources." },
+    { role: "system", content: "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts) or fence tag (e.g. ts:src/index.ts). Do not mention the swarm, workers, or that this was planned. Do not invent sources or download URLs." },
     {
       role: "user",
       content: [

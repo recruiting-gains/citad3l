@@ -197,6 +197,42 @@ function dedupeName(candidate: string, used: Set<string>): string {
   }
 }
 
+export function slugFromTitle(title?: string | null, fallback = "citad3l-answer"): string {
+  const base = (title && title !== "New chat" ? title : fallback)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return base || fallback;
+}
+
+export function stripExportFooter(markdown: string): string {
+  return markdown.replace(/\n+---\n\*\*Downloads \(signed, 24h\):\*\*[^\n]*\s*$/, "");
+}
+
+/**
+ * Check a markdown heading or label line immediately above a code fence for a safe relative file path,
+ * e.g. "### bot/main.py", "**src/index.ts**", "File: `requirements.txt`", or "`config.json`:".
+ */
+export function extractPrecedingFilenameHint(prevLine?: string): string | null {
+  if (!prevLine) return null;
+  const trimmed = prevLine.trim();
+  if (!trimmed || trimmed.length > 160) return null;
+  // Strip heading hashes, list bullets, bold markers, trailing colon
+  const normalized = trimmed
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^(?:[-*]|\d+\.)\s+/, "")
+    .replace(/^(?:file(?:name)?|path)\s*[:=]\s*/i, "")
+    .replace(/:$/, "")
+    .trim()
+    .replace(/^\*\*(.+)\*\*$/, "$1")
+    .replace(/^__(.+)__$/, "$1")
+    .replace(/^`([^`]+)`$/, "$1")
+    .trim();
+  if (!normalized || /\s/.test(normalized)) return null;
+  return sanitizeRelPath(normalized);
+}
+
 /**
  * Parse fenced code blocks (``` or ~~~, any fence length >= 3) from markdown.
  */
@@ -208,6 +244,8 @@ export function extractCodeBlocks(markdown: string): ExtractedCodeBlock[] {
   let openFenceChar: string | null = null;
   let openFenceLen = 0;
   let fenceInfo = "";
+  let prevHint: string | null = null;
+  let lastNonEmpty = "";
   let buf: string[] = [];
 
   for (const line of lines) {
@@ -221,7 +259,10 @@ export function extractCodeBlocks(markdown: string): ExtractedCodeBlock[] {
         openFenceChar = marker[0];
         openFenceLen = marker.length;
         fenceInfo = info;
+        prevHint = extractPrecedingFilenameHint(lastNonEmpty);
         buf = [];
+      } else if (line.trim()) {
+        lastNonEmpty = line;
       }
       continue;
     }
@@ -231,7 +272,7 @@ export function extractCodeBlocks(markdown: string): ExtractedCodeBlock[] {
     if (closeRe.test(line)) {
       const code = buf.join("\n");
       const lang = normalizeLang(fenceInfo);
-      const rawName = codeBlockFilename(lang, code, blocks.length, fenceInfo);
+      const rawName = extractFilenameHint(code, fenceInfo) ?? prevHint ?? codeBlockFilename(lang, code, blocks.length, fenceInfo);
       blocks.push({
         lang,
         code,
@@ -240,6 +281,8 @@ export function extractCodeBlocks(markdown: string): ExtractedCodeBlock[] {
       openFenceChar = null;
       openFenceLen = 0;
       fenceInfo = "";
+      prevHint = null;
+      lastNonEmpty = "";
       buf = [];
     } else {
       buf.push(line);
@@ -249,7 +292,7 @@ export function extractCodeBlocks(markdown: string): ExtractedCodeBlock[] {
   if (openFenceChar && buf.length) {
     const code = buf.join("\n");
     const lang = normalizeLang(fenceInfo);
-    const rawName = codeBlockFilename(lang, code, blocks.length, fenceInfo);
+    const rawName = extractFilenameHint(code, fenceInfo) ?? prevHint ?? codeBlockFilename(lang, code, blocks.length, fenceInfo);
     blocks.push({
       lang,
       code,
@@ -367,9 +410,10 @@ export function buildZip(entries: ZipEntryInput[], now = new Date()): Uint8Array
 }
 
 export function buildAnswerZip(markdown: string): { bytes: Uint8Array; fileCount: number; codeCount: number } {
-  const blocks = extractCodeBlocks(markdown);
+  const cleanMd = stripExportFooter(markdown);
+  const blocks = extractCodeBlocks(cleanMd);
   const entries: ZipEntryInput[] = [
-    { name: "answer.md", content: markdown.replace(/\r?\n$/, "") + "\n" },
+    { name: "answer.md", content: cleanMd.replace(/\r?\n$/, "") + "\n" },
     ...blocks.map((b) => ({ name: b.filename, content: b.code.replace(/\r?\n$/, "") + "\n" })),
   ];
   return { bytes: buildZip(entries), fileCount: entries.length, codeCount: blocks.length };
