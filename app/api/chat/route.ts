@@ -23,7 +23,7 @@ import { checkAccess } from "@/lib/access";
 import { spendGuard } from "@/lib/spend-guard";
 import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
 import { buildTurns, titleFrom } from "@/lib/prompt";
-import { checkText } from "@/lib/filter";
+import { checkText, checkTexts } from "@/lib/filter";
 import { reviewOrKeyword } from "@/lib/filter-llm";
 import { logFilterRefusal } from "@/lib/filter-log";
 import { getPublicModel, isGuestModelId } from "@/lib/models";
@@ -175,10 +175,25 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       return jerr(409, COMPUTER_CHAT_CODE, computerChatRefusal(prompt, admin)!, admin ? { task: prompt } : {});
     }
   }
-  const inputFilter = await reviewOrKeyword(prompt, req.signal, { privateMode: resolved.requiresClientE2EE });
+  // The filter sees everything the model will see that the user controls: the new message, their custom system prompt
+  // and the project instructions (full review), plus every earlier turn of this chat (keyword check).
+  const steering = [settings?.systemPrompt, projectInstructions].filter((t): t is string => !!t && !!t.trim());
+  const inputFilter = await reviewOrKeyword([...steering, prompt].join("\n\n"), req.signal, { privateMode: resolved.requiresClientE2EE });
   if (!inputFilter.allowed) {
     await logFilterRefusal({ userId, direction: "input", verdict: inputFilter, modelId: resolved.publicId });
     return jerr(400, "content_policy", inputFilter.message);
+  }
+  if (conversation) {
+    const earlier = await prisma.message.findMany({
+      where: { conversationId: conversation.id, ...(retryTarget ? { createdAt: { lt: retryTarget.createdAt } } : {}) },
+      orderBy: { createdAt: "asc" },
+      select: { content: true },
+    });
+    const historyFilter = checkTexts(earlier.map((m) => m.content));
+    if (!historyFilter.allowed) {
+      await logFilterRefusal({ userId, direction: "input", verdict: historyFilter, modelId: resolved.publicId });
+      return jerr(400, "content_policy", historyFilter.message);
+    }
   }
 
   let provider;
@@ -360,7 +375,12 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
   const skills = resolveSkills(pub, body.skills, { guest: true });
 
   const prompt = message;
-  const inputFilter = await reviewOrKeyword(prompt, req.signal);
+  // Guests send their own history, so it is untrusted: the filter reviews the clipped history the model will
+  // actually get together with the new message, and keyword-checks every history turn that was sent.
+  const guestHistory = (body.history ?? []).filter((m) => m.content.trim());
+  const guestClipped = clipGuestHistory(guestHistory);
+  const keywordAll = checkTexts(guestHistory.map((m) => m.content));
+  const inputFilter = keywordAll.allowed ? await reviewOrKeyword([...guestClipped.map((m) => m.content), prompt].join("\n\n"), req.signal) : keywordAll;
   if (!inputFilter.allowed) {
     const cookie = readGuestCookieHeader(req.headers.get("cookie"));
     await logFilterRefusal({ guestId: cookie?.id, direction: "input", verdict: inputFilter, modelId: resolved.publicId });
@@ -401,15 +421,7 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
     return jerr(401, "signup_required", "Free messages are busy right now. Enter your email to keep chatting.", { usage: guestUsageSummary(back.used) });
   }
 
-  let history = (body.history ?? []).filter((m) => m.content.trim());
-  let histChars = 0;
-  const clipped: typeof history = [];
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (histChars + history[i].content.length > GUEST_HISTORY_CHAR_BUDGET && clipped.length) break;
-    histChars += history[i].content.length;
-    clipped.unshift(history[i]);
-  }
-  const turns = buildTurns([...clipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
+  const turns = buildTurns([...guestClipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
 
   const ac = new AbortController();
   req.signal.addEventListener("abort", () => ac.abort(), { once: true });
@@ -460,4 +472,16 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
       ...cookieHeader(reserved.state),
     },
   });
+}
+
+/** Newest-first clip of guest-sent history to GUEST_HISTORY_CHAR_BUDGET (always keeps at least the latest turn). */
+function clipGuestHistory<T extends { content: string }>(history: T[]): T[] {
+  let histChars = 0;
+  const clipped: T[] = [];
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (histChars + history[i].content.length > GUEST_HISTORY_CHAR_BUDGET && clipped.length) break;
+    histChars += history[i].content.length;
+    clipped.unshift(history[i]);
+  }
+  return clipped;
 }

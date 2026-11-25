@@ -223,3 +223,16 @@ export async function reviewContent(
     return refused("check_failed");
   }
 }
+
+/**
+ * Keyword check over a whole chat history: each turn on its own, then all of them together (so a blocked phrase can't
+ * hide across turns). Used for guest-sent history, a signed-in chat's earlier turns, and imported chats.
+ */
+export function checkTexts(contents: readonly string[]): FilterVerdict {
+  for (const c of contents) {
+    if (!c) continue;
+    const v = checkText(c);
+    if (!v.allowed) return v;
+  }
+  return checkText(contents.join("\n"));
+}

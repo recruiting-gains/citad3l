@@ -151,16 +151,15 @@ export async function userIsAdmin(userId: string): Promise<boolean> {
 
 export async function ensureEntitlement(userId: string, tx: Tx | typeof prisma = prisma) {
   const e = await tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
-  // A free month from the referral promo is a plan with no Stripe subscription and an end date. Once it passes,
-  // drop back to Free. Only checked on that rare shape, so normal plans cost no extra query.
-  if (isPaidActive(e) && !e.stripeSubscriptionId && e.periodEnd && e.periodEnd.getTime() <= Date.now()) {
-    // Fails soft (e.g. before the referral table is migrated): the plan is then left exactly as it was.
-    const grants = await tx.referralAttribution
-      .count({ where: { referrerUserId: userId, rewardKind: "pro_days", status: "credited" } })
-      .catch(() => 0);
-    if (grants > 0) {
-      return tx.entitlement.update({ where: { userId }, data: { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0 } });
-    }
+  // Pro days from the referral promo end on their own date (referralProEndsAt), whatever happens to the friend's account.
+  // Once it passes, drop back to Free, unless a real subscription has taken over (then just clear the marker).
+  const refEnd = (e as { referralProEndsAt?: Date | null }).referralProEndsAt;
+  if (refEnd && refEnd.getTime() <= Date.now()) {
+    const realSub = !!e.stripeSubscriptionId && e.status !== "canceled" && !!e.periodEnd && e.periodEnd.getTime() > Date.now();
+    return tx.entitlement.update({
+      where: { userId },
+      data: realSub ? { referralProEndsAt: null } : { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0, cancelAtPeriodEnd: false, referralProEndsAt: null },
+    });
   }
   return e;
 }

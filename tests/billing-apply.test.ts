@@ -81,7 +81,7 @@ describe("customer.subscription.deleted", () => {
     expect(result).toBe("processed");
     expect(entitlement.update).toHaveBeenCalledWith({
       where: { userId },
-      data: { plan: "trial", status: "canceled", cancelAtPeriodEnd: false, stripeSubscriptionId: null, periodEnd: null },
+      data: { plan: "trial", status: "canceled", cancelAtPeriodEnd: false, stripeSubscriptionId: null, periodEnd: null, referralProEndsAt: null },
     });
   });
 

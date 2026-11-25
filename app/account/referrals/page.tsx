@@ -13,7 +13,7 @@ export default async function Page() {
     ? "Share your link. Rewards aren't switched on yet."
     : promoEnded()
       ? `The referral promo ended ${REFERRAL_PROMO_END_LABEL}. Thanks for sharing.`
-      : `When they sign up with your code and subscribe, you get a free month. Up to ${referralCap()}. Ends ${REFERRAL_PROMO_END_LABEL}.`;
+      : `When they sign up with your code and subscribe, you get a free month of Pro. Up to ${referralCap()}. Ends ${REFERRAL_PROMO_END_LABEL}.`;
   return (
     <AccountShell title="Referrals" intro={intro} isOwner={isAdminEmail(u.email)}>
       <ReferralsView />

@@ -106,7 +106,8 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
       await prisma.entitlement.upsert({
         where: { userId },
         create: { userId, plan, status: "active", stripeCustomerId: s.customer as string, stripeSubscriptionId: (s.subscription as string) ?? null, periodUsed: 0, periodStart: new Date() },
-        update: { plan, status: "active", stripeCustomerId: s.customer as string, stripeSubscriptionId: (s.subscription as string) ?? null, cancelAtPeriodEnd: false },
+        // A real subscription replaces any referral Pro days (referralProEndsAt is cleared so it can't lapse the paid plan).
+        update: { plan, status: "active", stripeCustomerId: s.customer as string, stripeSubscriptionId: (s.subscription as string) ?? null, cancelAtPeriodEnd: false, ...(s.subscription ? { referralProEndsAt: null } : {}) },
       });
       return "processed";
     }
@@ -117,6 +118,8 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
       if (!userId) return "ignored";
       const ent = await prisma.entitlement.findUnique({ where: { userId } });
       if (isStaleForEntitlement(ent, sub.id, sub.status)) return "ignored";
+      // On referral Pro days with no subscription linked: an old ended subscription must not end those days early.
+      if (ent?.referralProEndsAt && ent.stripeSubscriptionId !== sub.id && !OPEN_SUBSCRIPTION_STATUSES.has(sub.status)) return "ignored";
       const plan = planForPrice(sub.items?.data?.[0]?.price?.id) ?? (sub.metadata?.plan === "max" ? "max" : ent?.plan === "trial" || !ent ? "pro" : ent.plan);
       const { start, end } = periodOf(sub);
       const newPeriod = !!start && (!ent?.periodStart || ent.periodStart.getTime() !== start.getTime());
@@ -132,6 +135,7 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
           periodEnd: end,
           cancelAtPeriodEnd: !!sub.cancel_at_period_end,
           ...(newPeriod ? { periodUsed: 0 } : {}),
+          ...(OPEN_SUBSCRIPTION_STATUSES.has(sub.status) ? { referralProEndsAt: null } : {}),
         },
       });
       return "processed";
@@ -144,7 +148,7 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
       // Only drop paid access when the deleted sub is the one currently granting it.
       // A leftover Pro cancel must not wipe a later Max subscription.
       if (!ent || ent.stripeSubscriptionId !== sub.id) return "ignored";
-      await prisma.entitlement.update({ where: { userId }, data: { plan: "trial", status: "canceled", cancelAtPeriodEnd: false, stripeSubscriptionId: null, periodEnd: null } });
+      await prisma.entitlement.update({ where: { userId }, data: { plan: "trial", status: "canceled", cancelAtPeriodEnd: false, stripeSubscriptionId: null, periodEnd: null, referralProEndsAt: null } });
       return "processed";
     }
     case "invoice.payment_failed": {
@@ -192,6 +196,8 @@ async function applyInvoicePaidToEntitlement(inv: Stripe.Invoice, userId: string
   const end = line?.period?.end ? new Date(line.period.end * 1000) : null;
   const ent = await prisma.entitlement.findUnique({ where: { userId } });
   if (!ent || ent.plan === "trial") return "ignored";
+  // Referral Pro days with no subscription: a stray invoice must not move their end date.
+  if (ent.referralProEndsAt && !ent.stripeSubscriptionId) return "ignored";
   const newPeriod = !!start && (!ent.periodStart || ent.periodStart.getTime() !== start.getTime());
   await prisma.entitlement.update({ where: { userId }, data: { status: "active", ...(start ? { periodStart: start, periodEnd: end } : {}), ...(newPeriod ? { periodUsed: 0 } : {}) } });
   return "processed";

@@ -1,10 +1,10 @@
-import { randomBytes } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import type Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { appUrl, PLAN_PRICE_USD } from "./config";
 import { getStripe } from "./stripe";
-import { ensureEntitlement } from "./usage";
+import { ensureEntitlement, isPaidActive } from "./usage";
 
 /**
  * Referral promo: "When they sign up with your code and subscribe, you get a free month. Up to 3. Ends Dec 8."
@@ -13,15 +13,20 @@ import { ensureEntitlement } from "./usage";
  *  2. Signup: a NEW account's first sign-in locks the code onto it (ReferralAttribution, unique per referred user).
  *     Only inside the promo window (REFERRAL_PROMO_START .. REFERRAL_PROMO_END). Cruz can also log one by hand
  *     (logManualReferral) if it is dated inside the window.
- *  3. Reward: the friend's FIRST paid subscription invoice (invoice.paid webhook) earns the REFERRER one free month.
+ *  3. Reward: the friend's FIRST paid subscription invoice (invoice.paid webhook) earns the REFERRER one free Pro month.
  *     Payment may land up to REFERRAL_PAYMENT_GRACE_DAYS after the window closes.
- *       - Referrer on a paid plan: Stripe customer balance credit of one month of their plan (comes off the next bill).
- *       - Referrer on Free: 30 days of Pro on their account (no Stripe needed). Lapses in ensureEntitlement().
+ *       - Worth at most one Pro month ($20) and never more than the friend's first payment (pen test 2026-11-24, H2).
+ *       - Referrer on a paid plan (Pro or Max): Stripe customer balance credit (comes off the next bill).
+ *       - Referrer on Free: Pro days ending on Entitlement.referralProEndsAt (lapses in ensureEntitlement()).
  *     One-sided: the friend gets nothing extra. No cash.
  *  4. Refund or dispute on the friend's first payment: a pending reward is voided; an issued one is reversed
  *     (unused balance credit is taken back; Pro days are removed). Anything already spent is flagged for review.
- *  Guards: first code wins, one reward per new account and per paying customer, cap per referrer, no self-referral
- *  (same account, same email after normalising, or same Stripe customer). Shared networks / IPs are NOT used.
+ *  Guards: first code wins, one reward per new account, per email (even after the account is deleted and re-made), per
+ *  paying customer and per card. Cap per referrer counts every reward ever granted (a reversed one still counts). No
+ *  self-referral: same account, same email after normalising, same Stripe customer, or the same card on both sides.
+ *  Rows are never deleted with an account (user links go NULL), so caps and refund reversals keep working.
+ *  Grants and reversals run in one DB transaction that locks the row and the referrer's entitlement.
+ *  Shared networks / IPs are NOT used.
  */
 
 export const REF_COOKIE = "c3_ref";
@@ -96,6 +101,18 @@ export async function getOrCreateReferral(userId: string) {
   throw new Error("Could not create a referral code.");
 }
 
+/** Stable hash of the normalised email, kept on the row so a deleted-and-remade account is still recognised. */
+export function referralEmailHash(email: string | null | undefined): string | null {
+  const n = normalizeEmailForSelfCheck(email);
+  return n ? createHmac("sha256", "citad3l-referral-email-v1").update(n).digest("hex") : null;
+}
+
+/** One Pro month in cents: the most a single referral can ever be worth. */
+export const PRO_MONTH_CENTS = Math.round(PLAN_PRICE_USD.pro * 100);
+
+/** Statuses/fields that mean a reward was (or is being) handed out. Used for the cap and the one-per-payer checks. */
+const GRANTED: Prisma.ReferralAttributionWhereInput = { OR: [{ status: "crediting" }, { creditedAt: { not: null } }] };
+
 export type CaptureResult =
   | "disabled"
   | "outside_window"
@@ -112,11 +129,16 @@ type AttributeOpts = { referrerUserId: string; referrerEmail: string | null; ref
 async function createAttribution(o: AttributeOpts): Promise<"attributed" | "same_email" | "already_attributed"> {
   const friend = await prisma.user.findUnique({ where: { id: o.referredUserId }, select: { email: true } });
   const sameEmail = !!friend?.email && normalizeEmailForSelfCheck(friend.email) === normalizeEmailForSelfCheck(o.referrerEmail);
+  const referredEmailHash = referralEmailHash(friend?.email);
+  // An email that was referred before (including by an account that has since been deleted) can't be referred again.
+  if (referredEmailHash && (await prisma.referralAttribution.count({ where: { referredEmailHash } })) > 0) return "already_attributed";
   try {
     await prisma.referralAttribution.create({
       data: {
         referrerUserId: o.referrerUserId,
         referredUserId: o.referredUserId,
+        referrerEmailHash: referralEmailHash(o.referrerEmail),
+        referredEmailHash,
         code: o.code,
         source: o.source,
         createdAt: o.at,
@@ -181,15 +203,28 @@ export async function logManualReferral(opts: { referrerEmail: string; friendEma
   return "pending";
 }
 
-const PENDING_STATUSES = ["pending", "crediting"];
+const PENDING_STATUSES = ["pending", "crediting", "review"];
+
+/** Rows that belong to this referrer: by account, or by email hash (survives the referrer deleting and remaking). */
+function referrerWhere(userId: string, emailHash: string | null): Prisma.ReferralAttributionWhereInput {
+  return emailHash ? { OR: [{ referrerUserId: userId }, { referrerEmailHash: emailHash }] } : { referrerUserId: userId };
+}
+
+/** Rewards ever granted to this referrer (credited, being credited, or credited then reversed). */
+export async function referralRewardsUsed(userId: string, emailHash: string | null, opts: { excludeId?: string; tx?: Prisma.TransactionClient } = {}): Promise<number> {
+  const db = opts.tx ?? prisma;
+  return db.referralAttribution.count({ where: { AND: [referrerWhere(userId, emailHash), GRANTED, ...(opts.excludeId ? [{ id: { not: opts.excludeId } }] : [])] } });
+}
 
 export async function referralPayload(userId: string, now = new Date()) {
   const row = await getOrCreateReferral(userId);
   const enabled = referralsEnabled();
   const cap = referralCap();
-  let invited = 0, pending = 0, credited = 0;
+  let invited = 0, pending = 0, credited = 0, used = 0;
   if (enabled) {
-    const groups = await prisma.referralAttribution.groupBy({ by: ["status"], where: { referrerUserId: userId }, _count: { _all: true } });
+    const me = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    const where = referrerWhere(userId, referralEmailHash(me?.email));
+    const groups = await prisma.referralAttribution.groupBy({ by: ["status"], where, _count: { _all: true } });
     for (const g of groups) {
       const n = g._count._all;
       if (g.status === "rejected") continue;
@@ -197,6 +232,7 @@ export async function referralPayload(userId: string, now = new Date()) {
       if (g.status === "credited") credited += n;
       else if (PENDING_STATUSES.includes(g.status)) pending += n;
     }
+    used = await referralRewardsUsed(userId, referralEmailHash(me?.email));
   }
   return {
     code: row.code,
@@ -206,7 +242,7 @@ export async function referralPayload(userId: string, now = new Date()) {
     invited,
     pending,
     credited,
-    capRemaining: Math.max(0, cap - credited),
+    capRemaining: Math.max(0, cap - used),
     endsLabel: REFERRAL_PROMO_END_LABEL,
     endsAt: REFERRAL_PROMO_END.toISOString(),
     ended: promoEnded(now),
@@ -244,6 +280,13 @@ export function decideOnInvoice(att: { status: string; createdAt: Date }, inv: I
   return "reward";
 }
 
+/** What a referral is worth: one Pro month at most, and never more than the friend actually paid first. */
+export function rewardValue(firstPaidCents: number): { cents: number; days: number } {
+  const cents = Math.max(0, Math.min(PRO_MONTH_CENTS, Math.floor(firstPaidCents)));
+  const days = cents >= PRO_MONTH_CENTS ? REFERRAL_FREE_DAYS : Math.floor((REFERRAL_FREE_DAYS * cents) / PRO_MONTH_CENTS);
+  return { cents, days };
+}
+
 function customerIdOf(c: string | { id: string } | null | undefined): string | null {
   if (!c) return null;
   return typeof c === "string" ? c : c.id ?? null;
@@ -254,141 +297,244 @@ export async function referralOnInvoicePaid(inv: Stripe.Invoice, userId: string)
   if (!referralsEnabled()) return false;
   const att = await prisma.referralAttribution.findUnique({ where: { referredUserId: userId } });
   if (!att) return false;
+  const facts = invoiceFacts(inv);
   if (att.status === "crediting") {
-    await grantReward(att.id); // resume a grant that failed half way
+    // Resume a grant that failed half way, but only from the same first invoice.
+    if (att.firstPaidInvoiceId && att.firstPaidInvoiceId !== facts.invoiceId) return false;
+    await grantReward(att.id);
     return true;
   }
-  const facts = invoiceFacts(inv);
   const decision = decideOnInvoice(att, facts);
   if (decision === "ignore") return false;
   const customerId = customerIdOf(inv.customer as string | { id: string } | null);
   if (decision === "expire") {
-    await prisma.referralAttribution.updateMany({ where: { id: att.id, status: "pending" }, data: { status: "expired", reason: "outside_promo_window", firstPaidInvoiceId: facts.invoiceId, firstPaidAt: facts.paidAt, referredCustomerId: customerId } });
+    await prisma.referralAttribution.updateMany({ where: { id: att.id, status: "pending" }, data: { status: "expired", reason: "outside_promo_window", firstPaidInvoiceId: facts.invoiceId, firstPaidAt: facts.paidAt, firstPaidAmountCents: facts.amountPaid, referredCustomerId: customerId } });
     return true;
   }
   // Claim it once (a duplicate or concurrent webhook can't grant twice), then grant.
   const claimed = await prisma.referralAttribution.updateMany({
     where: { id: att.id, status: "pending" },
-    data: { status: "crediting", firstPaidInvoiceId: facts.invoiceId, firstPaidAt: facts.paidAt, referredCustomerId: customerId },
+    data: { status: "crediting", firstPaidInvoiceId: facts.invoiceId, firstPaidAt: facts.paidAt, firstPaidAmountCents: facts.amountPaid, referredCustomerId: customerId },
   });
   if (claimed.count !== 1) return false;
   await grantReward(att.id);
   return true;
 }
 
+// ----- card fingerprints (Stripe reads only) -----
+
+type ChargeLike = { status?: string | null; payment_method_details?: { card?: { fingerprint?: string | null } | null } | null } | null | undefined;
+const fpOf = (c: ChargeLike) => (c && (!c.status || c.status === "succeeded") ? c.payment_method_details?.card?.fingerprint ?? null : null);
+
+/** Card fingerprint of the charge that paid this invoice, or null (e.g. a wallet with no card fingerprint). */
+export async function invoiceCardFingerprint(stripe: Stripe, invoiceId: string): Promise<string | null> {
+  if (!invoiceId) return null;
+  const pays = await stripe.invoicePayments.list({ invoice: invoiceId, limit: 10 });
+  for (const p of pays.data) {
+    if (p.status && p.status !== "paid") continue;
+    const pay = p.payment as { charge?: string | { id: string }; payment_intent?: string | { id: string } } | undefined;
+    const piId = customerIdOf(pay?.payment_intent as string | { id: string } | undefined);
+    if (piId) {
+      const pi = await stripe.paymentIntents.retrieve(piId, { expand: ["latest_charge"] });
+      const fp = fpOf(pi.latest_charge as ChargeLike);
+      if (fp) return fp;
+    }
+    const chId = customerIdOf(pay?.charge as string | { id: string } | undefined);
+    if (chId) {
+      const fp = fpOf((await stripe.charges.retrieve(chId)) as unknown as ChargeLike);
+      if (fp) return fp;
+    }
+  }
+  return null;
+}
+
+/** Every card fingerprint seen on a customer: saved cards plus recent successful charges. */
+export async function customerCardFingerprints(stripe: Stripe, customerId: string | null | undefined): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (!customerId) return out;
+  const pms = await stripe.customers.listPaymentMethods(customerId, { type: "card", limit: 100 });
+  for (const pm of pms.data) if (pm.card?.fingerprint) out.add(pm.card.fingerprint);
+  const charges = await stripe.charges.list({ customer: customerId, limit: 100 });
+  for (const c of charges.data) {
+    const fp = fpOf(c as unknown as ChargeLike);
+    if (fp) out.add(fp);
+  }
+  return out;
+}
+
+export type GrantResult = "credited" | "rejected" | "capped" | "review" | "skipped";
+
 /**
- * Gives the referrer one free month for a row in status "crediting". Resumable: the Stripe transaction id is saved
- * as soon as it exists, and a Stripe idempotency key stops a retry from crediting twice.
+ * Gives the referrer their reward for a row in status "crediting". Runs in one DB transaction that locks the row and the
+ * referrer's entitlement, so a concurrent grant, a resume, or a refund can't interleave with it. Resumable: the Stripe
+ * balance credit uses an idempotency key, so a retry never credits twice.
  */
-export async function grantReward(id: string, now = new Date()): Promise<"credited" | "rejected" | "capped" | "skipped"> {
-  const att = await prisma.referralAttribution.findUnique({ where: { id } });
-  if (!att || att.status !== "crediting") return "skipped";
-  const stop = async (status: "rejected" | "capped", reason: string) => {
-    await prisma.referralAttribution.update({ where: { id }, data: { status, reason } });
-    return status;
-  };
-  const referrerEnt = await ensureEntitlement(att.referrerUserId);
-  if (!att.referrerCreditTxnId) {
-    if (att.referredCustomerId && referrerEnt.stripeCustomerId && referrerEnt.stripeCustomerId === att.referredCustomerId) return stop("rejected", "same_customer");
-    if (att.referredCustomerId) {
-      const dup = await prisma.referralAttribution.count({ where: { id: { not: id }, referredCustomerId: att.referredCustomerId, status: { in: ["credited", "crediting"] } } });
-      if (dup > 0) return stop("rejected", "customer_already_rewarded");
-    }
-    const used = await prisma.referralAttribution.count({ where: { id: { not: id }, referrerUserId: att.referrerUserId, status: { in: ["credited", "crediting"] } } });
-    if (used >= referralCap()) return stop("capped", "cap_reached");
+export async function grantReward(id: string, now = new Date()): Promise<GrantResult> {
+  const pre = await prisma.referralAttribution.findUnique({ where: { id } });
+  if (!pre || pre.status !== "crediting") return "skipped";
+  if (!pre.referrerUserId) {
+    await prisma.referralAttribution.updateMany({ where: { id, status: "crediting" }, data: { status: "rejected", reason: "referrer_deleted" } });
+    return "rejected";
   }
+  const referrerUserId = pre.referrerUserId;
+  const referrerEnt0 = await ensureEntitlement(referrerUserId);
+  const stripe = getStripe();
 
-  const payingPlan = referrerEnt.stripeSubscriptionId && (referrerEnt.plan === "pro" || referrerEnt.plan === "max") && referrerEnt.status !== "canceled" ? referrerEnt.plan : null;
-  if (payingPlan && referrerEnt.stripeCustomerId) {
-    // Paid referrer: one month of their plan as Stripe bill credit.
-    const cents = Math.round(PLAN_PRICE_USD[payingPlan] * 100);
-    const stripe = getStripe();
+  // Network reads first (outside the lock): the friend's paying card, and every card the referrer has used.
+  let friendFp: string | null = pre.referredCardFingerprint;
+  let friendCards = new Set<string>();
+  let referrerCards = new Set<string>();
+  if (!pre.referrerCreditTxnId && !pre.rewardKind) {
     if (!stripe) throw new Error("referral reward: billing not configured");
-    let txnId = att.referrerCreditTxnId;
-    if (!txnId) {
-      const t = await stripe.customers.createBalanceTransaction(
-        referrerEnt.stripeCustomerId,
-        { amount: -cents, currency: "usd", description: `Citad3L referral: one free month of ${payingPlan === "max" ? "Max" : "Pro"}`, metadata: { referralAttributionId: id } },
-        { idempotencyKey: `c3-ref-${id}-month` },
-      );
-      txnId = t.id;
-    }
-    await prisma.referralAttribution.update({
-      where: { id },
-      data: { status: "credited", rewardKind: "balance", rewardCents: cents, referrerCustomerId: referrerEnt.stripeCustomerId, referrerCreditTxnId: txnId, creditedAt: now },
-    });
-    return "credited";
+    if (!friendFp && pre.firstPaidInvoiceId) friendFp = await invoiceCardFingerprint(stripe, pre.firstPaidInvoiceId);
+    friendCards = await customerCardFingerprints(stripe, pre.referredCustomerId);
+    if (friendFp) friendCards.add(friendFp);
+    referrerCards = await customerCardFingerprints(stripe, referrerEnt0.stripeCustomerId);
   }
 
-  // Free referrer: 30 days of Pro. Stacks on top of an earlier referral month that is still running.
-  const onReferralPro = referrerEnt.plan === "pro" && referrerEnt.status === "active" && !referrerEnt.stripeSubscriptionId && referrerEnt.periodEnd && referrerEnt.periodEnd > now;
-  const from = onReferralPro ? referrerEnt.periodEnd! : now;
-  const endsAt = new Date(from.getTime() + REFERRAL_FREE_DAYS * DAY_MS);
-  await prisma.entitlement.update({
-    where: { userId: att.referrerUserId },
-    data: onReferralPro ? { periodEnd: endsAt } : { plan: "pro", status: "active", periodStart: now, periodEnd: endsAt, periodUsed: 0, cancelAtPeriodEnd: false },
-  });
-  await prisma.referralAttribution.update({
-    where: { id },
-    data: { status: "credited", rewardKind: "pro_days", rewardDays: REFERRAL_FREE_DAYS, rewardEndsAt: endsAt, creditedAt: now },
-  });
-  return "credited";
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "ReferralAttribution" WHERE "id" = ${id} FOR UPDATE`;
+      await tx.$queryRaw`SELECT "userId" FROM "Entitlement" WHERE "userId" = ${referrerUserId} FOR UPDATE`;
+      const att = await tx.referralAttribution.findUnique({ where: { id } });
+      if (!att || att.status !== "crediting") return "skipped" as const;
+      const referrerEnt = await tx.entitlement.findUniqueOrThrow({ where: { userId: referrerUserId } });
+      const stop = async (status: "rejected" | "capped" | "review", reason: string) => {
+        await tx.referralAttribution.update({ where: { id }, data: { status, reason, ...(friendFp ? { referredCardFingerprint: friendFp } : {}) } });
+        return status;
+      };
+      const { cents, days } = rewardValue(att.firstPaidAmountCents);
+
+      if (!att.referrerCreditTxnId && !att.rewardKind) {
+        if (att.referredCustomerId && referrerEnt.stripeCustomerId && referrerEnt.stripeCustomerId === att.referredCustomerId) return stop("rejected", "same_customer");
+        for (const fp of friendCards) if (referrerCards.has(fp)) return stop("rejected", "same_card");
+        if (att.referredCustomerId) {
+          const dup = await tx.referralAttribution.count({ where: { AND: [{ id: { not: id } }, { referredCustomerId: att.referredCustomerId }, GRANTED] } });
+          if (dup > 0) return stop("rejected", "customer_already_rewarded");
+        }
+        if (friendFp) {
+          const dupCard = await tx.referralAttribution.count({ where: { AND: [{ id: { not: id } }, { referredCardFingerprint: friendFp }, GRANTED] } });
+          if (dupCard > 0) return stop("rejected", "card_already_rewarded");
+        } else {
+          // No card fingerprint (e.g. a wallet payment): hold for a manual look instead of paying out blind.
+          return stop("review", "no_card_fingerprint");
+        }
+        if (cents <= 0 || days <= 0) return stop("rejected", "no_payment_amount");
+        const used = await referralRewardsUsed(referrerUserId, att.referrerEmailHash, { excludeId: id, tx });
+        if (used >= referralCap()) return stop("capped", "cap_reached");
+      }
+
+      const paying = !!referrerEnt.stripeSubscriptionId && (referrerEnt.plan === "pro" || referrerEnt.plan === "max") && referrerEnt.status !== "canceled" && !referrerEnt.referralProEndsAt;
+      if ((paying && referrerEnt.stripeCustomerId) || att.rewardKind === "balance") {
+        // Paid referrer: up to one Pro month as Stripe bill credit (never the Max price).
+        const customer = att.referrerCustomerId ?? referrerEnt.stripeCustomerId!;
+        const amount = att.rewardKind === "balance" ? att.rewardCents : cents;
+        if (!stripe) throw new Error("referral reward: billing not configured");
+        let txnId = att.referrerCreditTxnId;
+        if (!txnId) {
+          await tx.referralAttribution.update({ where: { id }, data: { rewardKind: "balance", rewardCents: amount, referrerCustomerId: customer, referredCardFingerprint: friendFp } });
+          const t = await stripe.customers.createBalanceTransaction(
+            customer,
+            { amount: -amount, currency: "usd", description: "Citad3L referral: one free month of Pro", metadata: { referralAttributionId: id } },
+            { idempotencyKey: `c3-ref-${id}-month` },
+          );
+          txnId = t.id;
+        }
+        await tx.referralAttribution.update({
+          where: { id },
+          data: { status: "credited", rewardKind: "balance", rewardCents: amount, referrerCustomerId: customer, referrerCreditTxnId: txnId, creditedAt: now },
+        });
+        return "credited" as const;
+      }
+
+      // Free referrer: Pro days with their own end date. Stacks on an earlier referral month that is still running.
+      const onReferralPro = isPaidActive(referrerEnt) && !!referrerEnt.referralProEndsAt && referrerEnt.referralProEndsAt > now;
+      const from = onReferralPro ? referrerEnt.referralProEndsAt! : now;
+      const endsAt = new Date(from.getTime() + days * DAY_MS);
+      const staleSub = !!referrerEnt.stripeSubscriptionId && referrerEnt.status === "canceled";
+      await tx.entitlement.update({
+        where: { userId: referrerUserId },
+        data: onReferralPro
+          ? { periodEnd: endsAt, referralProEndsAt: endsAt }
+          : { plan: "pro", status: "active", periodStart: now, periodEnd: endsAt, periodUsed: 0, cancelAtPeriodEnd: false, referralProEndsAt: endsAt, ...(staleSub ? { stripeSubscriptionId: null } : {}) },
+      });
+      await tx.referralAttribution.update({
+        where: { id },
+        data: { status: "credited", rewardKind: "pro_days", rewardDays: days, rewardCents: cents, rewardEndsAt: endsAt, creditedAt: now, referredCardFingerprint: friendFp },
+      });
+      return "credited" as const;
+    },
+    { timeout: 20_000, maxWait: 10_000 },
+  );
 }
 
 /** Refund or dispute on the friend's account: void a pending reward, or reverse an issued one where we can. */
 export async function referralOnPaymentReversal(customerId: string | null, kind: "refund" | "dispute", now = new Date()): Promise<boolean> {
   if (!referralsEnabled() || !customerId) return false;
-  let att = await prisma.referralAttribution.findFirst({ where: { referredCustomerId: customerId } });
-  if (!att) {
+  let found = await prisma.referralAttribution.findFirst({ where: { referredCustomerId: customerId }, select: { id: true } });
+  if (!found) {
     const ent = await prisma.entitlement.findUnique({ where: { stripeCustomerId: customerId }, select: { userId: true } });
-    if (ent) att = await prisma.referralAttribution.findUnique({ where: { referredUserId: ent.userId } });
+    if (ent) found = await prisma.referralAttribution.findUnique({ where: { referredUserId: ent.userId }, select: { id: true } });
   }
-  if (!att) return false;
-  if (att.status === "pending" || (att.status === "crediting" && !att.referrerCreditTxnId)) {
-    await prisma.referralAttribution.update({ where: { id: att.id }, data: { status: "voided", reason: kind } });
-    return true;
-  }
-  if (att.status !== "credited") return false;
+  if (!found) return false;
+  const id = found.id;
+  const stripe = getStripe();
 
-  if (att.rewardKind === "balance" && att.referrerCustomerId && att.rewardCents > 0) {
-    // Take back only credit that is still unused, so a reversal never creates a surprise charge.
-    const stripe = getStripe();
-    if (!stripe) throw new Error("referral reversal: billing not configured");
-    const cus = await stripe.customers.retrieve(att.referrerCustomerId);
-    const balance = "deleted" in cus && cus.deleted ? 0 : (cus as Stripe.Customer).balance ?? 0;
-    const unused = Math.min(att.rewardCents, Math.max(0, -balance));
-    let txnId: string | null = null;
-    if (unused > 0) {
-      const t = await stripe.customers.createBalanceTransaction(
-        att.referrerCustomerId,
-        { amount: unused, currency: "usd", description: "Citad3L referral reversed (friend's payment was refunded)", metadata: { referralAttributionId: att.id } },
-        { idempotencyKey: `c3-ref-${att.id}-reverse` },
-      );
-      txnId = t.id;
-    }
-    const full = unused >= att.rewardCents;
-    await prisma.referralAttribution.update({
-      where: { id: att.id },
-      data: { status: "reversed", reason: kind, reversalTxnId: txnId, reversedAt: now, ...(full ? {} : { flagReason: `credit_partly_used:${att.rewardCents - unused}` }) },
-    });
-    return true;
-  }
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "ReferralAttribution" WHERE "id" = ${id} FOR UPDATE`;
+      const att = await tx.referralAttribution.findUniqueOrThrow({ where: { id } });
+      if (att.referrerUserId) await tx.$queryRaw`SELECT "userId" FROM "Entitlement" WHERE "userId" = ${att.referrerUserId} FOR UPDATE`;
+      if (att.status === "pending" || att.status === "review" || (att.status === "crediting" && !att.referrerCreditTxnId)) {
+        await tx.referralAttribution.update({ where: { id }, data: { status: "voided", reason: kind } });
+        return true;
+      }
+      if (att.status !== "credited") return false;
 
-  if (att.rewardKind === "pro_days") {
-    const ent = await prisma.entitlement.findUnique({ where: { userId: att.referrerUserId } });
-    if (ent && !ent.stripeSubscriptionId && ent.plan === "pro" && ent.periodEnd) {
-      const newEnd = new Date(ent.periodEnd.getTime() - att.rewardDays * DAY_MS);
-      await prisma.entitlement.update({
-        where: { userId: att.referrerUserId },
-        data: newEnd <= now ? { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0 } : { periodEnd: newEnd },
-      });
-    }
-    await prisma.referralAttribution.update({
-      where: { id: att.id },
-      data: { status: "reversed", reason: kind, reversedAt: now, ...(ent?.stripeSubscriptionId ? { flagReason: "referrer_now_subscribed" } : {}) },
-    });
-    return true;
-  }
-  await prisma.referralAttribution.update({ where: { id: att.id }, data: { flagReason: kind } });
-  return true;
+      if (att.rewardKind === "balance" && att.referrerCustomerId && att.rewardCents > 0) {
+        // Take back only credit that is still unused, so a reversal never creates a surprise charge. A reward that was
+        // already used keeps counting toward the cap (creditedAt stays set).
+        if (!stripe) throw new Error("referral reversal: billing not configured");
+        const cus = await stripe.customers.retrieve(att.referrerCustomerId);
+        const balance = "deleted" in cus && cus.deleted ? 0 : (cus as Stripe.Customer).balance ?? 0;
+        const unused = Math.min(att.rewardCents, Math.max(0, -balance));
+        let txnId: string | null = null;
+        if (unused > 0) {
+          const t = await stripe.customers.createBalanceTransaction(
+            att.referrerCustomerId,
+            { amount: unused, currency: "usd", description: "Citad3L referral reversed (friend's payment was refunded)", metadata: { referralAttributionId: att.id } },
+            { idempotencyKey: `c3-ref-${att.id}-reverse` },
+          );
+          txnId = t.id;
+        }
+        const full = unused >= att.rewardCents;
+        await tx.referralAttribution.update({
+          where: { id },
+          data: { status: "reversed", reason: kind, reversalTxnId: txnId, reversedAt: now, ...(full ? {} : { flagReason: `credit_partly_used:${att.rewardCents - unused}` }) },
+        });
+        return true;
+      }
+
+      if (att.rewardKind === "pro_days" && att.referrerUserId) {
+        const ent = await tx.entitlement.findUnique({ where: { userId: att.referrerUserId } });
+        if (ent?.referralProEndsAt && isPaidActive(ent)) {
+          const newEnd = new Date(ent.referralProEndsAt.getTime() - att.rewardDays * DAY_MS);
+          await tx.entitlement.update({
+            where: { userId: att.referrerUserId },
+            data: newEnd <= now
+              ? { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0, referralProEndsAt: null }
+              : { periodEnd: newEnd, referralProEndsAt: newEnd },
+          });
+        }
+        await tx.referralAttribution.update({
+          where: { id },
+          data: { status: "reversed", reason: kind, reversedAt: now, ...(ent?.referralProEndsAt ? {} : { flagReason: "referrer_now_subscribed" }) },
+        });
+        return true;
+      }
+      await tx.referralAttribution.update({ where: { id }, data: { flagReason: kind } });
+      return true;
+    },
+    { timeout: 20_000, maxWait: 10_000 },
+  );
 }

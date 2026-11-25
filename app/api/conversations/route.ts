@@ -5,6 +5,9 @@ import { z } from "zod";
 import { BodyTooLarge, jerr, readJsonLimited, tooMany } from "@/lib/http";
 import { LIMITS, limitDurable, rule } from "@/lib/ratelimit";
 import { titleFrom } from "@/lib/prompt";
+import { checkTexts } from "@/lib/filter";
+import { reviewOrKeyword } from "@/lib/filter-llm";
+import { logFilterRefusal } from "@/lib/filter-log";
 
 const MAX_IMPORT_MESSAGES = 12;
 const MAX_IMPORT_CHARS = 8000;
@@ -26,7 +29,8 @@ export async function GET(req: Request) {
 /**
  * Save a guest chat (home page try box / signed-out chat) into the signed-in account. The transcript comes from the
  * visitor's own browser (localStorage) right after they sign in with the "save your chat" email code. Bounded in size
- * and rate limited; it never calls a model, so it costs nothing.
+ * and rate limited. It never runs a chat model, but the whole transcript goes through the same safety filter as a
+ * live message first, so blocked content can't be planted into an account's history this way.
  */
 const GuestImport = z.object({
   messages: z.array(z.object({
@@ -49,6 +53,12 @@ export async function POST(req: Request) {
   }
   const firstUser = body.messages.find((m) => m.role === "user");
   if (!firstUser) return jerr(400, "bad_request", "Nothing to save.");
+  let verdict = checkTexts(body.messages.map((m) => m.content));
+  if (verdict.allowed) verdict = await reviewOrKeyword(body.messages.map((m) => m.content).join("\n\n"), req.signal);
+  if (!verdict.allowed) {
+    await logFilterRefusal({ userId, direction: "input", verdict, modelId: null });
+    return jerr(400, "content_policy", verdict.message);
+  }
   const base = Date.now() - body.messages.length;
   const conv = await prisma.conversation.create({
     data: {

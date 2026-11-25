@@ -295,8 +295,8 @@ export function ReferralsView() {
           {live ? (
             <ol className="referral-steps">
               <li>Your friend signs up with your link by {data.endsLabel}.</li>
-              <li>When they pay for Pro or Max, you get a free month.</li>
-              <li>On a paid plan, it comes off your next bill. On Free, you get 30 days of Pro.</li>
+              <li>When they pay for Pro or Max, you get a free month of Pro.</li>
+              <li>On a paid plan, you get $20 off your next bill. On Free, you get 30 days of Pro. If their first payment was under $20, your reward is scaled down to match.</li>
             </ol>
           ) : null}
           <p className="referral-note">
