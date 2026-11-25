@@ -9,6 +9,7 @@ import { demoLoginEnabled, isAdminEmail, isProd } from "@/lib/config";
 import { checkVerifyLimits, verifyEmailCode } from "@/lib/auth/email-code";
 import { clientIpFrom } from "@/lib/client-ip";
 import { ADMIN_SESSION_MAX_AGE_SEC, checkAndRollSession, createLoginSession } from "@/lib/sessions";
+import { captureReferralAtSignup, REF_COOKIE, referralsEnabled } from "@/lib/referrals";
 
 class EmailCodeSigninError extends CredentialsSignin {
   constructor(code: "invalid_code" | "expired_code" | "locked" | "invalid_email") {
@@ -66,6 +67,24 @@ if (demoLoginEnabled()) {
   );
 }
 
+/**
+ * Locks a `?ref=` code (kept in the c3_ref cookie by RefCapture) onto a brand-new account at its first sign-in.
+ * Never blocks sign-in: any failure just means no referral is recorded.
+ */
+async function captureReferralFromCookie(userId: string) {
+  if (!referralsEnabled()) return;
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const code = jar.get(REF_COOKIE)?.value;
+    if (!code) return;
+    await captureReferralAtSignup({ userId, code });
+    try { jar.delete(REF_COOKIE); } catch { /* read-only context */ }
+  } catch (e) {
+    console.error("[referrals] capture failed", e instanceof Error ? e.message : "error");
+  }
+}
+
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
   // 365-day ceiling so admin cookies can last a year. LoginSession + the jwt
@@ -78,6 +97,7 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user?.id) {
         token.uid = user.id;
+        await captureReferralFromCookie(user.id);
         if (user.email) token.email = user.email;
         try {
           const s = await createLoginSession(user.id, { email: user.email, isAdmin: isAdminEmail(user.email) });

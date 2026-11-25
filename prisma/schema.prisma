@@ -59,6 +59,8 @@ model User {
   modelSettings UserModelSettings[]
   loginSessions LoginSession[]
   referral      Referral?
+  referralsMade ReferralAttribution[] @relation("ReferralReferrer")
+  referredBy    ReferralAttribution?  @relation("ReferralReferred")
   bannedAt      DateTime?
   bannedReason  String?
   filterLogs    FilterRefusalLog[]
@@ -237,6 +239,38 @@ model Referral {
   code      String   @unique
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Who invited whom. One row per referred account (first code wins, locked at signup, or a manual log entry).
+// status: pending -> crediting -> credited, or rejected / capped / expired / voided / reversed. See lib/referrals.ts.
+model ReferralAttribution {
+  id                  String    @id @default(cuid())
+  referrerUserId      String
+  referredUserId      String    @unique
+  code                String
+  source              String    @default("link")
+  status              String    @default("pending")
+  reason              String?
+  referredCustomerId  String?
+  firstPaidInvoiceId  String?
+  firstPaidAt         DateTime?
+  rewardKind          String?
+  rewardCents         Int       @default(0)
+  rewardDays          Int       @default(0)
+  rewardEndsAt        DateTime?
+  referrerCustomerId  String?
+  referrerCreditTxnId String?
+  reversalTxnId       String?
+  creditedAt          DateTime?
+  reversedAt          DateTime?
+  flagReason          String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  referrer            User      @relation("ReferralReferrer", fields: [referrerUserId], references: [id], onDelete: Cascade)
+  referred            User      @relation("ReferralReferred", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([referrerUserId, status])
+  @@index([referredCustomerId])
 }
 
 model GuestQuota {

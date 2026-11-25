@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { getStripe, planForPrice } from "./stripe";
+import { referralOnInvoicePaid, referralOnPaymentReversal } from "./referrals";
 
 type Sub = Stripe.Subscription & { current_period_start?: number; current_period_end?: number };
 
@@ -155,18 +156,43 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
     }
     case "invoice.paid": {
       const inv = event.data.object as Stripe.Invoice;
-      const userId = await findUserId(typeof inv.customer === "string" ? inv.customer : inv.customer?.id ?? null);
+      const userId = await findUserId(typeof inv.customer === "string" ? inv.customer : inv.customer?.id ?? null, inv.parent?.subscription_details?.metadata?.userId);
       if (!userId) return "ignored";
-      const line = inv.lines?.data?.[0];
-      const start = line?.period?.start ? new Date(line.period.start * 1000) : null;
-      const end = line?.period?.end ? new Date(line.period.end * 1000) : null;
-      const ent = await prisma.entitlement.findUnique({ where: { userId } });
-      if (!ent || ent.plan === "trial") return "ignored";
-      const newPeriod = !!start && (!ent.periodStart || ent.periodStart.getTime() !== start.getTime());
-      await prisma.entitlement.update({ where: { userId }, data: { status: "active", ...(start ? { periodStart: start, periodEnd: end } : {}), ...(newPeriod ? { periodUsed: 0 } : {}) } });
-      return "processed";
+      const entResult = await applyInvoicePaidToEntitlement(inv, userId);
+      // Referral rewards ride on paid invoices (see lib/referrals.ts). Runs after the plan update so a credit
+      // failure (which makes Stripe retry) never holds back the friend's paid access.
+      const refChanged = await referralOnInvoicePaid(inv, userId);
+      return entResult === "processed" || refChanged ? "processed" : "ignored";
+    }
+    case "charge.refunded": {
+      const ch = event.data.object as Stripe.Charge;
+      if (!(ch.amount_refunded > 0)) return "ignored";
+      return (await referralOnPaymentReversal(typeof ch.customer === "string" ? ch.customer : ch.customer?.id ?? null, "refund")) ? "processed" : "ignored";
+    }
+    case "charge.dispute.created": {
+      const d = event.data.object as Stripe.Dispute;
+      let customer: string | null = null;
+      if (typeof d.charge === "string") {
+        const stripe = getStripe();
+        const ch = stripe ? await stripe.charges.retrieve(d.charge) : null;
+        customer = ch ? (typeof ch.customer === "string" ? ch.customer : ch.customer?.id ?? null) : null;
+      } else if (d.charge) {
+        customer = typeof d.charge.customer === "string" ? d.charge.customer : d.charge.customer?.id ?? null;
+      }
+      return (await referralOnPaymentReversal(customer, "dispute")) ? "processed" : "ignored";
     }
     default:
       return "ignored";
   }
+}
+
+async function applyInvoicePaidToEntitlement(inv: Stripe.Invoice, userId: string): Promise<"processed" | "ignored"> {
+  const line = inv.lines?.data?.[0];
+  const start = line?.period?.start ? new Date(line.period.start * 1000) : null;
+  const end = line?.period?.end ? new Date(line.period.end * 1000) : null;
+  const ent = await prisma.entitlement.findUnique({ where: { userId } });
+  if (!ent || ent.plan === "trial") return "ignored";
+  const newPeriod = !!start && (!ent.periodStart || ent.periodStart.getTime() !== start.getTime());
+  await prisma.entitlement.update({ where: { userId }, data: { status: "active", ...(start ? { periodStart: start, periodEnd: end } : {}), ...(newPeriod ? { periodUsed: 0 } : {}) } });
+  return "processed";
 }

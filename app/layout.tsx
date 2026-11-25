@@ -6,6 +6,7 @@ import { isAdminEmail } from "@/lib/config";
 import { fontSans, fontMono } from "./fonts";
 import { currentUser, labelFor } from "@/lib/session";
 import SessionKeepAlive from "@/components/auth/SessionKeepAlive";
+import RefCapture from "@/components/RefCapture";
 
 export const metadata: Metadata = {
   title: "Citad3L — Strategic AI",
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <TopNav signedIn={!!u} userLabel={u ? labelFor(u) : undefined} isOwner={!!u && isAdminEmail(u.email)} />
         <CommandPalette signedIn={!!u} isOwner={!!u && isAdminEmail(u.email)} />
         <SessionKeepAlive signedIn={!!u} />
+        <RefCapture />
         <div id="main">{children}</div>
       </body>
     </html>

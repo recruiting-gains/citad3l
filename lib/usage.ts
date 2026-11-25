@@ -150,7 +150,19 @@ export async function userIsAdmin(userId: string): Promise<boolean> {
 }
 
 export async function ensureEntitlement(userId: string, tx: Tx | typeof prisma = prisma) {
-  return tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
+  const e = await tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
+  // A free month from the referral promo is a plan with no Stripe subscription and an end date. Once it passes,
+  // drop back to Free. Only checked on that rare shape, so normal plans cost no extra query.
+  if (isPaidActive(e) && !e.stripeSubscriptionId && e.periodEnd && e.periodEnd.getTime() <= Date.now()) {
+    // Fails soft (e.g. before the referral table is migrated): the plan is then left exactly as it was.
+    const grants = await tx.referralAttribution
+      .count({ where: { referrerUserId: userId, rewardKind: "pro_days", status: "credited" } })
+      .catch(() => 0);
+    if (grants > 0) {
+      return tx.entitlement.update({ where: { userId }, data: { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0 } });
+    }
+  }
+  return e;
 }
 
 export async function getUsage(userId: string): Promise<UsageSummary> {

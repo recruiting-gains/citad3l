@@ -2797,6 +2797,12 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
 }
 .referral-copy.is-copied { background: var(--surface-3); color: var(--fg); }
 .referral-note { margin-top: 10px; font-size: var(--t-xs); color: var(--fg-3); }
+.referral-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 14px 0 0; }
+.referral-stats > div { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+.referral-stats dt { font-size: var(--t-xs); color: var(--fg-3); }
+.referral-stats dd { margin: 2px 0 0; font-size: var(--t-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.referral-steps { margin: 14px 0 0; padding-left: 18px; font-size: var(--t-sm); color: var(--fg-2); display: grid; gap: 6px; }
+@media (max-width: 560px) { .referral-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* =========================================================
    8. Connect (coming soon)
