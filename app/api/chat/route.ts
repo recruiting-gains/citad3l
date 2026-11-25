@@ -301,7 +301,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               userMessage: prompt,
               history: turns,
               signal: ac.signal,
-              webSearch: swarmWebSearch,
+              webSearch: skills.webSearch,
               onStatus: (s) => send(c, "status", s),
               onDelta: (t) => {
                 text += t;

@@ -50,6 +50,8 @@
   "durable_objects": { "bindings": [{ "name": "COMPUTER_HUB", "class_name": "ComputerHub" }] },
   "migrations": [{ "tag": "v1-computer-hub", "new_sqlite_classes": ["ComputerHub"] }],
   "vars": {
+    // Media bot only (Chief of Staff Swarm runs for Cruz). Not an admin. Do not add this to CITAD3L_ADMIN_EMAILS.
+    "SWARM_WEB_SEARCH_EMAILS": "adhd2quant+citad3l-media@mail.grokbot.com",
     "AUTH_TRUST_HOST": "true",
     "APP_URL": "https://citad3l.io",
     "AUTH_EMAIL_FROM": "Citad3L <login@citad3l.io>",

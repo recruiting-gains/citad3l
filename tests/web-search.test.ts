@@ -18,11 +18,12 @@ describe("model picker skills follow the selected model, not the hovered row", (
     expect(availableSkills(getPublicModel("citad3l-fast")).webSearch).toBe(true);
     for (const id of ["citad3l-private", "citad3l-image", "citad3l-video"]) expect(availableSkills(getPublicModel(id)).webSearch, id).toBe(false);
   });
-  it("server keeps Web search for signed-in V1/Fast, drops it for guests and Swarm", () => {
+  it("server keeps Web search for signed-in V1/Fast, drops it for guests, and honors Swarm toggle (off by default)", () => {
     for (const id of ["citad3l-v1", "citad3l-fast"]) {
       expect(resolveSkills(getPublicModel(id), { webSearch: true }).webSearch, id).toBe(true);
       expect(resolveSkills(getPublicModel(id), { webSearch: true }, { guest: true }).webSearch, id).toBe(false);
-      expect(resolveSkills(getPublicModel(id), { webSearch: true }, { swarm: true }).webSearch, id).toBe(false);
+      expect(resolveSkills(getPublicModel(id), {}, { swarm: true }).webSearch, id).toBe(false);
+      expect(resolveSkills(getPublicModel(id), { webSearch: true }, { swarm: true }).webSearch, id).toBe(true);
     }
   });
 });
@@ -59,7 +60,7 @@ describe("Web search reaches the provider as web_search=on", () => {
     const route = readFileSync(new URL("../app/api/chat/route.ts", import.meta.url), "utf8");
     expect(route).toMatch(/const swarmWebSearch = swarm && canUseSwarmWebSearch\(await userEmail\(userId\)\);/);
     expect(route).toMatch(/const skills = resolveSkills\(pub, body\.skills, \{ swarm, swarmWebSearch \}\);/);
-    expect(route).toMatch(/webSearch: swarmWebSearch,/);
+    expect(route).toMatch(/webSearch: skills\.webSearch,/);
     expect(route).toMatch(/webSearch: skills\.webSearch,/);
   });
 });
@@ -84,12 +85,24 @@ describe("Swarm web search is allowlisted, not site-wide", () => {
     }
   });
 
-  it("turns Swarm web search on only when the allowlist flag is set, and never for guests", () => {
+  it("honors the Swarm web search toggle, forces it on for the allowlist, and never for guests", () => {
     const v1 = getPublicModel("citad3l-v1");
-    expect(resolveSkills(v1, { webSearch: true }, { swarm: true }).webSearch).toBe(false);
+    expect(resolveSkills(v1, {}, { swarm: true }).webSearch).toBe(false);
+    expect(resolveSkills(v1, { webSearch: true }, { swarm: true }).webSearch).toBe(true);
     expect(resolveSkills(v1, {}, { swarm: true, swarmWebSearch: true }).webSearch).toBe(true);
     expect(resolveSkills(v1, { thinking: true }, { swarm: true, swarmWebSearch: true }).thinking).toBe(false);
+    expect(resolveSkills(v1, { webSearch: true }, { guest: true, swarm: true }).webSearch).toBe(false);
     expect(resolveSkills(v1, {}, { guest: true, swarm: true, swarmWebSearch: true }).webSearch).toBe(false);
+  });
+
+  it("shows a Web search toggle next to Swarm and in the skills menu", () => {
+    const workspace = readFileSync(new URL("../components/chat/ChatWorkspace.tsx", import.meta.url), "utf8");
+    const picker = readFileSync(new URL("../components/chat/ModelPicker.tsx", import.meta.url), "utf8");
+    expect(workspace).toMatch(/data-testid="swarm-websearch-toggle"/);
+    expect(workspace).toMatch(/swarm=\{swarm && swarmAvailable\}/);
+    expect(workspace).not.toMatch(/Web search and Extended thinking are off in Swarm/);
+    expect(picker).toMatch(/swarm\?: boolean;/);
+    expect(picker).toMatch(/avail\.thinking && !guest && !swarm/);
   });
 
   it("runSwarm keeps planning offline and only enables search on workers/synthesis when asked", () => {

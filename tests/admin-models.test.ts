@@ -145,7 +145,7 @@ describe("both admins: every model and mode works end to end (server)", () => {
       expect(r.status).toBe(200);
       const ev = await sse(r);
       expect(calls.swarm).toBe(1);
-      expect(calls.swarmWebSearch).toBe(false); // owner/admin are not on the Swarm web-search allowlist
+      expect(calls.swarmWebSearch).toBe(false); // off by default unless the client turns it on or the account is allowlisted
       expect(ev.some((e) => e.event === "delta" && e.data.text === "swarm answer")).toBe(true);
     });
     it(`${email}: Image generates and the reply is an image`, async () => {
@@ -313,24 +313,37 @@ describe("2026-11-19 6:05 PM: no plan lock for admins on a trial plan (Owner saw
   });
 });
 
-describe("Swarm web search allowlist does not grant it to admins", () => {
-  it("Media bot Swarm can get web search; owner Swarm stays off", async () => {
+describe("Swarm web search toggle and allowlist", () => {
+  it("Media bot is always on; other signed-in users follow the client toggle; guests cannot", async () => {
     const saved = process.env.SWARM_WEB_SEARCH_EMAILS;
     USERS["u-media"] = "media@example.test";
     try {
       process.env.SWARM_WEB_SEARCH_EMAILS = "media@example.test";
+      // Allowlisted account: on even if the client omits the flag
       userId = "u-media";
-      const r = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
+      const r = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true });
       expect(r.status).toBe(200);
-      expect(calls.swarm).toBe(1);
       expect(calls.swarmWebSearch).toBe(true);
 
+      // Owner, flag off (default): stays off
       Object.assign(calls, { swarm: 0, swarmWebSearch: undefined });
       userId = "u-cruz";
-      const r2 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
+      const r2 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true });
       expect(r2.status).toBe(200);
-      expect(calls.swarm).toBe(1);
       expect(calls.swarmWebSearch).toBe(false);
+
+      // Owner, flag on: honored
+      Object.assign(calls, { swarm: 0, swarmWebSearch: undefined });
+      const r3 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
+      expect(r3.status).toBe(200);
+      expect(calls.swarmWebSearch).toBe(true);
+
+      // Regular trial user can also toggle on
+      Object.assign(calls, { swarm: 0, swarmWebSearch: undefined });
+      userId = "u-trial";
+      const r4 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
+      expect(r4.status).toBe(200);
+      expect(calls.swarmWebSearch).toBe(true);
     } finally {
       delete USERS["u-media"];
       if (saved === undefined) delete process.env.SWARM_WEB_SEARCH_EMAILS;

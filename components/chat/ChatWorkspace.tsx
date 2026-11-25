@@ -1277,6 +1277,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             </label>
           ) : null}
           {swarmAvailable ? (
+            <>
             <button
               type="button"
               className={`swarm-toggle${swarm ? " is-on" : ""}`}
@@ -1288,6 +1289,20 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             >
               Swarm
             </button>
+            {swarm ? (
+              <button
+                type="button"
+                className={`swarm-toggle${skills.webSearch ? " is-on" : ""}`}
+                aria-pressed={!!skills.webSearch}
+                data-testid="swarm-websearch-toggle"
+                disabled={streaming}
+                title="Look up current facts during this Swarm run. Off by default. Adds up to 4 search calls on top of the 4 Swarm replies."
+                onClick={() => setSkills((prev) => ({ ...prev, webSearch: !prev.webSearch }))}
+              >
+                Web search
+              </button>
+            ) : null}
+            </>
           ) : null}
         </div>
         <div className="composer-right">
@@ -1329,7 +1344,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               <IMic />
             </button>
           ) : null}
-          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
+          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
           {streaming ? (
             <button type="button" className="stop-btn" onClick={stop} aria-label="Stop generating (Esc)" title="Stop (Esc)">
               <i />
@@ -1361,7 +1376,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       ) : imageReady ? (
         <p className="composer-hint">Citad3L Image turns your prompt into a picture. You can also type /image from a chat model.</p>
       ) : swarm && swarmAvailable ? (
-        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer.{skills.webSearch || skills.thinking ? " Web search and Extended thinking are off in Swarm." : ""}</p>
+        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
       ) : null}
     </div>
   );

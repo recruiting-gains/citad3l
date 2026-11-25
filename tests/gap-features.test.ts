@@ -122,7 +122,8 @@ describe("skills", () => {
     expect(availableSkills(priv)).toEqual({ webSearch: false, thinking: false, coding: false });
     const want = { webSearch: true, thinking: true, coding: true };
     expect(resolveSkills(v1, want, { guest: true })).toEqual({ webSearch: false, thinking: false, coding: true });
-    expect(resolveSkills(v1, want, { swarm: true })).toEqual({ webSearch: false, thinking: false, coding: true });
+    expect(resolveSkills(v1, { coding: true }, { swarm: true })).toEqual({ webSearch: false, thinking: false, coding: true });
+    expect(resolveSkills(v1, want, { swarm: true })).toEqual({ webSearch: true, thinking: false, coding: true });
     expect(resolveSkills(v1, want, { swarm: true, swarmWebSearch: true })).toEqual({ webSearch: true, thinking: false, coding: true });
     expect(resolveSkills(v1, want)).toEqual(want);
     // Guests (home page try box, signed-out chat) run on Fast only.

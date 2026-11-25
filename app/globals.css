@@ -1572,6 +1572,7 @@ body > a[href="#main-content"]:not(:focus),
     .send-btn, .stop-btn { width: 34px; height: 34px; }
     .composer-meta { flex-wrap: wrap; gap: 6px; }
     .composer-bar { flex-wrap: wrap; row-gap: 8px; }
+    .composer-left { flex-wrap: wrap; row-gap: 6px; }
     .composer-meta .badge-mock, .composer-meta .usage-chip,
     .chat-empty-meta .badge-mock, .chat-empty-meta .usage-chip { height: 22px; padding: 0 8px; font-size: var(--t-xs); }
     .chat-empty-meta { flex-wrap: wrap; justify-content: flex-start; padding: 8px 2px 0; }

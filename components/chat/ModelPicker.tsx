@@ -16,6 +16,7 @@ export interface ModelPickerProps {
   skills?: SkillRequest;
   onSkillsChange?: (s: SkillRequest) => void;
   guest?: boolean;
+  swarm?: boolean;
   canOpenSettings?: boolean;
   onOpenSettings?: () => void;
 }
@@ -40,7 +41,7 @@ function Dots({ n }: { n: number }) {
 
 export function ModelPicker({
   models, selectedId, onChange, disabled, placement = "up",
-  skills, onSkillsChange, guest, canOpenSettings, onOpenSettings,
+  skills, onSkillsChange, guest, swarm, canOpenSettings, onOpenSettings,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -75,6 +76,8 @@ export function ModelPicker({
         ? "Skills aren't available for media models."
         : guest
           ? "Sign in to use Web search and Extended thinking."
+          : swarm
+          ? "In Swarm, Web search is off by default; you can turn it on. Extended thinking stays off."
           : !avail.thinking && (skills?.thinking || true)
           ? "Extended thinking runs on Citad3L V1 only."
           : "Skills apply to your next message.";
@@ -196,7 +199,7 @@ export function ModelPicker({
         <div className="skill-toggles">
           {([
             ["webSearch", "Web search", avail.webSearch && !guest],
-            ["thinking", "Extended thinking", avail.thinking && !guest],
+            ["thinking", "Extended thinking", avail.thinking && !guest && !swarm],
             ["coding", "Coding tools", avail.coding],
           ] as const).map(([key, label, on]) => (
             <button
@@ -207,6 +210,7 @@ export function ModelPicker({
               disabled={!on || !onSkillsChange}
               onClick={() => toggle(key)}
               data-testid={`skill-${key}`}
+              title={key === "webSearch" && swarm ? "Off by default in Swarm. Adds up to 4 search calls on top of the 4 Swarm replies." : key === "thinking" && swarm ? "Extended thinking stays off in Swarm." : undefined}
             >
               <span className="skill-toggle-switch" />
               {label}
