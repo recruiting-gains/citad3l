@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ProviderInfo } from "@/lib/types";
 import type { PublicModel } from "@/lib/models";
 import { marketingModels } from "@/lib/models";
-import { Footer } from "@/components/Footer";
+import { SiteFooter } from "@/components/SiteFooter";
 import { MockBadge } from "@/components/MockBadge";
 import { LineupCard } from "@/components/model/LineupCard";
 
@@ -42,7 +42,7 @@ export function ModelsIndexView({ provider, signedIn, isAdmin = false }: ModelsI
           </div>
         </div>
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }

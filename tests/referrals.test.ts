@@ -38,6 +38,8 @@ import {
   REFERRAL_PROMO_END,
   REFERRAL_PROMO_START,
   referralEmailHash,
+  referralFooterLink,
+  referralProgramVisible,
   referralOnInvoicePaid,
   referralOnPaymentReversal,
   referralPayload,
@@ -390,5 +392,20 @@ describe("referralPayload", () => {
     expect(p).toMatchObject({ code: "abcd1234", enabled: true, cap: 3, invited: 5, pending: 3, credited: 1, capRemaining: 1, endsLabel: "Dec 8", ended: false });
     expect((await referralPayload("u_ref", new Date("2026-12-10T00:00:00Z"))).ended).toBe(true);
     expect(JSON.stringify(p)).not.toMatch(/@/);
+  });
+});
+
+describe("referralProgramVisible / footer link", () => {
+  it("is on only while the program is switched on and the window is still open", () => {
+    process.env.REFERRALS_ENABLED = "on";
+    expect(referralProgramVisible(now)).toBe(true);
+    expect(referralFooterLink(now)).toEqual({ href: "/account/referrals", label: "Referral program", tag: "Free month of Pro" });
+    process.env.REFERRALS_ENABLED = "off";
+    expect(referralProgramVisible(now)).toBe(false);
+    expect(referralFooterLink(now)).toBeNull();
+    process.env.REFERRALS_ENABLED = "on";
+    expect(referralProgramVisible(new Date("2026-12-09T06:00:00Z"))).toBe(false); // just after Dec 8 11:59 PM CT
+    expect(referralFooterLink(new Date("2026-12-09T06:00:00Z"))).toBeNull();
+    expect(referralProgramVisible(REFERRAL_PROMO_END)).toBe(true); // still on at the last moment of Dec 8
   });
 });

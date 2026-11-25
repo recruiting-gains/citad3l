@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/session";
 import { providerInfo } from "@/lib/inference";
 import { getPublicModel } from "@/lib/models";
 import { isAdminEmail } from "@/lib/config";
+import { referralProgramVisible } from "@/lib/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -19,5 +20,5 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const model = getPublicModel(id);
   if (!model) notFound();
   const u = await currentUser();
-  return <ModelView signedIn={!!u} provider={providerInfo()} model={model} isAdmin={!!u && isAdminEmail(u.email)} />;
+  return <ModelView signedIn={!!u} provider={providerInfo()} model={model} isAdmin={!!u && isAdminEmail(u.email)} showReferral={referralProgramVisible()} />;
 }

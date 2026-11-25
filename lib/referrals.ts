@@ -55,6 +55,15 @@ export function inPromoWindow(at: Date): boolean {
 export function promoEnded(now = new Date()): boolean {
   return now.getTime() > REFERRAL_PROMO_END.getTime();
 }
+/** Public entry points (footer) only show the program while it is switched on and the window is still open. Moving REFERRAL_PROMO_END extends it; after that date it hides itself. */
+export function referralProgramVisible(now = new Date()): boolean {
+  return referralsEnabled() && !promoEnded(now);
+}
+/** Footer/nav link for the promo, or null when it should stay hidden. Signed-out visitors hitting this path are sent to sign-in with a return URL. */
+export function referralFooterLink(now = new Date()): { href: string; label: string; tag: string } | null {
+  if (!referralProgramVisible(now)) return null;
+  return { href: "/account/referrals", label: "Referral program", tag: "Free month of Pro" };
+}
 export function paymentDeadline(): Date {
   return new Date(REFERRAL_PROMO_END.getTime() + REFERRAL_PAYMENT_GRACE_DAYS * DAY_MS);
 }

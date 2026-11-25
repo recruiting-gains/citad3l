@@ -510,6 +510,7 @@
   .footer-links { display: flex; flex-direction: column; gap: 14px; }
   .footer-links a { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-base); color: var(--fg-2); transition: color var(--dur-1); width: fit-content; }
   .footer-links a:hover { color: var(--fg); }
+  .footer-link-tag { font-size: var(--t-sm); color: var(--fg-3); font-weight: 400; }
   .footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); font-size: var(--t-13); color: var(--fg-2); }
   .footer-bottom nav { display: flex; gap: 20px; }
   .footer-bottom a:hover { color: var(--fg); }

@@ -2,46 +2,50 @@ import * as React from "react";
 import Link from "next/link";
 import { Rook } from "@/components/Rook";
 import { marketingModels } from "@/lib/models";
+export type FooterLink = { href: string; label: string; tag?: string };
 
-function footerCols(): { title: string; links: { href: string; label: string }[] }[] {
+export function footerCols(showReferral: boolean): { title: string; links: FooterLink[] }[] {
+  const product: FooterLink[] = [
+    { href: "/chat", label: "Chat" },
+    { href: "/projects", label: "Projects" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/faq", label: "FAQ" },
+    { href: "/connect", label: "Connect" },
+    ...(showReferral ? [{ href: "/account/referrals", label: "Referral program", tag: "Free month of Pro" } satisfies FooterLink] : []),
+  ];
   return [
-  {
-    title: "Product",
-    links: [
-      { href: "/chat", label: "Chat" },
-      { href: "/projects", label: "Projects" },
-      { href: "/pricing", label: "Pricing" },
-      { href: "/faq", label: "FAQ" },
-      { href: "/connect", label: "Connect" },
-    ],
-  },
-  {
-    title: "Engine",
-    links: [
-      { href: "/models", label: "Models" },
-      ...marketingModels().map((m) => ({ href: `/models/${m.id}`, label: m.name })),
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { href: "/account", label: "Plan & usage" },
-      { href: "/login", label: "Log in" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { href: "/terms", label: "Terms" },
-      { href: "/privacy", label: "Privacy" },
-    ],
-  },
+    { title: "Product", links: product },
+    {
+      title: "Engine",
+      links: [
+        { href: "/models", label: "Models" },
+        ...marketingModels().map((m) => ({ href: `/models/${m.id}`, label: m.name })),
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { href: "/account", label: "Plan & usage" },
+        { href: "/login", label: "Log in" },
+      ],
+    },
+    {
+      title: "Legal",
+      links: [
+        { href: "/terms", label: "Terms" },
+        { href: "/privacy", label: "Privacy" },
+      ],
+    },
   ];
 }
 
-export function Footer() {
+/**
+ * `showReferral` is decided by a server parent (`referralProgramVisible`) so the link is present in the HTML only
+ * while the promo is on, and so client hydration can't flash it on or off.
+ */
+export function Footer({ showReferral = false }: { showReferral?: boolean }) {
   const year = new Date().getFullYear();
-  const COLS = footerCols();
+  const COLS = footerCols(showReferral);
   return (
     <footer className="footer">
       <div className="container">
@@ -61,7 +65,10 @@ export function Footer() {
               <ul className="footer-links" style={{ listStyle: "none", margin: 0, padding: 0 }}>
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <Link href={l.href}>{l.label}</Link>
+                    <Link href={l.href}>
+                      {l.label}
+                      {l.tag ? <span className="footer-link-tag">{l.tag}</span> : null}
+                    </Link>
                   </li>
                 ))}
               </ul>

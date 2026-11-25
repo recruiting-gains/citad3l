@@ -1,4 +1,4 @@
-import { Footer } from "@/components/Footer";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export function ConnectView() {
   return (
@@ -26,7 +26,7 @@ curl \$CITAD3L_BASE_URL/chat/completions`}</pre>
         </section>
         <p className="container tiny" style={{ marginTop: 28, paddingBottom: 48 }}>Included with Pro and Max at launch. Keys are issued from your account. Provider credentials stay on the server.</p>
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }

@@ -18,6 +18,7 @@ export interface PricingViewProps {
   billingOpen?: boolean;
   /** ADMIN_EMAILS account: every model is already unlocked; plans are for customers. */
   isAdmin?: boolean;
+  showReferral?: boolean;
 }
 
 const sv = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -59,7 +60,7 @@ const faqs = [
 
 const lineup = marketingModels();
 
-export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false }: PricingViewProps) {
+export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false }: PricingViewProps) {
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [notes, setNotes] = useState<Partial<Record<PlanId, string>>>({});
   const [canceled, setCanceled] = useState(false);
@@ -244,7 +245,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <WaitlistForm source="pricing" />
         </section>
       </main>
-      <Footer />
+      <Footer showReferral={showReferral} />
     </>
   );
 }
