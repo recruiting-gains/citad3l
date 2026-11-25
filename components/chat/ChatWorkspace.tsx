@@ -19,6 +19,8 @@ import { planRetry, rerouteFromChatError, routeOutgoing } from "@/lib/computer/c
 import { createGate, createSyncEngine, mergeRemote, nextSyncDelay, sameMessages } from "@/lib/sync";
 import { attachCaps, composeMessage, DOC_ACCEPT, MAX_FILES, MAX_IMAGES, MAX_VIDEO_IMAGES, splitMessage, type Attachment } from "@/lib/attachments";
 import { createDictation, createDraftBinding, dictationSupported, giveMicConsent, hasMicConsent, MIC_DISCLOSURE, type Dictation } from "@/lib/dictation";
+import { buildAnswerZip, triggerBlobDownload } from "@/lib/downloads";
+import { buildChatPdf } from "@/lib/pdf-export";
 
 const MAX_CHARS = 8000;
 const NEAR_CHARS = 7000;
@@ -56,6 +58,8 @@ const IPlus = () => <Ic><path d="M8 3v10M3 8h10" /></Ic>;
 const ITrash = () => <Ic size={13}><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" /></Ic>;
 const IEdit = () => <Ic size={13}><path d="M10.5 2.5l3 3L6 13H3v-3z" /></Ic>;
 const ICopy = () => <Ic size={14}><rect x="5" y="5" width="8.5" height="8.5" rx="2" /><path d="M10.5 5V3.5A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5H5" /></Ic>;
+const IZip = () => <Ic size={14}><path d="M3 3.5A1.5 1.5 0 0 1 4.5 2h7A1.5 1.5 0 0 1 13 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5z" /><path d="M7.5 4.5h1M7.5 6.8h1M7.5 9.2h1M6.2 11.2h3.6" /></Ic>;
+const IPdf = () => <Ic size={14}><path d="M4 2h5.5L13 5.5V12.5A1.5 1.5 0 0 1 11.5 14h-7A1.5 1.5 0 0 1 3 12.5v-9A1.5 1.5 0 0 1 4.5 2z" /><path d="M9 2v4h4M5.5 9.5h5M5.5 11.8h3.5" /></Ic>;
 const ICheck = () => <Ic size={14} sw={1.8}><path d="M3 8.5l3.2 3L13 4.5" /></Ic>;
 const IRetry = () => <Ic size={14}><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.8h-2.8" /></Ic>;
 const IUp = () => <Ic size={16} sw={1.8}><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" /></Ic>;
@@ -106,6 +110,7 @@ const SUGGESTIONS = [
 
 /* ---------- component ---------- */
 const MODEL_STORAGE_KEY = "citad3l.model";
+const CONTINUED_STORAGE_KEY = "citad3l.continued";
 
 export function ChatWorkspace({ initialConversationId = null, initialProjectId = null, userLabel, provider, initialUsage, models, defaultModelId = DEFAULT_MODEL_ID, signedIn = true, isOwner = false, computerEnabled = false, hermesEnabled = false, hermesBrains = [] }: ChatWorkspaceProps) {
   const catalog = models && models.length ? models : visibleModels();
@@ -136,6 +141,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [continuedMap, setContinuedMap] = useState<Record<string, number>>({});
+  const [truncatedMap, setTruncatedMap] = useState<Record<string, boolean>>({});
   const [atBottom, setAtBottom] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [greeting, setGreeting] = useState<Greeting>({ short: "Hello", sub: "" });
@@ -159,6 +166,30 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const stickRef = useRef(true);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CONTINUED_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, number>;
+        if (parsed && typeof parsed === "object") setContinuedMap(parsed);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const markContinued = useCallback((id: string | null, count: number) => {
+    if (!id || count <= 0) return;
+    setContinuedMap((prev) => {
+      if ((prev[id] ?? 0) >= count) return prev;
+      const next = { ...prev, [id]: count };
+      try {
+        const keys = Object.keys(next);
+        if (keys.length > 100) delete next[keys[0]];
+        window.localStorage.setItem(CONTINUED_STORAGE_KEY, JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const name = firstName(userLabel);
 
@@ -675,11 +706,21 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       } else if (ev === "done") {
         terminal = true;
         patchLive((m) => ({ ...m, status: "complete" }));
+        if (typeof d.continuations === "number" && d.continuations > 0) {
+          markContinued(liveRef.current, d.continuations);
+        }
+        if (d.truncated === true && liveRef.current) {
+          const id = liveRef.current;
+          setTruncatedMap((prev) => ({ ...prev, [id]: true }));
+        }
         if (d.usage) setUsage(d.usage as UsageSummary);
         setStatusLine(null);
       } else if (ev === "status") {
         const detail = typeof d.detail === "string" ? d.detail : "";
         if (detail) setStatusLine(detail);
+        if (typeof d.continuations === "number" && d.continuations > 0) {
+          markContinued(liveRef.current, d.continuations);
+        }
       } else if (ev === "refused") {
         terminal = true;
         const msg = String(d.message ?? "This request isn't allowed.");
@@ -937,6 +978,38 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       window.setTimeout(() => setCopiedId((c) => (c === m.id ? null : c)), 1500);
     } catch {
       toast("error", "Couldn't copy to clipboard.");
+    }
+  };
+
+  const fileSlug = () => {
+    const base = (title && title !== "New chat" ? title : "citad3l-answer")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+    return base || "citad3l-answer";
+  };
+
+  const downloadMsgZip = (m: ChatMessage) => {
+    try {
+      const { bytes, fileCount } = buildAnswerZip(m.content);
+      triggerBlobDownload(bytes, "application/zip", `${fileSlug()}.zip`);
+      toast("ok", `Saved zip (${fileCount} ${fileCount === 1 ? "file" : "files"}).`);
+    } catch {
+      toast("error", "Couldn't create zip.");
+    }
+  };
+
+  const downloadMsgPdf = (m: ChatMessage) => {
+    try {
+      const bytes = buildChatPdf(m.content, {
+        title: title && title !== "New chat" ? title : "Citad3L Answer",
+        createdAt: m.createdAt,
+      });
+      triggerBlobDownload(bytes, "application/pdf", `${fileSlug()}.pdf`);
+      toast("ok", "Saved PDF.");
+    } catch {
+      toast("error", "Couldn't create PDF.");
     }
   };
 
@@ -1327,11 +1400,21 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     const checkFailed = m.content.startsWith("We couldn't finish the safety check");
     const refused = m.content.startsWith("This message was blocked") || m.content.startsWith("This request isn't allowed.");
     const canRetry = (checkFailed || !refused) && !streaming && (m.id === lastAssistantId || m.status === "error" || m.status === "stopped" || checkFailed);
+    const contCount = continuedMap[m.id] ?? 0;
     return (
       <div key={m.id} className={`msg msg-assistant${isLast ? " is-last" : ""}`}>
         <div className="msg-head">
           <span className="msg-avatar"><Rook size={14} /></span>
           Citad3L
+          {contCount > 0 && (
+            <span
+              className="msg-continued"
+              data-testid="msg-continued"
+              title={`Auto-continued ${contCount} ${contCount === 1 ? "time" : "times"} to finish a long reply`}
+            >
+              continued{contCount > 1 ? ` ×${contCount}` : ""}
+            </span>
+          )}
         </div>
         <div className="msg-body" aria-live={live ? "polite" : undefined} aria-busy={live}>
           {live && !m.content ? (
@@ -1344,6 +1427,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
           )}
         </div>
         {m.status === "stopped" && <div className="msg-status">Stopped — not charged.</div>}
+        {m.status === "complete" && truncatedMap[m.id] && (
+          <div className="msg-status">Reached max auto-continue limit — reply may be incomplete.</div>
+        )}
         {m.status === "error" && (
           <div className="msg-error" role="alert">
             <span>{errs[m.id] ?? "This reply failed. Failed replies are never charged."}</span>
@@ -1357,10 +1443,30 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         {!live && (
           <div className="msg-actions">
             {m.content && (
-              <button type="button" className={`msg-action${copiedId === m.id ? " is-done" : ""}`} onClick={() => void copyMsg(m)}>
-                {copiedId === m.id ? <ICheck /> : <ICopy />}
-                {copiedId === m.id ? "Copied" : "Copy"}
-              </button>
+              <>
+                <button type="button" className={`msg-action${copiedId === m.id ? " is-done" : ""}`} onClick={() => void copyMsg(m)}>
+                  {copiedId === m.id ? <ICheck /> : <ICopy />}
+                  {copiedId === m.id ? "Copied" : "Copy"}
+                </button>
+                <button
+                  type="button"
+                  className="msg-action"
+                  onClick={() => downloadMsgZip(m)}
+                  data-testid="msg-download-zip"
+                  title="Download all code blocks and this answer as a zip"
+                >
+                  <IZip /> Download zip
+                </button>
+                <button
+                  type="button"
+                  className="msg-action"
+                  onClick={() => downloadMsgPdf(m)}
+                  data-testid="msg-download-pdf"
+                  title="Download this answer as a PDF"
+                >
+                  <IPdf /> Download PDF
+                </button>
+              </>
             )}
             {canRetry && m.status !== "error" && (
               <button type="button" className="msg-action" onClick={() => retryMessage(m.id)} disabled={limitHit}>

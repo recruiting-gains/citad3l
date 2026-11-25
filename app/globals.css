@@ -723,7 +723,12 @@
   .msg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: var(--t-13); font-weight: 500; color: var(--fg); }
   .msg-avatar { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; border: 1px solid var(--line); color: var(--ink); background: var(--bg); }
   .msg-body { font-size: var(--t-md); line-height: 1.65; color: var(--fg); min-width: 0; }
-  .msg-actions { display: flex; align-items: center; gap: 2px; margin-top: 8px; opacity: 0.0; transition: opacity var(--dur-1); }
+  .msg-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; margin-top: 8px; opacity: 0.0; transition: opacity var(--dur-1); }
+  .msg-continued {
+    display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--fg-3);
+    font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+  }
   .msg:hover .msg-actions, .msg:focus-within .msg-actions, .msg.is-last .msg-actions, .msg-actions.is-visible { opacity: 1; }
   .msg-user .msg-actions { justify-content: flex-end; }
   .msg-action {
@@ -976,6 +981,7 @@
     height: 36px; padding: 0 6px 0 14px; background: #141920; border-bottom: 1px solid #1c2128;
   }
   .code-lang { font-family: var(--font-mono); font-size: var(--t-xs); letter-spacing: 0.04em; text-transform: lowercase; color: #8a96a8; }
+  .code-actions { display: inline-flex; align-items: center; gap: 2px; }
   .code-copy {
     display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 7px;
     font-size: var(--t-sm); color: #aab4c3; transition: background-color var(--dur-1), color var(--dur-1);

@@ -12,6 +12,7 @@ import {
   guestChatEnabled,
   GUEST_MAX_TOKENS,
   GUEST_RATE_LIMIT_PER_MINUTE,
+  MAX_AUTO_CONTINUATIONS,
   MAX_MESSAGE_CHARS,
   SWARM_UNITS,
 } from "@/lib/config";
@@ -22,6 +23,7 @@ import { SignInRequired, resolveModel, UnknownModel } from "@/lib/inference/prov
 import { checkAccess } from "@/lib/access";
 import { spendGuard } from "@/lib/spend-guard";
 import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
+import { streamWithAutoContinue } from "@/lib/inference/continue";
 import { buildTurns, titleFrom } from "@/lib/prompt";
 import { checkText, checkTexts } from "@/lib/filter";
 import { reviewOrKeyword } from "@/lib/filter-llm";
@@ -285,6 +287,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       async start(c) {
         send(c, "meta", { conversationId: conv.id, userMessageId, assistantMessageId: assistantId, title: conv.title, swarm: swarm || undefined });
         let text = "";
+        let continuations = 0;
+        let truncated = false;
         let outcome: "complete" | "stopped" | "error" | "refused" = "complete";
         let errMsg = "";
         try {
@@ -300,21 +304,38 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               },
             });
             if (!text) text = result.text;
+            continuations = result.continuations;
+            truncated = result.truncated;
           } else {
-            for await (const t of provider.stream(turns, ac.signal)) {
-              text += t;
-              const out = checkText(text);
-              if (!out.allowed) {
-                await logFilterRefusal({ userId, direction: "output", verdict: out, modelId: resolved.publicId });
-                text = out.message;
-                outcome = "refused";
-                errMsg = out.message;
-                break;
-              }
-              send(c, "delta", { text: t });
-            }
+            const result = await streamWithAutoContinue({
+              provider,
+              messages: turns,
+              signal: ac.signal,
+              maxContinuations: MAX_AUTO_CONTINUATIONS,
+              checkSafety: async (fullText) => {
+                const out = checkText(fullText);
+                if (!out.allowed) {
+                  await logFilterRefusal({ userId, direction: "output", verdict: out, modelId: resolved.publicId });
+                  throw new FilterRefusal(out.message);
+                }
+              },
+              onContinue: ({ continuation, maxContinuations }) => {
+                send(c, "status", {
+                  phase: "continuing",
+                  detail: `Continuing long reply (${continuation}/${maxContinuations})…`,
+                  continuations: continuation,
+                });
+              },
+              onDelta: (t) => {
+                text += t;
+                send(c, "delta", { text: t });
+              },
+            });
+            if (!text) text = result.text;
+            continuations = result.continuations;
+            truncated = result.truncated;
           }
-          if (outcome !== "refused" && !text.trim()) { outcome = "error"; errMsg = "The engine returned an empty reply."; }
+          if (!text.trim()) { outcome = "error"; errMsg = "The engine returned an empty reply."; }
         } catch (e) {
           if (e instanceof FilterRefusal) {
             outcome = "refused";
@@ -330,7 +351,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
         await settle(reservationId, outcome === "complete", assistantId);
         await prisma.message.update({ where: { id: assistantId }, data: { content: text, status: outcome === "refused" ? "complete" : outcome } }).catch(() => {});
         const usage = await getUsage(userId);
-        if (outcome === "complete") send(c, "done", { usage });
+        if (outcome === "complete") send(c, "done", { usage, ...(continuations > 0 ? { continuations } : {}), ...(truncated ? { truncated: true } : {}) });
         else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });
         else if (outcome === "error") send(c, "error", { code: "provider_unavailable", message: errMsg, usage });
         try { c.close(); } catch { /* closed */ }
