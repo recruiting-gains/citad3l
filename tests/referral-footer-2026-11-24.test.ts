@@ -16,10 +16,21 @@ describe("footer Product column", () => {
     expect(footer).toMatch(/showReferral = false/);
     expect(footer).toMatch(/\.\.\.\(showReferral \? \[\{ href: "\/account\/referrals"/);
   });
-  it("hamburger/menu has no Product section, so the link lives in the footer only", () => {
+  it("mobile hamburger also has Referral program, only when showReferral is on, pointing at the account page", () => {
     const nav = readFileSync("components/TopNav.tsx", "utf8");
-    expect(nav).not.toMatch(/Product/);
-    expect(nav).not.toMatch(/Referral program/);
+    expect(nav).not.toMatch(/title: "Product"|Product column/);
+    expect(nav).toMatch(/showReferral && \(/);
+    expect(nav).toMatch(/href="\/account\/referrals"/);
+    expect(nav).toMatch(/Referral program/);
+    expect(nav).toMatch(/Free month of Pro/);
+    // Only in the phone sheet, not the desktop link row.
+    const sheet = nav.slice(nav.indexOf("nav-sheet"));
+    const desktop = nav.slice(0, nav.indexOf("nav-sheet"));
+    expect(sheet).toMatch(/Referral program/);
+    expect(desktop).not.toMatch(/Referral program/);
+  });
+  it("the layout decides hamburger visibility on the server so the link hides after Dec 8", () => {
+    expect(readFileSync("app/layout.tsx", "utf8")).toMatch(/showReferral=\{referralProgramVisible\(\)\}/);
   });
   it("signed-out visitors who open /account/referrals are sent to sign-in with a return URL", () => {
     const page = readFileSync("app/account/referrals/page.tsx", "utf8");

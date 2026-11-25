@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import TopNav from "@/components/TopNav";
 import CommandPalette from "@/components/CommandPalette";
 import { isAdminEmail } from "@/lib/config";
+import { referralProgramVisible } from "@/lib/referrals";
 import { fontSans, fontMono } from "./fonts";
 import { currentUser, labelFor } from "@/lib/session";
 import SessionKeepAlive from "@/components/auth/SessionKeepAlive";
@@ -55,7 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <a href="#main" className="skip-link">Skip to content</a>
-        <TopNav signedIn={!!u} userLabel={u ? labelFor(u) : undefined} isOwner={!!u && isAdminEmail(u.email)} />
+        <TopNav signedIn={!!u} userLabel={u ? labelFor(u) : undefined} isOwner={!!u && isAdminEmail(u.email)} showReferral={referralProgramVisible()} />
         <CommandPalette signedIn={!!u} isOwner={!!u && isAdminEmail(u.email)} />
         <SessionKeepAlive signedIn={!!u} />
         <RefCapture />

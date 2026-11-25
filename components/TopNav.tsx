@@ -62,9 +62,9 @@ function initials(label?: string): string {
   return s.toUpperCase() || "C";
 }
 
-export interface TopNavProps { signedIn: boolean; userLabel?: string; isOwner?: boolean; }
+export interface TopNavProps { signedIn: boolean; userLabel?: string; isOwner?: boolean; showReferral?: boolean; }
 
-export function TopNav({ signedIn, userLabel, isOwner }: TopNavProps) {
+export function TopNav({ signedIn, userLabel, isOwner, showReferral = false }: TopNavProps) {
   const pathname = usePathname() ?? "/";
   const links = !signedIn ? GUEST_LINKS : isOwner ? [...LINKS, { href: "/admin", label: "Admin", match: (p: string) => p === "/admin" || p.startsWith("/admin/") }] : LINKS;
   const [open, setOpen] = React.useState(false);
@@ -186,6 +186,12 @@ export function TopNav({ signedIn, userLabel, isOwner }: TopNavProps) {
             {signedIn && (
               <Link href="/pricing" className="sheet-link" aria-current={pricingActive ? "page" : undefined}>
                 Pricing
+                <ChevronIcon />
+              </Link>
+            )}
+            {showReferral && (
+              <Link href="/account/referrals" className="sheet-link" aria-current={pathname.startsWith("/account/referrals") ? "page" : undefined}>
+                <span>Referral program <span className="text-3">Free month of Pro</span></span>
                 <ChevronIcon />
               </Link>
             )}
