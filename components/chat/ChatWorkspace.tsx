@@ -21,6 +21,8 @@ import { attachCaps, composeMessage, DOC_ACCEPT, MAX_FILES, MAX_IMAGES, MAX_VIDE
 import { createDictation, createDraftBinding, dictationSupported, giveMicConsent, hasMicConsent, MIC_DISCLOSURE, type Dictation } from "@/lib/dictation";
 import { buildAnswerZip, triggerBlobDownload } from "@/lib/downloads";
 import { buildChatPdf } from "@/lib/pdf-export";
+import { isSlashImageCommand, looksLikeImageRequest } from "@/lib/image-intent";
+import { trackFunnelEvent } from "@/lib/events-client";
 
 const MAX_CHARS = 8000;
 const NEAR_CHARS = 7000;
@@ -35,6 +37,7 @@ export interface ChatWorkspaceProps {
   defaultModelId?: string;
   signedIn?: boolean;
   isOwner?: boolean;
+  billingOpen?: boolean;
   /** @computer (Mac control). True ONLY for the OWNER_EMAIL account; the server enforces this again. */
   computerEnabled?: boolean;
   /** Owner-only Citad3L Hermes (server enforces HERMES_ALLOWED_EMAILS). */
@@ -112,7 +115,7 @@ const SUGGESTIONS = [
 const MODEL_STORAGE_KEY = "citad3l.model";
 const CONTINUED_STORAGE_KEY = "citad3l.continued";
 
-export function ChatWorkspace({ initialConversationId = null, initialProjectId = null, userLabel, provider, initialUsage, models, defaultModelId = DEFAULT_MODEL_ID, signedIn = true, isOwner = false, computerEnabled = false, hermesEnabled = false, hermesBrains = [] }: ChatWorkspaceProps) {
+export function ChatWorkspace({ initialConversationId = null, initialProjectId = null, userLabel, provider, initialUsage, models, defaultModelId = DEFAULT_MODEL_ID, signedIn = true, isOwner = false, billingOpen = false, computerEnabled = false, hermesEnabled = false, hermesBrains = [] }: ChatWorkspaceProps) {
   const catalog = models && models.length ? models : visibleModels();
   const [conversations, setConversations] = useState<ConversationListItem[]>([]);
   const [convsLoaded, setConvsLoaded] = useState(false);
@@ -128,6 +131,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const [usage, setUsage] = useState<UsageSummary>(initialUsage);
   const [banner, setBanner] = useState<Banner | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [softSaveDismissed, setSoftSaveDismissed] = useState(false);
+  const [upgradeCard, setUpgradeCard] = useState<null | "pro" | "max">(null);
+  const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [input, setInput] = useState("");
   const [hermesBrain, setHermesBrain] = useState<string>("v1");
   const brainInfo = (k: string) => hermesBrains.find((b) => b.key === k) ?? { key: k, label: k.toUpperCase(), premium: false };
@@ -483,6 +489,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   // Paperclip: signed-in users on V1/Fast (images + files) and Video (one starting-frame image). Private and Image stay text-only.
   const caps = signedIn ? attachCaps(selectedModel) : { images: false, files: false };
   const canOpenSettings = signedIn && (isOwner || usage.plan === "max");
+  const isFreeUser = !signedIn || (usage.plan === "trial" && !isOwner && !usage.admin);
 
   const chooseModel = (id: string) => {
     if (!catalog.some((m) => m.id === id)) return;
@@ -491,6 +498,14 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     const nextCaps = attachCaps(next);
     setAttachments((xs) => xs.filter((a) => (a.kind === "image" ? nextCaps.images : nextCaps.files)));
     setModelId(id);
+    if (isImageReady(next) && isFreeUser) {
+      setUpgradeCard("pro");
+      trackFunnelEvent("image_upgrade_shown", "/chat");
+    } else if (isVideoReady(next) && !isOwner && !usage.admin && usage.plan !== "max") {
+      setUpgradeCard("max");
+    } else {
+      setUpgradeCard(null);
+    }
     try {
       window.localStorage.setItem(MODEL_STORAGE_KEY, id);
     } catch {
@@ -639,7 +654,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
           setBanner({ kind: "error", title: "Create an account to continue.", text: message, login: true });
           break;
         case "upgrade_required":
-          setBanner({ kind: "warn", title: "Upgrade to use this.", text: message, upgrade: true });
+          setUpgradeCard(videoReady ? "max" : "pro");
+          trackFunnelEvent("image_upgrade_shown", "/chat");
           break;
         case "daily_cap":
           toast("warn", message);
@@ -888,6 +904,14 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     if (!canSend) return;
     stopDictation(); // nothing late may refill the draft after it's sent
     const text = input.trim();
+    if (isFreeUser && !imageReady && !videoReady && looksLikeImageRequest(text)) {
+      setUpgradeCard("pro");
+      trackFunnelEvent("image_upgrade_shown", "/chat");
+      if (isSlashImageCommand(text)) {
+        setInput("");
+        return;
+      }
+    }
     setInput("");
     if (attachments.length) {
       const atts = attachments;
@@ -1253,6 +1277,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             </label>
           ) : null}
           {swarmAvailable ? (
+            <>
             <button
               type="button"
               className={`swarm-toggle${swarm ? " is-on" : ""}`}
@@ -1264,6 +1289,20 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             >
               Swarm
             </button>
+            {swarm ? (
+              <button
+                type="button"
+                className={`swarm-toggle${skills.webSearch ? " is-on" : ""}`}
+                aria-pressed={!!skills.webSearch}
+                data-testid="swarm-websearch-toggle"
+                disabled={streaming}
+                title="Look up current facts during this Swarm run. Off by default. Adds up to 4 search calls on top of the 4 Swarm replies."
+                onClick={() => setSkills((prev) => ({ ...prev, webSearch: !prev.webSearch }))}
+              >
+                Web search
+              </button>
+            ) : null}
+            </>
           ) : null}
         </div>
         <div className="composer-right">
@@ -1305,7 +1344,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               <IMic />
             </button>
           ) : null}
-          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
+          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
           {streaming ? (
             <button type="button" className="stop-btn" onClick={stop} aria-label="Stop generating (Esc)" title="Stop (Esc)">
               <i />
@@ -1337,7 +1376,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       ) : imageReady ? (
         <p className="composer-hint">Citad3L Image turns your prompt into a picture. You can also type /image from a chat model.</p>
       ) : swarm && swarmAvailable ? (
-        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer.{skills.webSearch || skills.thinking ? " Web search and Extended thinking are off in Swarm." : ""}</p>
+        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
       ) : null}
     </div>
   );
@@ -1382,6 +1421,77 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         {input.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
       </span>
     ) : null;
+
+  const startUpgradeCheckout = async (plan: "pro" | "max") => {
+    trackFunnelEvent("image_upgrade_clicked", "/chat");
+    if (!signedIn) {
+      window.location.assign("/login?next=/pricing");
+      return;
+    }
+    if (!billingOpen) {
+      window.location.assign("/pricing#plans");
+      return;
+    }
+    setUpgradeBusy(true);
+    try {
+      const r = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const j = (await r.json().catch(() => null)) as { url?: string } | null;
+      if (r.ok && j?.url) {
+        window.location.assign(j.url);
+        return;
+      }
+      window.location.assign("/pricing#plans");
+    } catch {
+      window.location.assign("/pricing#plans");
+    } finally {
+      setUpgradeBusy(false);
+    }
+  };
+
+  const upgradeCardEl = upgradeCard ? (
+    <div className="upgrade-card chat-upgrade-card" role="region" aria-label="Upgrade for Citad3L Image" data-testid="image-upgrade-card">
+      <div className="upgrade-card-top">
+        <div>
+          <p className="upgrade-card-title">{upgradeCard === "max" ? "Citad3L Video comes with Max ($50/mo)" : "Citad3L Image comes with Pro ($20/mo)"}</p>
+          <p className="upgrade-card-sub">
+            {upgradeCard === "max"
+              ? "Render 5-second 720p clips with sound, plus Image, Private mode, and higher allowances."
+              : "Generate detailed pictures with clean, legible text, plus Private mode, Swarm, and 25 replies every 5 hours."}
+          </p>
+        </div>
+        <button type="button" className="upgrade-card-close" aria-label="Dismiss upgrade card" onClick={() => setUpgradeCard(null)}>×</button>
+      </div>
+      <div className="upgrade-card-actions">
+        {signedIn && billingOpen ? (
+          <button type="button" className="btn btn-primary btn-sm" disabled={upgradeBusy} onClick={() => void startUpgradeCheckout(upgradeCard)}>
+            {upgradeBusy ? "Opening checkout…" : upgradeCard === "max" ? "Upgrade to Max — $50/mo" : "Upgrade to Pro — $20/mo"}
+          </button>
+        ) : (
+          <a className="btn btn-primary btn-sm" href={signedIn ? "/pricing#plans" : "/login?next=/pricing"} onClick={() => trackFunnelEvent("image_upgrade_clicked", "/chat")}>
+            {signedIn ? (upgradeCard === "max" ? "See Max ($50/mo)" : "See Pro ($20/mo)") : "Sign in to upgrade"}
+          </a>
+        )}
+        <a className="btn btn-secondary btn-sm" href="/pricing#plans">Compare plans</a>
+      </div>
+    </div>
+  ) : null;
+
+  const showSoftSave = !signedIn && !limitHit && !softSaveDismissed && usage.used >= 2 && messages.some((m) => m.role === "assistant" && m.status === "complete");
+  const softSaveEl = showSoftSave ? (
+    <div className="try-soft-save chat-soft-save" role="region" aria-label="Save your chat">
+      <div className="try-soft-save-row">
+        <p className="try-soft-save-text"><strong>Save your chat</strong> — sign in with a 6-digit email code to keep this thread and unlock Private mode.</p>
+        <div className="try-soft-save-actions">
+          <a className="btn btn-secondary btn-sm" href="/login?next=/chat" onClick={() => trackFunnelEvent("soft_save_clicked", "/chat")}>Save my chat</a>
+          <button type="button" className="try-soft-save-dismiss" onClick={() => setSoftSaveDismissed(true)}>Not now</button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   const bannerEl = banner ? (
     <div className={`banner banner-${banner.kind}`} role="alert">
@@ -1717,6 +1827,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                 {currentProject ? `Working in ${currentProject.name}.` : greeting.sub || "Strategy, robotics, AI security — or whatever's on your mind."}
               </p>
               {bannerEl && <div style={{ width: "100%", marginTop: 20 }}>{bannerEl}</div>}
+              {upgradeCardEl && <div style={{ width: "100%", marginTop: 16 }}>{upgradeCardEl}</div>}
               {limitHit && <div style={{ width: "100%", marginTop: 20 }}><LimitReached usage={usage} /></div>}
               {renderComposer()}
               <div className="chat-empty-meta">
@@ -1791,6 +1902,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               <div className="composer-dock">
                 <div className="composer-dock-inner">
                   {bannerEl}
+                  {upgradeCardEl}
+                  {softSaveEl}
                   {computerPending && (
                     <div className="notice notice-warn" role="alertdialog" aria-label="Confirm @computer action" data-testid="computer-confirm" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
                       <span style={{ flex: 1, minWidth: 200 }}><strong>@computer wants to:</strong> {computerPending.action}. {computerPending.reason}</span>

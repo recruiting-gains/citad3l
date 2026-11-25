@@ -32,9 +32,11 @@ describe("footer Product column", () => {
   it("the layout decides hamburger visibility on the server so the link hides after Dec 8", () => {
     expect(readFileSync("app/layout.tsx", "utf8")).toMatch(/showReferral=\{referralProgramVisible\(\)\}/);
   });
-  it("signed-out visitors who open /account/referrals are sent to sign-in with a return URL", () => {
+  it("signed-out visitors who open /account/referrals see the public referral page with a sign-in CTA", () => {
     const page = readFileSync("app/account/referrals/page.tsx", "utf8");
-    expect(page).toMatch(/redirect\("\/login\?next=\/account\/referrals"\)/);
+    expect(page).not.toMatch(/redirect\("\/login/);
+    expect(page).toContain('href="/login?next=/account/referrals"');
+    expect(page).toContain("Sign in to get your link");
   });
   it("marketing pages decide visibility on the server so the link hides after Dec 8 without a client flash", () => {
     expect(readFileSync("app/page.tsx", "utf8")).toMatch(/showReferral=\{referralProgramVisible\(\)\}/);

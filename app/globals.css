@@ -1570,7 +1570,9 @@ body > a[href="#main-content"]:not(:focus),
     .composer .project-chip { height: 32px; max-width: 132px; padding: 0 10px; }
     .engine-pill { height: 32px; }
     .send-btn, .stop-btn { width: 34px; height: 34px; }
-    .composer-meta { gap: 6px; }
+    .composer-meta { flex-wrap: wrap; gap: 6px; }
+    .composer-bar { flex-wrap: wrap; row-gap: 8px; }
+    .composer-left { flex-wrap: wrap; row-gap: 6px; }
     .composer-meta .badge-mock, .composer-meta .usage-chip,
     .chat-empty-meta .badge-mock, .chat-empty-meta .usage-chip { height: 22px; padding: 0 8px; font-size: var(--t-xs); }
     .chat-empty-meta { flex-wrap: wrap; justify-content: flex-start; padding: 8px 2px 0; }
@@ -3163,4 +3165,117 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   .try-log { max-height: 300px; padding: 12px; }
   .try-head { padding: 10px 12px; flex-wrap: wrap; }
   .try-msg { max-width: 94%; }
+}
+
+/* ---------- Plan A: soft save, image upgrade card, public referrals ---------- */
+.try-soft-save {
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.try-soft-save.chat-soft-save {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+}
+.try-soft-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-soft-save-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--fg-2);
+  flex: 1 1 240px;
+}
+.try-soft-save-text strong { color: var(--fg); font-weight: 600; }
+.try-soft-save-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.try-soft-save-dismiss {
+  border: 0;
+  background: transparent;
+  color: var(--fg-3);
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.try-soft-save-dismiss:hover { color: var(--fg); }
+.try-soft-save-form .email-code { max-width: 420px; }
+
+.upgrade-card {
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-3), var(--surface));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.upgrade-card.chat-upgrade-card {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+}
+.upgrade-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.upgrade-card-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--fg); }
+.upgrade-card-sub { margin: 4px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--fg-2); }
+.upgrade-card-close {
+  border: 0;
+  background: transparent;
+  color: var(--fg-3);
+  font-size: 18px;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.upgrade-card-close:hover { background: var(--surface-2); color: var(--fg); }
+.upgrade-card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.referral-public {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 56px var(--gutter) 72px;
+}
+.referral-public-hero { max-width: 680px; }
+.referral-public-title { margin: 12px 0 0; }
+.referral-public-sub { margin: 14px 0 0; font-size: 17px; line-height: 1.55; color: var(--fg-2); }
+.referral-public-ctas { margin-top: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.referral-public-steps {
+  margin-top: 44px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.referral-step-card {
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  background: var(--surface-3);
+}
+.referral-step-num { display: block; font-size: 12px; font-weight: 600; color: var(--fg-3); letter-spacing: 0.06em; }
+.referral-step-title { margin: 10px 0 6px; font-size: 16px; font-weight: 600; color: var(--fg); }
+.referral-step-body { margin: 0; font-size: 14px; line-height: 1.5; color: var(--fg-2); }
+
+@media (max-width: 720px) {
+  .referral-public { padding-block: 36px 48px; }
+  .referral-public-steps { grid-template-columns: 1fr; margin-top: 28px; }
+}
+@media (max-width: 640px) {
+  .try-chip { width: 100%; }
+  .try-input { padding: 10px; }
+  .try-soft-save, .upgrade-card { padding: 12px; }
 }

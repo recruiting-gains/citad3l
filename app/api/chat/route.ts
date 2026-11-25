@@ -15,9 +15,10 @@ import {
   MAX_AUTO_CONTINUATIONS,
   MAX_MESSAGE_CHARS,
   SWARM_UNITS,
+  canUseSwarmWebSearch,
 } from "@/lib/config";
 import { LIMITS, limitDurable, rateLimit, rule } from "@/lib/ratelimit";
-import { reserve, settle, getUsage, UsageError, userIsAdmin } from "@/lib/usage";
+import { reserve, settle, getUsage, UsageError, userIsAdmin, userEmail } from "@/lib/usage";
 import { getProvider, ProviderUnavailable } from "@/lib/inference";
 import { SignInRequired, resolveModel, UnknownModel } from "@/lib/inference/provider-models";
 import { checkAccess } from "@/lib/access";
@@ -45,6 +46,7 @@ import {
 import { guestStore } from "@/lib/guest-store";
 import { COMPUTER_CHAT_CODE, computerChatRefusal } from "@/lib/computer/chat-guard";
 import { maybeCreateAutoExports } from "@/lib/exports-r2";
+import { readUtmCookieHeader, utmMetadata } from "@/lib/utm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -144,7 +146,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
   // Swarm fans out to V1 + Fast, which are not E2EE, so it can't run on Private.
   if (swarm && resolved.requiresClientE2EE) return jerr(400, "bad_request", "Swarm isn't available with Citad3L Private.");
   const pub = getPublicModel(resolved.publicId);
-  const skills = resolveSkills(pub, body.skills, { swarm });
+  const swarmWebSearch = swarm && canUseSwarmWebSearch(await userEmail(userId));
+  const skills = resolveSkills(pub, body.skills, { swarm, swarmWebSearch });
   // Attachments: images only on vision models (V1, Fast); files on any non-Private chat model; ignored on retries
   // (the stored message already carries the file text).
   const att = body.retryAssistantMessageId ? null : checkAttachments(body.attachments, attachCaps(pub), { swarm, modelName: resolved.name });
@@ -298,6 +301,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               userMessage: prompt,
               history: turns,
               signal: ac.signal,
+              webSearch: skills.webSearch,
               onStatus: (s) => send(c, "status", s),
               onDelta: (t) => {
                 text += t;
@@ -471,6 +475,9 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
     return jerr(401, "signup_required", "Free messages are busy right now. Enter your email to keep chatting.", { usage: guestUsageSummary(back.used) });
   }
 
+  if (!cookieIn || cookieIn.used === 0) {
+    console.info("[funnel]", JSON.stringify({ event: "guest_first_message", ...utmMetadata(readUtmCookieHeader(req.headers.get("cookie"))) }));
+  }
   const turns = buildTurns([...guestClipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
 
   const ac = new AbortController();

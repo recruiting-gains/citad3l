@@ -1,22 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Markdown } from "@/components/chat/Markdown";
 import { EmailCodeForm } from "@/components/auth/EmailCodeForm";
 import { loadGuestChat, saveGuestChat, type GuestTurn } from "@/lib/guest-chat-client";
+import { isSlashImageCommand, looksLikeImageRequest } from "@/lib/image-intent";
+import { trackFunnelEvent } from "@/lib/events-client";
 
 /**
  * Home page "try it free" chat. Signed-out visitors get a few free messages on Citad3L Fast (the server enforces the
- * cap with a signed cookie + per-IP and site-wide daily limits). When they run out, the box asks for an email to save
- * the chat: the 6-digit email code signs them in and /chat/saved moves this transcript into their account.
+ * cap with a signed cookie + per-IP and site-wide daily limits). After message 2 a non-blocking "save your chat" bar
+ * lets them keep the transcript with a 6-digit email code; when they run out, the box prompts them to continue.
  */
 
 type Turn = GuestTurn & { id: string; status?: "streaming" | "done" | "error" };
 
 const SUGGESTIONS = [
-  "Explain how lock picking actually works",
-  "Give me the blunt case for and against quitting my job",
-  "What do most AI chatbots refuse to talk about, and why?",
+  "Plan a focused 4-hour work block today and cut half my meetings",
+  "Write a calm, firm email turning down unpaid extra work",
+  "Give me a 5-step checklist to tighten privacy on a new phone",
 ];
 
 let seq = 0;
@@ -31,6 +34,10 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
   const [used, setUsed] = useState(initialUsed);
   const [notice, setNotice] = useState<string | null>(null);
   const [capped, setCapped] = useState(initialUsed >= freeLimit);
+  const [softSaveDismissed, setSoftSaveDismissed] = useState(false);
+  const [softSaveOpen, setSoftSaveOpen] = useState(false);
+  const [imageUpgradeOpen, setImageUpgradeOpen] = useState(false);
+  const softShownLogged = useRef(false);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -46,18 +53,39 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [turns, busy]);
 
+  const hasCompletedReply = turns.some((t) => t.role === "assistant" && t.status === "done");
+  const showSoftSave = !capped && !softSaveDismissed && used >= 2 && hasCompletedReply;
+
+  useEffect(() => {
+    if (showSoftSave && !softShownLogged.current) {
+      softShownLogged.current = true;
+      trackFunnelEvent("soft_save_shown", "/");
+    }
+  }, [showSoftSave]);
+
   const remaining = Math.max(0, freeLimit - used);
 
   const send = async (raw: string) => {
     const message = raw.trim();
     if (!message || busy || capped) return;
     setNotice(null);
+
+    if (looksLikeImageRequest(message)) {
+      setImageUpgradeOpen(true);
+      trackFunnelEvent("image_upgrade_shown", "/");
+      if (isSlashImageCommand(message)) {
+        setText("");
+        return;
+      }
+    }
+
     const history = turns.filter((t) => t.status === "done").map(({ role, content }) => ({ role, content })).slice(-10);
     const uid = nid();
     const aid = nid();
     setTurns((ts) => [...ts, { id: uid, role: "user", content: message, status: "done" }, { id: aid, role: "assistant", content: "", status: "streaming" }]);
     setText("");
     setBusy(true);
+    trackFunnelEvent("guest_message_sent", "/");
     const patch = (f: (t: Turn) => Turn) => setTurns((ts) => ts.map((t) => (t.id === aid ? f(t) : t)));
     const ac = new AbortController();
     abortRef.current = ac;
@@ -72,7 +100,6 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
         const d = (await res.json().catch(() => null)) as { error?: { code?: string; message?: string }; usage?: { used?: number } } | null;
         const code = d?.error?.code ?? "";
         if (typeof d?.usage?.used === "number") setUsed(d.usage.used);
-        // Not sent: drop the empty reply and give the text back.
         setTurns((ts) => ts.filter((t) => t.id !== aid && t.id !== uid));
         setText(message);
         if (code === "signup_required") { setCapped(true); setNotice(d?.error?.message ?? null); }
@@ -132,7 +159,7 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
       <div className="try-log" ref={logRef} aria-live="polite">
         {empty ? (
           <div className="try-empty">
-            <p className="try-empty-text">Ask the thing other AI shrugs at.</p>
+            <p className="try-empty-text">Private and fast. Pick a prompt or ask anything below.</p>
             <div className="try-suggest">
               {SUGGESTIONS.map((s) => (
                 <button key={s} type="button" className="try-chip" disabled={busy || capped} onClick={() => void send(s)}>{s}</button>
@@ -151,6 +178,65 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
           ))
         )}
       </div>
+
+      {imageUpgradeOpen && (
+        <div className="upgrade-card" role="region" aria-label="Citad3L Image upgrade">
+          <div className="upgrade-card-top">
+            <div>
+              <p className="upgrade-card-title">Image generation comes with Pro</p>
+              <p className="upgrade-card-sub">Citad3L Fast here is text-only. Upgrade to Pro ($20/month) for Citad3L Image with crisp text, plus Private mode and Swarm.</p>
+            </div>
+            <button type="button" className="upgrade-card-close" aria-label="Dismiss image upgrade card" onClick={() => setImageUpgradeOpen(false)}>×</button>
+          </div>
+          <div className="upgrade-card-actions">
+            <Link href="/pricing#plans" className="btn btn-primary btn-sm" onClick={() => trackFunnelEvent("image_upgrade_clicked", "/")}>See Pro ($20/mo)</Link>
+            <Link href="/login?next=/chat" className="btn btn-secondary btn-sm">Sign in</Link>
+          </div>
+        </div>
+      )}
+
+      {showSoftSave && (
+        <div className="try-soft-save" role="region" aria-label="Save your chat">
+          <div className="try-soft-save-row">
+            <p className="try-soft-save-text">
+              <strong>Save your chat</strong> — keep this thread and unlock Private mode with a free email code (no card).
+            </p>
+            <div className="try-soft-save-actions">
+              {!softSaveOpen && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => {
+                    setSoftSaveOpen(true);
+                    trackFunnelEvent("soft_save_clicked", "/");
+                  }}
+                >
+                  Save my chat
+                </button>
+              )}
+              <button
+                type="button"
+                className="try-soft-save-dismiss"
+                aria-label="Dismiss save prompt"
+                onClick={() => { setSoftSaveOpen(false); setSoftSaveDismissed(true); }}
+              >
+                {softSaveOpen ? "Close" : "Not now"}
+              </button>
+            </div>
+          </div>
+          {softSaveOpen && (
+            <div className="try-soft-save-form">
+              <EmailCodeForm
+                callbackUrl="/chat/saved"
+                sendLabel="Email me a code"
+                idPrefix="try-soft"
+                compact
+                beforeRedirect={() => saveGuestChat(turns.filter((t) => t.status !== "error"))}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {capped ? (
         <div className="try-save">

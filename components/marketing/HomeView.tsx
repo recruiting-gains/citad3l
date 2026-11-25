@@ -31,8 +31,8 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
     <>
       <main className="page-main">
         <section className={`hero container${showTry ? " hero-try" : ""}`}>
-          <h1 className="display hero-title">AI that answers the question the safe bots dodge.</h1>
-          <p className="hero-sub">Ask the thing other AI shrugs at. Citad3L reasons through the grey areas instead of bouncing you to a forum.</p>
+          <h1 className="display hero-title">Private AI. Fast answers.</h1>
+          <p className="hero-sub">No ads. No training on your chats. Try Citad3L Fast right below with no signup, or sign in for Private mode in a verified secure enclave.</p>
           <div className="hero-ctas">
             {signedIn ? (
               <Link href="/chat" className="btn btn-primary btn-lg">Open chat</Link>

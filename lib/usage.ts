@@ -151,6 +151,15 @@ export async function userIsAdmin(userId: string): Promise<boolean> {
   }
 }
 
+export async function userEmail(userId: string): Promise<string | null> {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    return u?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureEntitlement(userId: string, tx: Tx | typeof prisma = prisma) {
   const e = await tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
   // Pro days from the referral promo end on their own date (referralProEndsAt), whatever happens to the friend's account.

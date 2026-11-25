@@ -10,8 +10,8 @@ import SessionKeepAlive from "@/components/auth/SessionKeepAlive";
 import RefCapture from "@/components/RefCapture";
 
 export const metadata: Metadata = {
-  title: "Citad3L — Strategic AI",
-  description: "Citad3L is a strategic AI assistant for everyday questions, writing, code and research — with a sharp interest in AI advancement, robotics and AI security.",
+  title: "Citad3L — Private AI. Fast answers.",
+  description: "Private AI with fast answers. No ads, no training on your chats. Try Citad3L Fast free with no signup, or sign in for Private mode.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

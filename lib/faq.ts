@@ -21,7 +21,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "What skills can I turn on?",
-    a: "Signed-in users can turn on web search, and on Citad3L V1, extended thinking. There is also a coding-assistance toggle that steers the model to write complete, runnable code. It cannot run commands or edit your files. Guests do not get web search or extended thinking.",
+    a: "Signed-in users can turn on web search, including in Swarm (off by default). Web search in Swarm uses up to 4 search calls in that run, on top of the 4 Swarm replies. On Citad3L V1, extended thinking is available outside Swarm; it stays off in Swarm. There is also a coding-assistance toggle that steers the model to write complete, runnable code. It cannot run commands or edit your files. Guests do not get web search or extended thinking.",
   },
   {
     q: "Is it private, and what do you store?",

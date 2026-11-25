@@ -7,6 +7,7 @@ import { getUsage } from "@/lib/usage";
 import { prisma } from "@/lib/db";
 import { guestUsageSummary } from "@/lib/guest";
 import { isAdminEmail } from "@/lib/config";
+import { billingOpenFor } from "@/lib/stripe";
 import { HERMES_MODEL, isHermesEmail } from "@/lib/hermes";
 import { hermesBrainOptions } from "@/lib/hermes-brains";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       signedIn={!!u}
       isOwner={!!u && isAdminEmail(u.email)}
       computerEnabled={!!u && isAdminEmail(u.email)}
+      billingOpen={billingOpenFor(u?.email)}
       hermesEnabled={hermes} hermesBrains={hermes ? hermesBrainOptions() : []}
     />
   );

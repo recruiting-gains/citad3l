@@ -19,18 +19,21 @@ export function availableSkills(model: PublicModel | undefined | null): Resolved
 /**
  * Clamp requested skills to what the model and session allow.
  * Guests cannot use web search or extended thinking (cost).
- * Swarm mode drops web search and thinking (cost and planning complexity).
+ * Swarm keeps extended thinking off. Signed-in users may turn on web search in Swarm
+ * (off by default; honors skills.webSearch). An allowlisted account
+ * (SWARM_WEB_SEARCH_EMAILS, e.g. the Media bot) always gets web search in Swarm.
  */
 export function resolveSkills(
   model: PublicModel | undefined | null,
   requested: SkillRequest | null | undefined,
-  opts: { guest?: boolean; swarm?: boolean } = {},
+  opts: { guest?: boolean; swarm?: boolean; swarmWebSearch?: boolean } = {},
 ): ResolvedSkills {
   const avail = availableSkills(model);
   const guest = !!opts.guest;
   const swarm = !!opts.swarm;
+  const swarmSearch = swarm && (opts.swarmWebSearch === true || requested?.webSearch === true);
   return {
-    webSearch: !guest && !swarm && avail.webSearch && requested?.webSearch === true,
+    webSearch: !guest && avail.webSearch && (swarm ? swarmSearch : requested?.webSearch === true),
     thinking: !guest && !swarm && avail.thinking && requested?.thinking === true,
     coding: avail.coding && requested?.coding === true,
   };
