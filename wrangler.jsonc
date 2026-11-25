@@ -70,6 +70,8 @@
     // Checkout gate: "admins" (admin accounts only), "all", or "off". "all" only opens checkout when STRIPE_MODE is "live".
     // Flip to "all" only when the owner says go.
     "BILLING_ENABLED": "all",
+    // Referral promo (2026-11-24). "on" starts capturing codes and issuing rewards. "off" (or unset) is a no-op.
+    "REFERRALS_ENABLED": "on",
     // Public launch (2026-11-21): Private + Swarm for any account, Image for Pro/Max, Video for Max (lib/access.ts).
     // Kill switch: "admins" puts all four back to admin-only.
     "PUBLIC_FEATURES": "all",
