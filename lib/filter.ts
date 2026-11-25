@@ -6,6 +6,7 @@
  * Adult sexual content is banned by default (see legal/drafts/acceptable-use.md)
  * and can only be relaxed with CITAD3L_ALLOW_ADULT=true — hard lines stay on.
  *
+ * Filter refusals never ban, pause, or suspend an account; only a human admin can do that.
  * This is a keyword/regex pass. An optional Fast-model classifier can be
  * enabled with CITAD3L_FILTER_LLM=true (see reviewContent).
  */
@@ -17,11 +18,11 @@ export type FilterVerdict =
   | { allowed: false; category: FilterCategory; message: string };
 
 export const REFUSAL: Record<FilterCategory, string> = {
-  csam: "This request isn't allowed. Citad3L doesn't allow sexual content involving minors.",
-  explosives: "This request isn't allowed. Citad3L doesn't provide instructions for bombs or explosives.",
-  adult_sexual: "This request isn't allowed. Sexually explicit content isn't permitted on Citad3L.",
-  // Fail-closed: the AI safety check could not give a clear answer, so nothing is sent to the model.
-  check_failed: "We couldn't finish the safety check on this message. Please try again in a moment.",
+  csam: "This message was blocked because it looks like sexual content involving a minor. That isn't allowed on Citad3L. If that isn't what you meant, try wording it without any sexual content involving anyone under 18.",
+  explosives: "This message was blocked because it looks like a request for help making bombs or explosives. That isn't allowed on Citad3L. If you meant history, news, or fiction, try rephrasing so it isn't a how-to.",
+  adult_sexual: "This message was blocked because it looks like sexually explicit content, which isn't allowed here. Try rephrasing without explicit sexual content.",
+  // Fail-closed: the check could not finish, so nothing is sent. Friendly retry; not a topic refusal.
+  check_failed: "We couldn't finish the safety check on this message, so it wasn't sent. Please try sending it again.",
 };
 
 export function adultContentAllowed(): boolean {
@@ -222,4 +223,17 @@ export async function reviewContent(
   } catch {
     return refused("check_failed");
   }
+}
+
+/**
+ * Keyword check over a whole chat history: each turn on its own, then all of them together (so a blocked phrase can't
+ * hide across turns). Used for guest-sent history, a signed-in chat's earlier turns, and imported chats.
+ */
+export function checkTexts(contents: readonly string[]): FilterVerdict {
+  for (const c of contents) {
+    if (!c) continue;
+    const v = checkText(c);
+    if (!v.allowed) return v;
+  }
+  return checkText(contents.join("\n"));
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/Footer";
+import { SiteFooter } from "@/components/SiteFooter";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { FAQ_ITEMS, faqJsonLd } from "@/lib/faq";
 
@@ -41,7 +41,7 @@ export default function Page() {
           <WaitlistForm source="faq" />
         </section>
       </main>
-      <Footer />
+      <SiteFooter />
     </>
   );
 }

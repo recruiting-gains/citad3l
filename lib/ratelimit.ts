@@ -52,6 +52,8 @@ export interface RateLimitRule {
 export interface RateLimitStore {
   /** Atomically increment the counter for key/windowStart and return the new count. */
   hit(key: string, windowStart: Date, expiresAt: Date): Promise<number>;
+  /** Read the current count without incrementing. Missing row is 0. */
+  peek?(key: string, windowStart: Date): Promise<number>;
   /** Best-effort cleanup of expired rows. */
   sweep?(now: Date): Promise<void>;
 }
@@ -81,6 +83,13 @@ export async function prismaRateLimitStore(): Promise<RateLimitStore> {
         ON CONFLICT ("key", "windowStart") DO UPDATE SET "count" = "RateLimitBucket"."count" + 1
         RETURNING "count"`;
       return Number(rows[0]?.count ?? 1);
+    },
+    async peek(key, windowStart) {
+      const row = await prisma.rateLimitBucket.findUnique({
+        where: { key_windowStart: { key, windowStart } },
+        select: { count: true },
+      });
+      return row?.count ?? 0;
     },
     async sweep(now) {
       // Bounded batch so one sweep never turns into a long table scan + delete.
@@ -139,6 +148,21 @@ export async function limitDurable(
   return blocked;
 }
 
+/**
+ * Read a single rule's current count without incrementing. Returns null if the store
+ * cannot be read (no peek, no database), so callers can omit the meter instead of guessing.
+ */
+export async function peekDurable(rule: RateLimitRule, nowMs = Date.now()): Promise<number | null> {
+  if (!rule.id) return null;
+  const store = await resolveStore();
+  if (!store?.peek) return null;
+  try {
+    return await store.peek(bucketKey(rule.name, rule.id), new Date(windowStartFor(nowMs, rule.windowMs)));
+  } catch {
+    return null;
+  }
+}
+
 /** On Workers, register background work with ctx.waitUntil so it isn't cancelled after the response. */
 async function keepAlive(p: Promise<unknown>) {
   try {
@@ -174,6 +198,9 @@ export const LIMITS = {
   waitlistIpHour: { name: "waitlist-ip-hour", limit: 5, windowMs: HOUR },
   waitlistIpDay: { name: "waitlist-ip-day", limit: 20, windowMs: DAY },
   billingUser10m: { name: "billing-user-10m", limit: 10, windowMs: 10 * MIN },
+  exportUserMin: { name: "export-user-min", limit: 10, windowMs: MIN },
+  exportUserHour: { name: "export-user-hour", limit: 40, windowMs: HOUR },
+  exportUserDay: { name: "export-user-day", limit: 100, windowMs: DAY },
 } as const satisfies Record<string, Omit<RateLimitRule, "id">>;
 
 export function rule(def: Omit<RateLimitRule, "id">, id: string | null | undefined): RateLimitRule {

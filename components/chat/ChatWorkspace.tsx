@@ -13,11 +13,14 @@ import { ModelSettingsModal } from "@/components/chat/ModelSettingsModal";
 import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
 import { timeOfDayGreeting, formatGreeting, type Greeting } from "@/lib/greeting";
 import { UsageMeters } from "@/components/UsageMeter";
+import { relevantLimitHit, usageLine } from "@/lib/usage-display";
 import type { SkillRequest } from "@/lib/types";
 import { planRetry, rerouteFromChatError, routeOutgoing } from "@/lib/computer/chat-guard";
 import { createGate, createSyncEngine, mergeRemote, nextSyncDelay, sameMessages } from "@/lib/sync";
 import { attachCaps, composeMessage, DOC_ACCEPT, MAX_FILES, MAX_IMAGES, MAX_VIDEO_IMAGES, splitMessage, type Attachment } from "@/lib/attachments";
 import { createDictation, createDraftBinding, dictationSupported, giveMicConsent, hasMicConsent, MIC_DISCLOSURE, type Dictation } from "@/lib/dictation";
+import { buildAnswerZip, triggerBlobDownload } from "@/lib/downloads";
+import { buildChatPdf } from "@/lib/pdf-export";
 
 const MAX_CHARS = 8000;
 const NEAR_CHARS = 7000;
@@ -55,6 +58,8 @@ const IPlus = () => <Ic><path d="M8 3v10M3 8h10" /></Ic>;
 const ITrash = () => <Ic size={13}><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" /></Ic>;
 const IEdit = () => <Ic size={13}><path d="M10.5 2.5l3 3L6 13H3v-3z" /></Ic>;
 const ICopy = () => <Ic size={14}><rect x="5" y="5" width="8.5" height="8.5" rx="2" /><path d="M10.5 5V3.5A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5H5" /></Ic>;
+const IZip = () => <Ic size={14}><path d="M3 3.5A1.5 1.5 0 0 1 4.5 2h7A1.5 1.5 0 0 1 13 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5z" /><path d="M7.5 4.5h1M7.5 6.8h1M7.5 9.2h1M6.2 11.2h3.6" /></Ic>;
+const IPdf = () => <Ic size={14}><path d="M4 2h5.5L13 5.5V12.5A1.5 1.5 0 0 1 11.5 14h-7A1.5 1.5 0 0 1 3 12.5v-9A1.5 1.5 0 0 1 4.5 2z" /><path d="M9 2v4h4M5.5 9.5h5M5.5 11.8h3.5" /></Ic>;
 const ICheck = () => <Ic size={14} sw={1.8}><path d="M3 8.5l3.2 3L13 4.5" /></Ic>;
 const IRetry = () => <Ic size={14}><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.8h-2.8" /></Ic>;
 const IUp = () => <Ic size={16} sw={1.8}><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" /></Ic>;
@@ -105,6 +110,7 @@ const SUGGESTIONS = [
 
 /* ---------- component ---------- */
 const MODEL_STORAGE_KEY = "citad3l.model";
+const CONTINUED_STORAGE_KEY = "citad3l.continued";
 
 export function ChatWorkspace({ initialConversationId = null, initialProjectId = null, userLabel, provider, initialUsage, models, defaultModelId = DEFAULT_MODEL_ID, signedIn = true, isOwner = false, computerEnabled = false, hermesEnabled = false, hermesBrains = [] }: ChatWorkspaceProps) {
   const catalog = models && models.length ? models : visibleModels();
@@ -135,6 +141,10 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [continuedMap, setContinuedMap] = useState<Record<string, number>>({});
+  const [truncatedMap, setTruncatedMap] = useState<Record<string, boolean>>({});
+  const [exportsMap, setExportsMap] = useState<Record<string, { zip?: { url: string; filename: string; bytes: number }; pdf?: { url: string; filename: string; bytes: number } }>>({});
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [greeting, setGreeting] = useState<Greeting>({ short: "Hello", sub: "" });
@@ -159,8 +169,31 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(CONTINUED_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, number>;
+        if (parsed && typeof parsed === "object") setContinuedMap(parsed);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const markContinued = useCallback((id: string | null, count: number) => {
+    if (!id || count <= 0) return;
+    setContinuedMap((prev) => {
+      if ((prev[id] ?? 0) >= count) return prev;
+      const next = { ...prev, [id]: count };
+      try {
+        const keys = Object.keys(next);
+        if (keys.length > 100) delete next[keys[0]];
+        window.localStorage.setItem(CONTINUED_STORAGE_KEY, JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const name = firstName(userLabel);
-  const limitHit = usage.limit > 0 && usage.remaining <= 0;
 
   /* toasts */
   const toast = useCallback((kind: Toast["kind"], text: string) => {
@@ -444,6 +477,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const videoReady = isVideoReady(selectedModel) && signedIn;
   const swarmAvailable = isSwarmAvailable(selectedModel) && signedIn;
   const hermesReady = selectedModel?.modality === "agent" && signedIn && hermesEnabled;
+  const composerMode = videoReady ? "video" as const : imageReady ? "image" as const : "chat" as const;
+  const limitHit = relevantLimitHit(usage, { mode: composerMode, swarm: swarm && swarmAvailable });
   const allowImageUpload = modelAllowsImageUpload(selectedModel) && signedIn;
   // Paperclip: signed-in users on V1/Fast (images + files) and Video (one starting-frame image). Private and Image stay text-only.
   const caps = signedIn ? attachCaps(selectedModel) : { images: false, files: false };
@@ -576,6 +611,15 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       const id = liveRef.current;
       if (u) setUsage(u);
       if (code === "content_policy") {
+        // Fail-closed check: the message was not sent. Put the draft back so "try again" is honest.
+        const retryable = message.startsWith("We couldn't finish the safety check");
+        if (retryable && !retryId) {
+          setInput(text);
+          if (atts.length) setAttachments(atts);
+          setMessages((ms) => ms.filter((m) => m.id !== id && m.id !== userTmp));
+          toast("warn", message);
+          return;
+        }
         patchLive((m) => ({ ...m, content: message, status: "complete" }));
         setErr(id, null);
         return;
@@ -664,11 +708,30 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       } else if (ev === "done") {
         terminal = true;
         patchLive((m) => ({ ...m, status: "complete" }));
+        if (typeof d.continuations === "number" && d.continuations > 0) {
+          markContinued(liveRef.current, d.continuations);
+        }
+        if (d.truncated === true && liveRef.current) {
+          const id = liveRef.current;
+          setTruncatedMap((prev) => ({ ...prev, [id]: true }));
+        }
         if (d.usage) setUsage(d.usage as UsageSummary);
         setStatusLine(null);
+      } else if (ev === "exports") {
+        const id = liveRef.current;
+        if (id) {
+          const zip = d.zip as { url: string; filename: string; bytes: number } | undefined;
+          const pdf = d.pdf as { url: string; filename: string; bytes: number } | undefined;
+          if (zip || pdf) {
+            setExportsMap((prev) => ({ ...prev, [id]: { zip, pdf } }));
+          }
+        }
       } else if (ev === "status") {
         const detail = typeof d.detail === "string" ? d.detail : "";
         if (detail) setStatusLine(detail);
+        if (typeof d.continuations === "number" && d.continuations > 0) {
+          markContinued(liveRef.current, d.continuations);
+        }
       } else if (ev === "refused") {
         terminal = true;
         const msg = String(d.message ?? "This request isn't allowed.");
@@ -929,6 +992,68 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     }
   };
 
+  const fileSlug = () => {
+    const base = (title && title !== "New chat" ? title : "citad3l-answer")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+    return base || "citad3l-answer";
+  };
+
+  const downloadMsgZip = (m: ChatMessage) => {
+    try {
+      const { bytes, fileCount } = buildAnswerZip(m.content);
+      triggerBlobDownload(bytes, "application/zip", `${fileSlug()}.zip`);
+      toast("ok", `Saved zip (${fileCount} ${fileCount === 1 ? "file" : "files"}).`);
+    } catch {
+      toast("error", "Couldn't create zip.");
+    }
+  };
+
+  const downloadMsgPdf = (m: ChatMessage) => {
+    try {
+      const bytes = buildChatPdf(m.content, {
+        title: title && title !== "New chat" ? title : "Citad3L Answer",
+        createdAt: m.createdAt,
+      });
+      triggerBlobDownload(bytes, "application/pdf", `${fileSlug()}.pdf`);
+      toast("ok", "Saved PDF.");
+    } catch {
+      toast("error", "Couldn't create PDF.");
+    }
+  };
+
+  const createServerExportLinks = async (m: ChatMessage) => {
+    if (!signedIn || exportingId) return;
+    setExportingId(m.id);
+    try {
+      const payload = m.id.startsWith("tmp-")
+        ? { title: title && title !== "New chat" ? title : "Citad3L Answer", markdown: m.content, kind: "both" }
+        : { messageId: m.id, kind: "both" };
+      const r = await fetch("/api/exports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        zip?: { url: string; filename: string; bytes: number };
+        pdf?: { url: string; filename: string; bytes: number };
+        error?: { message?: string };
+      };
+      if (!r.ok) {
+        toast("error", j.error?.message ?? "Couldn't create 24h download links.");
+        return;
+      }
+      setExportsMap((prev) => ({ ...prev, [m.id]: { zip: j.zip, pdf: j.pdf } }));
+      toast("ok", "24-hour download links ready.");
+    } catch {
+      toast("error", "Couldn't create 24h download links.");
+    } finally {
+      setExportingId(null);
+    }
+  };
+
   /* ---------- sidebar actions ---------- */
   const openConversation = (e: React.MouseEvent, id: string) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
@@ -1027,12 +1152,13 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
   const showEmpty = !conversationId && messages.length === 0 && !loading && !loadError;
 
-  const usageText = usage.unlimited
-    ? "Unlimited"
-    : usage.guest || usage.plan === "trial"
-      ? `${usage.remaining} of ${usage.limit} free messages left`
-      : `${usage.remaining.toLocaleString()} of ${usage.limit.toLocaleString()} ${usage.unitLabel} left`;
-  const usageCls = limitHit ? " is-out" : usage.limit > 0 && usage.remaining / usage.limit <= 0.2 ? " is-low" : "";
+  const usageText = usageLine(usage, { mode: composerMode, swarm: swarm && swarmAvailable });
+  const usageLow = composerMode === "image" && usage.image
+    ? usage.image.limit > 0 && usage.image.remaining / usage.image.limit <= 0.2
+    : composerMode === "video" && usage.video
+      ? usage.video.limit > 0 && usage.video.remaining / usage.video.limit <= 0.2
+      : usage.limit > 0 && usage.remaining / usage.limit <= 0.2;
+  const usageCls = limitHit ? " is-out" : usageLow ? " is-low" : "";
 
   /* ---------- render pieces ---------- */
   const limitPlaceholder =
@@ -1312,13 +1438,24 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       );
     }
     const live = m.status === "streaming";
-    const refused = m.content.startsWith("This request isn't allowed.");
-    const canRetry = !refused && !streaming && (m.id === lastAssistantId || m.status === "error" || m.status === "stopped");
+    const checkFailed = m.content.startsWith("We couldn't finish the safety check");
+    const refused = m.content.startsWith("This message was blocked") || m.content.startsWith("This request isn't allowed.");
+    const canRetry = (checkFailed || !refused) && !streaming && (m.id === lastAssistantId || m.status === "error" || m.status === "stopped" || checkFailed);
+    const contCount = continuedMap[m.id] ?? 0;
     return (
       <div key={m.id} className={`msg msg-assistant${isLast ? " is-last" : ""}`}>
         <div className="msg-head">
           <span className="msg-avatar"><Rook size={14} /></span>
           Citad3L
+          {contCount > 0 && (
+            <span
+              className="msg-continued"
+              data-testid="msg-continued"
+              title={`Auto-continued ${contCount} ${contCount === 1 ? "time" : "times"} to finish a long reply`}
+            >
+              continued{contCount > 1 ? ` ×${contCount}` : ""}
+            </span>
+          )}
         </div>
         <div className="msg-body" aria-live={live ? "polite" : undefined} aria-busy={live}>
           {live && !m.content ? (
@@ -1331,6 +1468,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
           )}
         </div>
         {m.status === "stopped" && <div className="msg-status">Stopped — not charged.</div>}
+        {m.status === "complete" && truncatedMap[m.id] && (
+          <div className="msg-status">Reached max auto-continue limit — reply may be incomplete.</div>
+        )}
         {m.status === "error" && (
           <div className="msg-error" role="alert">
             <span>{errs[m.id] ?? "This reply failed. Failed replies are never charged."}</span>
@@ -1344,10 +1484,67 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         {!live && (
           <div className="msg-actions">
             {m.content && (
-              <button type="button" className={`msg-action${copiedId === m.id ? " is-done" : ""}`} onClick={() => void copyMsg(m)}>
-                {copiedId === m.id ? <ICheck /> : <ICopy />}
-                {copiedId === m.id ? "Copied" : "Copy"}
-              </button>
+              <>
+                <button type="button" className={`msg-action${copiedId === m.id ? " is-done" : ""}`} onClick={() => void copyMsg(m)}>
+                  {copiedId === m.id ? <ICheck /> : <ICopy />}
+                  {copiedId === m.id ? "Copied" : "Copy"}
+                </button>
+                <button
+                  type="button"
+                  className="msg-action"
+                  onClick={() => downloadMsgZip(m)}
+                  data-testid="msg-download-zip"
+                  title="Download all code blocks and this answer as a zip"
+                >
+                  <IZip /> Download zip
+                </button>
+                <button
+                  type="button"
+                  className="msg-action"
+                  onClick={() => downloadMsgPdf(m)}
+                  data-testid="msg-download-pdf"
+                  title="Download this answer as a PDF"
+                >
+                  <IPdf /> Download PDF
+                </button>
+                {signedIn && (exportsMap[m.id]?.zip || exportsMap[m.id]?.pdf) ? (
+                  <>
+                    {exportsMap[m.id]?.zip && (
+                      <a
+                        className="msg-action"
+                        href={exportsMap[m.id]!.zip!.url}
+                        download={exportsMap[m.id]!.zip!.filename}
+                        data-testid="msg-signed-zip"
+                        title="Signed 24-hour zip link"
+                      >
+                        <IZip /> 24h zip
+                      </a>
+                    )}
+                    {exportsMap[m.id]?.pdf && (
+                      <a
+                        className="msg-action"
+                        href={exportsMap[m.id]!.pdf!.url}
+                        download={exportsMap[m.id]!.pdf!.filename}
+                        data-testid="msg-signed-pdf"
+                        title="Signed 24-hour PDF link"
+                      >
+                        <IPdf /> 24h PDF
+                      </a>
+                    )}
+                  </>
+                ) : signedIn ? (
+                  <button
+                    type="button"
+                    className="msg-action"
+                    onClick={() => void createServerExportLinks(m)}
+                    disabled={exportingId === m.id}
+                    data-testid="msg-create-export-links"
+                    title="Create signed 24-hour zip and PDF download links"
+                  >
+                    <IZip /> {exportingId === m.id ? "Saving…" : "24h links"}
+                  </button>
+                ) : null}
+              </>
             )}
             {canRetry && m.status !== "error" && (
               <button type="button" className="msg-action" onClick={() => retryMessage(m.id)} disabled={limitHit}>
@@ -1607,7 +1804,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                     <MockBadge provider={provider} />
                     <span className="spacer" />
                     {charCount}
-                    <span className={`usage-chip${usageCls}`} title="Failed or stopped replies aren't charged">{usageText}</span>
+                    <span className={`usage-chip${usageCls}`} title="Failed or stopped replies aren't charged. This is your remaining allowance before you send.">{usageText}</span>
                   </div>
                   <div className="composer-hint">
                     <span className="kbd">Enter</span> to send · <span className="kbd">Shift</span>+<span className="kbd">Enter</span> new line · <span className="kbd">Esc</span> to stop

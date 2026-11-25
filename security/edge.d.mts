@@ -1,6 +1,7 @@
 type Env = Record<string, string | undefined>;
 export function allowedOrigins(env?: Env): Set<string>;
 export function csrfBlockReason(request: Request, env?: Env): string | null;
+export function httpsRedirect(request: Request): Response | null;
 export const TURNSTILE_ORIGIN: string;
 export function contentSecurityPolicy(opts?: { enforce?: boolean }): string;
 export function securityHeaders(env?: Env, url?: URL): Record<string, string>;

@@ -6,6 +6,7 @@ import HomeView from "@/components/marketing/HomeView";
 import { currentUser } from "@/lib/session";
 import { providerInfo } from "@/lib/inference";
 import { siteJsonLd } from "@/lib/site-jsonld";
+import { referralProgramVisible } from "@/lib/referrals";
 export const dynamic = "force-dynamic";
 export default async function Page() {
   const u = await currentUser();
@@ -16,7 +17,7 @@ export default async function Page() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd("https://citad3l.io")).replace(/</g, "\\u003c") }} />
-      <HomeView signedIn={!!u} provider={providerInfo()} isAdmin={!!u && isAdminEmail(u.email)} guestUsed={guestUsed} freeLimit={FREE_MESSAGES} guestChat={guestChatEnabled()} />
+      <HomeView signedIn={!!u} provider={providerInfo()} isAdmin={!!u && isAdminEmail(u.email)} guestUsed={guestUsed} freeLimit={FREE_MESSAGES} guestChat={guestChatEnabled()} showReferral={referralProgramVisible()} />
     </>
   );
 }

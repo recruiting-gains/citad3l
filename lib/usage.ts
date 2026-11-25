@@ -9,9 +9,11 @@ import {
   UNIT_LABEL,
   MAX_CONCURRENT_STREAMS_PER_USER,
   STALE_RESERVATION_MS,
+  SWARM_UNITS,
   usageWeekMs,
   usageWindowMs,
 } from "./config";
+import { spendLimits, spendPeek } from "./spend-guard";
 import type { UsageMeter, UsageSummary } from "./types";
 
 export class UsageError extends Error {
@@ -150,12 +152,65 @@ export async function userIsAdmin(userId: string): Promise<boolean> {
 }
 
 export async function ensureEntitlement(userId: string, tx: Tx | typeof prisma = prisma) {
-  return tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
+  const e = await tx.entitlement.upsert({ where: { userId }, create: { userId }, update: {} });
+  // Pro days from the referral promo end on their own date (referralProEndsAt), whatever happens to the friend's account.
+  // Once it passes, drop back to Free, unless a real subscription has taken over (then just clear the marker).
+  const refEnd = (e as { referralProEndsAt?: Date | null }).referralProEndsAt;
+  if (refEnd && refEnd.getTime() <= Date.now()) {
+    const realSub = !!e.stripeSubscriptionId && e.status !== "canceled" && !!e.periodEnd && e.periodEnd.getTime() > Date.now();
+    return tx.entitlement.update({
+      where: { userId },
+      data: realSub ? { referralProEndsAt: null } : { plan: "trial", status: "trialing", periodStart: null, periodEnd: null, periodUsed: 0, cancelAtPeriodEnd: false, referralProEndsAt: null },
+    });
+  }
+  return e;
+}
+
+async function videoClipPeek(userId: string): Promise<import("./types").UsageMeter | null> {
+  const limit = spendLimits("video").perUser;
+  const day = await spendPeek("video", userId);
+  let rolling: number | null = null;
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    rolling = await prisma.message.count({
+      where: { userId, role: "assistant", createdAt: { gte: since }, content: { contains: '"c3l-video:' } },
+    });
+  } catch {
+    rolling = null;
+  }
+  const rollingMeter = rolling == null
+    ? null
+    : {
+        used: rolling,
+        limit,
+        remaining: Math.max(0, limit - rolling),
+        resetAt: day?.resetAt ?? null,
+        label: "Video clips today",
+      };
+  if (rollingMeter && day && rollingMeter.remaining < day.remaining) return rollingMeter;
+  if (day) return { ...day, label: "Video clips today" };
+  return rollingMeter;
 }
 
 export async function getUsage(userId: string): Promise<UsageSummary> {
   const [e, owner, admin] = await Promise.all([ensureEntitlement(userId), userIsOwner(userId), userIsAdmin(userId)]);
-  return summarize(e, { owner, admin });
+  const summary = summarize(e, { owner, admin });
+  summary.swarmUnits = SWARM_UNITS;
+  if (summary.unlimited) return summary;
+  try {
+    const paid = isPaidActive(e);
+    if (paid && (e.plan === "pro" || e.plan === "max")) {
+      const image = await spendPeek("image", userId);
+      if (image) summary.image = image;
+    }
+    if (paid && e.plan === "max") {
+      const video = await videoClipPeek(userId);
+      if (video) summary.video = video;
+    }
+  } catch {
+    // Leave media meters off rather than guess.
+  }
+  return summary;
 }
 
 /** Release reservations left behind by a crashed process (best-effort, inside the row lock). */

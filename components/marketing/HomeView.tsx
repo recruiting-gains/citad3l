@@ -9,7 +9,7 @@ import { LineupCard } from "@/components/model/LineupCard";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { GuestTryBox } from "@/components/marketing/GuestTryBox";
 
-export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean }
+export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean; showReferral?: boolean }
 
 const sv = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const INodes = () => <svg {...sv}><circle cx="12" cy="5" r="2" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="18" r="2" /><path d="M12 7v4M12 11l-5 5M12 11l5 5" /></svg>;
@@ -25,7 +25,7 @@ const lineup = marketingModels();
 const lead = lineup.find((m) => m.default) ?? lineup[0];
 const rest = lineup.filter((m) => m.id !== lead.id);
 
-export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true }: HomeViewProps) {
+export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true, showReferral = false }: HomeViewProps) {
   const showTry = !signedIn && guestChat;
   return (
     <>
@@ -127,7 +127,7 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
           <WaitlistForm source="home" />
         </section>
       </main>
-      <Footer />
+      <Footer showReferral={showReferral} />
     </>
   );
 }

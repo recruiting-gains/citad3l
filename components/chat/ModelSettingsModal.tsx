@@ -81,7 +81,7 @@ export function ModelSettingsModal({ modelId, modelName, onClose }: { modelId: s
               className="input"
               type="number"
               min={16}
-              max={4096}
+              max={8192}
               placeholder="Auto"
               value={settings.maxTokens ?? ""}
               onChange={(e) => setSettings((s: ModelSettings) => ({ ...s, maxTokens: e.target.value === "" ? null : Number(e.target.value) }))}

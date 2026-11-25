@@ -1,6 +1,6 @@
 import "server-only";
 import type { ProviderInfo } from "../types";
-import { isProd } from "../config";
+import { DEFAULT_MAX_TOKENS, isProd } from "../config";
 import { DEFAULT_MODEL_ID, defaultModel, getPublicModel } from "../models";
 import { resolveModel, providerApiKey, providerBaseUrl, providerWire } from "./provider-models";
 /** Access (admin-only models) is enforced by the API route before a provider is built; this is only the id lookup. */
@@ -22,9 +22,15 @@ export function wireMessages(messages: ChatTurn[]) {
       : { role: m.role, content: m.content },
   );
 }
+
+export type StreamChunk =
+  | { type: "delta"; text: string }
+  | { type: "finish"; finishReason: string | null };
+
 export interface InferenceProvider {
   info: ProviderInfo;
   stream(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<string>;
+  streamChunks?(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<StreamChunk>;
   complete(messages: ChatTurn[], signal: AbortSignal): Promise<string>;
 }
 
@@ -115,7 +121,7 @@ function completionBody(model: string, messages: ChatTurn[], stream: boolean, op
   const temperature = typeof opts.temperature === "number" && Number.isFinite(opts.temperature) ? opts.temperature : 0.7;
   const max_tokens = typeof opts.maxTokens === "number" && opts.maxTokens > 0
     ? opts.maxTokens
-    : Number(process.env.INFERENCE_MAX_TOKENS ?? 2048);
+    : Number(process.env.INFERENCE_MAX_TOKENS ?? DEFAULT_MAX_TOKENS);
   return { model, messages: wireMessages(messages), stream, temperature, max_tokens, ...providerExtras(opts) };
 }
 
@@ -127,44 +133,57 @@ function compatibleProvider(
   opts: ProviderOptions = {},
 ): InferenceProvider {
   const url = baseUrl.replace(/\/$/, "") + "/chat/completions";
+  async function *streamChunks(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<StreamChunk> {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        signal,
+        headers: { "content-type": "application/json", ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}) },
+        body: JSON.stringify(completionBody(model, messages, true, opts)),
+      });
+    } catch (e) {
+      if (signal.aborted) throw e;
+      throw new ProviderUnavailable("Inference host unreachable");
+    }
+    if (!res.ok || !res.body) throw new ProviderUnavailable(`Inference host returned ${res.status}`);
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    let finishReason: string | null = null;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") {
+          yield { type: "finish", finishReason };
+          return;
+        }
+        try {
+          const j = JSON.parse(data);
+          const fr = j.choices?.[0]?.finish_reason;
+          if (typeof fr === "string" && fr) finishReason = fr;
+          const t = j.choices?.[0]?.delta?.content;
+          if (t) yield { type: "delta", text: t as string };
+        } catch {
+          /* ignore keep-alives / malformed chunks */
+        }
+      }
+    }
+    yield { type: "finish", finishReason };
+  }
   return {
     info: { mock: false, label: info.label, model: info.model },
+    streamChunks,
     async *stream(messages, signal) {
-      let res: Response;
-      try {
-        res = await fetch(url, {
-          method: "POST",
-          signal,
-          headers: { "content-type": "application/json", ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {}) },
-          body: JSON.stringify(completionBody(model, messages, true, opts)),
-        });
-      } catch (e) {
-        if (signal.aborted) throw e;
-        throw new ProviderUnavailable("Inference host unreachable");
-      }
-      if (!res.ok || !res.body) throw new ProviderUnavailable(`Inference host returned ${res.status}`);
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 1);
-          if (!line.startsWith("data:")) continue;
-          const data = line.slice(5).trim();
-          if (data === "[DONE]") return;
-          try {
-            const j = JSON.parse(data);
-            const t = j.choices?.[0]?.delta?.content;
-            if (t) yield t as string;
-          } catch {
-            /* ignore keep-alives / malformed chunks */
-          }
-        }
+      for await (const c of streamChunks(messages, signal)) {
+        if (c.type === "delta") yield c.text;
       }
     },
     async complete(messages, signal) {
@@ -192,8 +211,8 @@ function compatibleProvider(
 /** Citad3L Private. Text only; no web search or other provider tools (they would run outside the enclave). */
 function enclaveProvider(baseUrl: string, model: string, apiKey: string, info: { label: string; model: string }, opts: ProviderOptions = {}): InferenceProvider {
   const temperature = typeof opts.temperature === "number" && Number.isFinite(opts.temperature) ? opts.temperature : 0.7;
-  const maxTokens = typeof opts.maxTokens === "number" && opts.maxTokens > 0 ? opts.maxTokens : Number(process.env.INFERENCE_MAX_TOKENS ?? 2048);
-  async function* run(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<string> {
+  const maxTokens = typeof opts.maxTokens === "number" && opts.maxTokens > 0 ? opts.maxTokens : Number(process.env.INFERENCE_MAX_TOKENS ?? DEFAULT_MAX_TOKENS);
+  async function* runChunks(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<StreamChunk> {
     let r: Awaited<ReturnType<typeof e2eeRequest>>;
     try {
       r = await e2eeRequest({ baseUrl, apiKey, model, turns: messages, stream: true, signal, temperature, maxTokens, wire: providerWire() });
@@ -207,6 +226,7 @@ function enclaveProvider(baseUrl: string, model: string, apiKey: string, info: {
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
+    let finishReason: string | null = null;
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -217,19 +237,32 @@ function enclaveProvider(baseUrl: string, model: string, apiKey: string, info: {
         buf = buf.slice(idx + 1);
         if (!line.startsWith("data:")) continue;
         const data = line.slice(5).trim();
-        if (data === "[DONE]") return;
-        let c: unknown;
-        try { c = JSON.parse(data)?.choices?.[0]?.delta?.content; } catch { continue; }
+        if (data === "[DONE]") {
+          yield { type: "finish", finishReason };
+          return;
+        }
+        let parsed: { choices?: Array<{ delta?: { content?: unknown }; finish_reason?: unknown }> };
+        try { parsed = JSON.parse(data); } catch { continue; }
+        const fr = parsed?.choices?.[0]?.finish_reason;
+        if (typeof fr === "string" && fr) finishReason = fr;
+        const c = parsed?.choices?.[0]?.delta?.content;
         if (typeof c !== "string" || !c) continue;
         let t: string;
         try { t = await r.decrypt(c); } catch { throw new ProviderUnavailable("Private got a reply that wasn't encrypted to this session, so it was discarded."); }
-        if (t) yield t;
+        if (t) yield { type: "delta", text: t };
       }
+    }
+    yield { type: "finish", finishReason };
+  }
+  async function* run(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<string> {
+    for await (const c of runChunks(messages, signal)) {
+      if (c.type === "delta") yield c.text;
     }
   }
   return {
     info: { mock: false, label: info.label, model: info.model },
     stream: run,
+    streamChunks: runChunks,
     async complete(messages, signal) {
       let text = "";
       for await (const t of run(messages, signal)) text += t;
@@ -247,21 +280,57 @@ const sleep = (ms: number, signal: AbortSignal) =>
 
 /** Explicitly labelled canned output. Never presented as live inference (UI shows a Mock badge). */
 function mockProvider(modelName: string): InferenceProvider {
+  async function* streamChunks(messages: ChatTurn[], signal: AbortSignal): AsyncGenerator<StreamChunk> {
+    const last = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+    if (last.includes("[[mock-fail]]")) {
+      await sleep(150, signal);
+      yield { type: "delta", text: "Partial output before a simulated failure…" };
+      throw new ProviderUnavailable("Simulated provider failure (mock)");
+    }
+    const slow = last.includes("[[mock-slow]]");
+    const isContPrompt = /Continue from the exact character/i.test(last);
+    const hasLongTag = messages.some((m) => m.role === "user" && m.content.includes("[[mock-long]]"));
+    let reply: string;
+    let finishReason = "stop";
+    if (hasLongTag && !isContPrompt) {
+      reply = [
+        "**Mock provider – long code test (part 1).**",
+        "",
+        "```python",
+        "# bot/trader.py",
+        "def compute_edge(yes_price: float, fee: float = 0.02) -> float:",
+        "    return round(1.0 - yes_price - fee, 4)",
+      ].join("\n");
+      finishReason = "length";
+    } else if (hasLongTag && isContPrompt) {
+      reply = [
+        "",
+        "def should_enter(edge: float, min_edge: float = 0.03) -> bool:",
+        "    return edge >= min_edge",
+        "```",
+        "",
+        "```json",
+        "// config.json",
+        '{"max_trade_usd": 5, "daily_loss_limit_usd": 50}',
+        "```",
+      ].join("\n");
+      finishReason = "stop";
+    } else {
+      reply = mockReply(modelName, messages);
+    }
+    const tokens = reply.match(/\S+\s*|\s+/g) ?? [reply];
+    for (const t of tokens) {
+      await sleep(slow ? 120 : 12, signal);
+      yield { type: "delta", text: t };
+    }
+    yield { type: "finish", finishReason };
+  }
   return {
     info: { mock: true, label: "Mock provider – not live inference", model: modelName },
+    streamChunks,
     async *stream(messages, signal) {
-      const last = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-      if (last.includes("[[mock-fail]]")) {
-        await sleep(150, signal);
-        yield "Partial output before a simulated failure…";
-        throw new ProviderUnavailable("Simulated provider failure (mock)");
-      }
-      const slow = last.includes("[[mock-slow]]");
-      const reply = mockReply(modelName, messages);
-      const tokens = reply.match(/\S+\s*|\s+/g) ?? [reply];
-      for (const t of tokens) {
-        await sleep(slow ? 120 : 18, signal);
-        yield t;
+      for await (const c of streamChunks(messages, signal)) {
+        if (c.type === "delta") yield c.text;
       }
     },
     async complete(messages, signal) {

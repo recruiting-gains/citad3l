@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { safeImageSrc, safeLinkHref } from "@/lib/safe-url";
 import { videoIdFromSrc } from "@/lib/video-content";
+import { codeBlockFilename, triggerBlobDownload } from "@/lib/downloads";
 
 type HNode = {
   type: string;
@@ -39,6 +40,13 @@ function CopyIcon() {
     </svg>
   );
 }
+function DownloadIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2.5v8M4.5 7.5L8 11l3.5-3.5M3 13.5h10" />
+    </svg>
+  );
+}
 function CheckIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -49,23 +57,44 @@ function CheckIcon() {
 
 function CodeBlock({ lang, text, children }: { lang: string; text: string; children: React.ReactNode }) {
   const [done, setDone] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const clean = text.replace(/\n$/, "");
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(text.replace(/\n$/, ""));
+      await navigator.clipboard.writeText(clean);
       setDone(true);
       window.setTimeout(() => setDone(false), 1600);
     } catch {
       /* clipboard unavailable */
     }
   };
+  const download = () => {
+    const filename = codeBlockFilename(lang, clean);
+    triggerBlobDownload(clean + "\n", "text/plain;charset=utf-8", filename);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1600);
+  };
   return (
     <div className="code-block">
       <div className="code-head">
         <span className="code-lang">{lang}</span>
-        <button type="button" className={`code-copy${done ? " is-done" : ""}`} onClick={copy} aria-label="Copy code">
-          {done ? <CheckIcon /> : <CopyIcon />}
-          {done ? "Copied" : "Copy"}
-        </button>
+        <div className="code-actions">
+          <button
+            type="button"
+            className={`code-copy${saved ? " is-done" : ""}`}
+            onClick={download}
+            data-testid="code-download"
+            aria-label={`Download code as ${codeBlockFilename(lang, clean)}`}
+            title={`Download ${codeBlockFilename(lang, clean)}`}
+          >
+            {saved ? <CheckIcon /> : <DownloadIcon />}
+            {saved ? "Saved" : "Download"}
+          </button>
+          <button type="button" className={`code-copy${done ? " is-done" : ""}`} onClick={copy} aria-label="Copy code">
+            {done ? <CheckIcon /> : <CopyIcon />}
+            {done ? "Copied" : "Copy"}
+          </button>
+        </div>
       </div>
       <pre>{children}</pre>
     </div>

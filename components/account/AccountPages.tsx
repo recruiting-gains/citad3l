@@ -251,26 +251,63 @@ export function SessionsView() {
   );
 }
 
+type ReferralData = {
+  code: string;
+  url: string;
+  enabled: boolean;
+  cap: number;
+  invited: number;
+  pending: number;
+  credited: number;
+  capRemaining: number;
+  endsLabel: string;
+  ended: boolean;
+};
+
 export function ReferralsView() {
-  const [data, setData] = useState<{ code: string; url: string; blurb: string } | null>(null);
+  const [data, setData] = useState<ReferralData | null>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => {
-    void fetch("/api/account/referral").then((r) => r.json()).then(setData).catch(() => {});
+    void fetch("/api/account/referral").then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
   }, []);
   const copy = async () => {
     if (!data) return;
     try { await navigator.clipboard.writeText(data.url); setCopied(true); window.setTimeout(() => setCopied(false), 1500); } catch { /* ignore */ }
   };
+  const live = !!data?.enabled && !data.ended;
   return (
     <section className="account-section account-card">
-      <p className="account-card-sub">{data?.blurb ?? "Share your code. Rewards for referrals are on the way."}</p>
+      <p className="account-card-sub">{data?.enabled && data.ended ? `This promo ended ${data.endsLabel}.` : "Copy your link and send it to a friend."}</p>
       {data && (
         <div className="referral-box">
           <code className="referral-code">{data.code}</code>
-          <button type="button" className="referral-copy btn btn-secondary btn-sm" onClick={() => void copy()}>{copied ? "Copied" : "Copy"}</button>
+          <button type="button" className="referral-copy btn btn-secondary btn-sm" onClick={() => void copy()}>{copied ? "Copied" : "Copy link"}</button>
         </div>
       )}
-      <p className="referral-note">No payouts or credits yet.</p>
+      {data?.enabled ? (
+        <>
+          <dl className="referral-stats">
+            <div><dt>Invited</dt><dd>{data.invited}</dd></div>
+            <div><dt>Waiting</dt><dd>{data.pending}</dd></div>
+            <div><dt>Free months</dt><dd>{data.credited}</dd></div>
+            <div><dt>Left</dt><dd>{data.capRemaining} of {data.cap}</dd></div>
+          </dl>
+          {live ? (
+            <ol className="referral-steps">
+              <li>Your friend signs up with your link by {data.endsLabel}.</li>
+              <li>When they pay for Pro or Max, you get a free month of Pro.</li>
+              <li>On a paid plan, you get $20 off your next bill. On Free, you get 30 days of Pro. If their first payment was under $20, your reward is scaled down to match.</li>
+            </ol>
+          ) : null}
+          <p className="referral-note">
+            {live
+              ? "Waiting means they signed up but haven't paid yet. One per new account, and you can't refer yourself."
+              : "Friends who signed up in time still count when they pay."}
+          </p>
+        </>
+      ) : (
+        <p className="referral-note">Rewards aren&apos;t switched on yet.</p>
+      )}
     </section>
   );
 }

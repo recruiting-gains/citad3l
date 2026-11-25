@@ -22,7 +22,7 @@ export function UsageMeter({ meter, compact }: { meter: Meter; compact?: boolean
   if (compact) {
     return (
       <div className={`usage-meter-sm${clsFor(meter)}`} title={`${meter.label}: ${meter.remaining} left`}>
-        <span>{meter.label === "Weekly cap" ? "Week" : "5h"}</span>
+        <span>{meter.label === "Weekly cap" ? "Week" : meter.label === "Images today" ? "Img" : meter.label === "Video clips today" ? "Vid" : "5h"}</span>
         <span className="usage-meter-track"><span className={`usage-meter-fill${clsFor(meter)}`} style={{ width: `${pct}%` }} /></span>
       </div>
     );
@@ -57,13 +57,15 @@ export function UsageMeters({ usage, compact }: { usage: UsageSummary; compact?:
   }
   const window = usage.window;
   const week = usage.week;
-  if (!window && !week) {
+  const extra = [usage.image, usage.video].filter((m): m is Meter => !!m);
+  if (!window && !week && !extra.length) {
     return <UsageMeter meter={{ used: usage.used, limit: usage.limit, remaining: usage.remaining, resetAt: usage.resetAt, label: "Allowance" }} compact={compact} />;
   }
   return (
     <div className={compact ? "usage-meters-sm" : "usage-meters"}>
       {window && <UsageMeter meter={window} compact={compact} />}
       {week && <UsageMeter meter={week} compact={compact} />}
+      {extra.map((m) => <UsageMeter key={m.label} meter={m} compact={compact} />)}
     </div>
   );
 }

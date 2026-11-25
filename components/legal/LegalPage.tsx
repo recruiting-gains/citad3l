@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { LegalDoc } from "@/lib/legal";
-import { Footer } from "@/components/Footer";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export function LegalPage({ doc }: { doc: LegalDoc }) {
   return (
@@ -17,7 +17,7 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
       ))}
       <p className="tiny" style={{ marginTop: 40 }}><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/faq">FAQ</Link></p>
     </main>
-    <Footer />
+    <SiteFooter />
     </>
   );
 }

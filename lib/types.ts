@@ -25,6 +25,12 @@ export interface UsageSummary {
   unlimited?: boolean;
   window?: UsageMeter;
   week?: UsageMeter;
+  /** Daily Image cap for the signed-in user, when the plan includes Image. */
+  image?: UsageMeter;
+  /** Daily Video cap for the signed-in user, when the plan includes Video. */
+  video?: UsageMeter;
+  /** How many allowance replies one Swarm send uses. */
+  swarmUnits?: number;
 }
 
 export interface ProviderInfo {

@@ -12,6 +12,7 @@ import {
   guestChatEnabled,
   GUEST_MAX_TOKENS,
   GUEST_RATE_LIMIT_PER_MINUTE,
+  MAX_AUTO_CONTINUATIONS,
   MAX_MESSAGE_CHARS,
   SWARM_UNITS,
 } from "@/lib/config";
@@ -22,8 +23,9 @@ import { SignInRequired, resolveModel, UnknownModel } from "@/lib/inference/prov
 import { checkAccess } from "@/lib/access";
 import { spendGuard } from "@/lib/spend-guard";
 import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
+import { streamWithAutoContinue } from "@/lib/inference/continue";
 import { buildTurns, titleFrom } from "@/lib/prompt";
-import { checkText } from "@/lib/filter";
+import { checkText, checkTexts } from "@/lib/filter";
 import { reviewOrKeyword } from "@/lib/filter-llm";
 import { logFilterRefusal } from "@/lib/filter-log";
 import { getPublicModel, isGuestModelId } from "@/lib/models";
@@ -42,6 +44,7 @@ import {
 } from "@/lib/guest";
 import { guestStore } from "@/lib/guest-store";
 import { COMPUTER_CHAT_CODE, computerChatRefusal } from "@/lib/computer/chat-guard";
+import { maybeCreateAutoExports } from "@/lib/exports-r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,6 +87,18 @@ export async function POST(req: Request) {
   }
   const message = body.message.trim();
   if (!body.retryAssistantMessageId && !message && !body.attachments?.length) return jerr(400, "bad_request", "Message is empty.");
+
+  // Keyword hard lines are decided before model resolution, so a blocked message still gets a clear
+  // explanation even if inference is not configured. The later reviewOrKeyword pass also covers
+  // attachments and the optional AI check.
+  if (message) {
+    const early = checkText(message);
+    if (!early.allowed) {
+      const cookie = readGuestCookieHeader(req.headers.get("cookie"));
+      await logFilterRefusal({ userId: userId ?? undefined, guestId: cookie?.id, direction: "input", verdict: early });
+      return jerr(400, "content_policy", early.message);
+    }
+  }
 
   // "@computer …" never goes to a chat model (it would claim it can't and make up results). Retries are checked
   // again below once the original user message is loaded.
@@ -175,10 +190,25 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       return jerr(409, COMPUTER_CHAT_CODE, computerChatRefusal(prompt, admin)!, admin ? { task: prompt } : {});
     }
   }
-  const inputFilter = await reviewOrKeyword(prompt, req.signal, { privateMode: resolved.requiresClientE2EE });
+  // The filter sees everything the model will see that the user controls: the new message, their custom system prompt
+  // and the project instructions (full review), plus every earlier turn of this chat (keyword check).
+  const steering = [settings?.systemPrompt, projectInstructions].filter((t): t is string => !!t && !!t.trim());
+  const inputFilter = await reviewOrKeyword([...steering, prompt].join("\n\n"), req.signal, { privateMode: resolved.requiresClientE2EE });
   if (!inputFilter.allowed) {
     await logFilterRefusal({ userId, direction: "input", verdict: inputFilter, modelId: resolved.publicId });
     return jerr(400, "content_policy", inputFilter.message);
+  }
+  if (conversation) {
+    const earlier = await prisma.message.findMany({
+      where: { conversationId: conversation.id, ...(retryTarget ? { createdAt: { lt: retryTarget.createdAt } } : {}) },
+      orderBy: { createdAt: "asc" },
+      select: { content: true },
+    });
+    const historyFilter = checkTexts(earlier.map((m) => m.content));
+    if (!historyFilter.allowed) {
+      await logFilterRefusal({ userId, direction: "input", verdict: historyFilter, modelId: resolved.publicId });
+      return jerr(400, "content_policy", historyFilter.message);
+    }
   }
 
   let provider;
@@ -258,6 +288,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       async start(c) {
         send(c, "meta", { conversationId: conv.id, userMessageId, assistantMessageId: assistantId, title: conv.title, swarm: swarm || undefined });
         let text = "";
+        let continuations = 0;
+        let truncated = false;
         let outcome: "complete" | "stopped" | "error" | "refused" = "complete";
         let errMsg = "";
         try {
@@ -273,21 +305,54 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               },
             });
             if (!text) text = result.text;
+            continuations = result.continuations;
+            truncated = result.truncated;
           } else {
-            for await (const t of provider.stream(turns, ac.signal)) {
-              text += t;
-              const out = checkText(text);
-              if (!out.allowed) {
-                await logFilterRefusal({ userId, direction: "output", verdict: out, modelId: resolved.publicId });
-                text = out.message;
-                outcome = "refused";
-                errMsg = out.message;
-                break;
-              }
-              send(c, "delta", { text: t });
+            const result = await streamWithAutoContinue({
+              provider,
+              messages: turns,
+              signal: ac.signal,
+              maxContinuations: MAX_AUTO_CONTINUATIONS,
+              checkSafety: async (fullText) => {
+                const out = checkText(fullText);
+                if (!out.allowed) {
+                  await logFilterRefusal({ userId, direction: "output", verdict: out, modelId: resolved.publicId });
+                  throw new FilterRefusal(out.message);
+                }
+              },
+              onContinue: ({ continuation, maxContinuations }) => {
+                send(c, "status", {
+                  phase: "continuing",
+                  detail: `Continuing long reply (${continuation}/${maxContinuations})…`,
+                  continuations: continuation,
+                });
+              },
+              onDelta: (t) => {
+                text += t;
+                send(c, "delta", { text: t });
+              },
+            });
+            if (!text) text = result.text;
+            continuations = result.continuations;
+            truncated = result.truncated;
+          }
+          if (!text.trim()) {
+            outcome = "error";
+            errMsg = "The engine returned an empty reply.";
+          } else {
+            const exported = await maybeCreateAutoExports({
+              userId,
+              swarm,
+              title: conv.title,
+              userMessage: prompt,
+              assistantText: text,
+            });
+            if (exported) {
+              text += exported.footer;
+              send(c, "delta", { text: exported.footer });
+              send(c, "exports", exported.bundle);
             }
           }
-          if (outcome !== "refused" && !text.trim()) { outcome = "error"; errMsg = "The engine returned an empty reply."; }
         } catch (e) {
           if (e instanceof FilterRefusal) {
             outcome = "refused";
@@ -303,7 +368,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
         await settle(reservationId, outcome === "complete", assistantId);
         await prisma.message.update({ where: { id: assistantId }, data: { content: text, status: outcome === "refused" ? "complete" : outcome } }).catch(() => {});
         const usage = await getUsage(userId);
-        if (outcome === "complete") send(c, "done", { usage });
+        if (outcome === "complete") send(c, "done", { usage, ...(continuations > 0 ? { continuations } : {}), ...(truncated ? { truncated: true } : {}) });
         else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });
         else if (outcome === "error") send(c, "error", { code: "provider_unavailable", message: errMsg, usage });
         try { c.close(); } catch { /* closed */ }
@@ -360,7 +425,12 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
   const skills = resolveSkills(pub, body.skills, { guest: true });
 
   const prompt = message;
-  const inputFilter = await reviewOrKeyword(prompt, req.signal);
+  // Guests send their own history, so it is untrusted: the filter reviews the clipped history the model will
+  // actually get together with the new message, and keyword-checks every history turn that was sent.
+  const guestHistory = (body.history ?? []).filter((m) => m.content.trim());
+  const guestClipped = clipGuestHistory(guestHistory);
+  const keywordAll = checkTexts(guestHistory.map((m) => m.content));
+  const inputFilter = keywordAll.allowed ? await reviewOrKeyword([...guestClipped.map((m) => m.content), prompt].join("\n\n"), req.signal) : keywordAll;
   if (!inputFilter.allowed) {
     const cookie = readGuestCookieHeader(req.headers.get("cookie"));
     await logFilterRefusal({ guestId: cookie?.id, direction: "input", verdict: inputFilter, modelId: resolved.publicId });
@@ -401,15 +471,7 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
     return jerr(401, "signup_required", "Free messages are busy right now. Enter your email to keep chatting.", { usage: guestUsageSummary(back.used) });
   }
 
-  let history = (body.history ?? []).filter((m) => m.content.trim());
-  let histChars = 0;
-  const clipped: typeof history = [];
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (histChars + history[i].content.length > GUEST_HISTORY_CHAR_BUDGET && clipped.length) break;
-    histChars += history[i].content.length;
-    clipped.unshift(history[i]);
-  }
-  const turns = buildTurns([...clipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
+  const turns = buildTurns([...guestClipped, { role: "user", content: prompt }], null, resolved.name, { coding: skills.coding });
 
   const ac = new AbortController();
   req.signal.addEventListener("abort", () => ac.abort(), { once: true });
@@ -460,4 +522,16 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
       ...cookieHeader(reserved.state),
     },
   });
+}
+
+/** Newest-first clip of guest-sent history to GUEST_HISTORY_CHAR_BUDGET (always keeps at least the latest turn). */
+function clipGuestHistory<T extends { content: string }>(history: T[]): T[] {
+  let histChars = 0;
+  const clipped: T[] = [];
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (histChars + history[i].content.length > GUEST_HISTORY_CHAR_BUDGET && clipped.length) break;
+    histChars += history[i].content.length;
+    clipped.unshift(history[i]);
+  }
+  return clipped;
 }

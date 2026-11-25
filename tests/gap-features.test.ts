@@ -227,7 +227,7 @@ describe("plans, settings, and no vendor leak", () => {
     expect(canUseModelSettings("max", false)).toBe(true);
     expect(canUseModelSettings("trial", true)).toBe(true);
     expect(clampTemperature(1.234)).toBe(1.23);
-    expect(clampMaxTokens(99999)).toBe(4096);
+    expect(clampMaxTokens(99999)).toBe(8192);
   });
 
   it("keeps vendor model ids out of client components", () => {

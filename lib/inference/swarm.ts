@@ -1,19 +1,24 @@
 import "server-only";
-import { SWARM_MAX_WORKERS } from "../config";
+import { MAX_AUTO_CONTINUATIONS, SWARM_MAX_WORKERS } from "../config";
 
-export const SWARM_PLAN_TOKENS = 400;
-export const SWARM_WORKER_TOKENS = 800;
-export const SWARM_SYNTH_TOKENS = 2048;
-const SWARM_CTX_CHARS = 4000;
-const SWARM_WORKER_CHARS = 6000;
+export const SWARM_PLAN_TOKENS = 500;
+export const SWARM_WORKER_TOKENS = 2048;
+export const SWARM_SYNTH_TOKENS = 6144;
+const SWARM_CTX_CHARS = 8000;
+const SWARM_WORKER_CHARS = 16000;
 const clip = <T extends { content: string }>(t: T): T => ({ ...t, content: t.content.slice(0, SWARM_CTX_CHARS) });
 import { checkText } from "../filter";
 import { completeText, getProvider, ProviderUnavailable, type ChatTurn } from "./index";
+import { streamWithAutoContinue } from "./continue";
 
 export const PLAN_SYSTEM = `You are planning work for a swarm of assistants. Break the user's request into 2 or 3 short, concrete subtasks that can be done in parallel. Reply with JSON only, no markdown, in this exact shape: {"subtasks":["...","..."]}
 Each subtask is one sentence. Do not answer the user yet.`;
 
-export type SwarmStatus = { phase: "planning" | "workers" | "synthesizing" | "fallback"; detail: string };
+export type SwarmStatus = {
+  phase: "planning" | "workers" | "synthesizing" | "continuing" | "fallback";
+  detail: string;
+  continuations?: number;
+};
 
 export function parseSubtasks(raw: string, cap = SWARM_MAX_WORKERS): string[] {
   const m = raw.match(/\{[\s\S]*\}/);
@@ -55,9 +60,9 @@ export async function runSwarm(opts: {
   signal: AbortSignal;
   onStatus?: (s: SwarmStatus) => void;
   onDelta: (text: string) => void;
-}): Promise<{ text: string; usedWorkers: number; fallback: boolean }> {
-  // Per-request cost caps: ≤3 workers (SWARM_MAX_WORKERS), and hard token caps on every call. Thinking and web
-  // search stay off. Worst case ≈ 1 plan + 3 workers + 1 synthesis, a few cents at provider prices.
+}): Promise<{ text: string; usedWorkers: number; fallback: boolean; continuations: number; truncated: boolean }> {
+  // Per-request cost caps: ≤3 workers (SWARM_MAX_WORKERS), and token caps on every call. Thinking and web
+  // search stay off. Final synthesis allows auto-continuation up to MAX_AUTO_CONTINUATIONS on finish_reason=length.
   const v1Plan = getProvider({ modelId: "citad3l-v1", maxTokens: SWARM_PLAN_TOKENS, temperature: 0.3, thinking: false, webSearch: false });
   const v1 = getProvider({ modelId: "citad3l-v1", maxTokens: SWARM_SYNTH_TOKENS, thinking: false, webSearch: false });
   const fast = getProvider({ modelId: "citad3l-fast", maxTokens: SWARM_WORKER_TOKENS, thinking: false, webSearch: false });
@@ -108,7 +113,7 @@ export async function runSwarm(opts: {
 
   opts.onStatus?.({ phase: "synthesizing", detail: "Citad3L V1 is writing the answer." });
   const synthTurns: ChatTurn[] = [
-    { role: "system", content: "You are Citad3L V1. Synthesize the worker results into one clear answer for the user. Use Markdown. Do not mention the swarm, workers, or that this was planned. Do not invent sources." },
+    { role: "system", content: "You are Citad3L V1. Synthesize the worker results into one clear, complete answer for the user. Use Markdown and fenced code blocks with complete code. For multi-file projects, put each file in its own fenced code block with its relative file path as a first-line comment (e.g. # src/main.py or // src/index.ts) or fence tag (e.g. ts:src/index.ts). Do not mention the swarm, workers, or that this was planned. Do not invent sources or download URLs." },
     {
       role: "user",
       content: [
@@ -117,23 +122,32 @@ export async function runSwarm(opts: {
       ].join("\n\n"),
     },
   ];
-  let text = "";
-  for await (const t of v1.stream(synthTurns, opts.signal)) {
-    text += t;
-    const mid = checkText(text);
-    if (!mid.allowed) throw new FilterRefusal(mid.message);
-    opts.onDelta(t);
-  }
-  const end = checkText(text);
-  if (!end.allowed) throw new FilterRefusal(end.message);
-  if (!text.trim()) throw new ProviderUnavailable("The engine returned an empty reply.");
-  return { text, usedWorkers: usable.length, fallback: false };
+  const out = await streamWithAutoContinue({
+    provider: v1,
+    messages: synthTurns,
+    signal: opts.signal,
+    maxContinuations: MAX_AUTO_CONTINUATIONS,
+    checkSafety: (fullText) => {
+      const check = checkText(fullText);
+      if (!check.allowed) throw new FilterRefusal(check.message);
+    },
+    onContinue: ({ continuation, maxContinuations }) => {
+      opts.onStatus?.({
+        phase: "continuing",
+        detail: `Continuing long reply (${continuation}/${maxContinuations})…`,
+        continuations: continuation,
+      });
+    },
+    onDelta: opts.onDelta,
+  });
+  if (!out.text.trim()) throw new ProviderUnavailable("The engine returned an empty reply.");
+  return { text: out.text, usedWorkers: usable.length, fallback: false, continuations: out.continuations, truncated: out.truncated };
 }
 
 async function fallbackV1(
   v1: ReturnType<typeof getProvider>,
   opts: { userMessage: string; history: ChatTurn[]; signal: AbortSignal; onStatus?: (s: SwarmStatus) => void; onDelta: (text: string) => void },
-): Promise<{ text: string; usedWorkers: number; fallback: boolean }> {
+): Promise<{ text: string; usedWorkers: number; fallback: boolean; continuations: number; truncated: boolean }> {
   opts.onStatus?.({ phase: "fallback", detail: "Swarm planning didn't parse; answering with Citad3L V1." });
   const turns: ChatTurn[] = [
     ...opts.history,
@@ -141,15 +155,24 @@ async function fallbackV1(
   if (!turns.some((t) => t.role === "user" && t.content === opts.userMessage)) {
     turns.push({ role: "user", content: opts.userMessage });
   }
-  let text = "";
-  for await (const t of v1.stream(turns, opts.signal)) {
-    text += t;
-    const mid = checkText(text);
-    if (!mid.allowed) throw new FilterRefusal(mid.message);
-    opts.onDelta(t);
-  }
-  const end = checkText(text);
-  if (!end.allowed) throw new FilterRefusal(end.message);
-  if (!text.trim()) throw new ProviderUnavailable("The engine returned an empty reply.");
-  return { text, usedWorkers: 0, fallback: true };
+  const out = await streamWithAutoContinue({
+    provider: v1,
+    messages: turns,
+    signal: opts.signal,
+    maxContinuations: MAX_AUTO_CONTINUATIONS,
+    checkSafety: (fullText) => {
+      const check = checkText(fullText);
+      if (!check.allowed) throw new FilterRefusal(check.message);
+    },
+    onContinue: ({ continuation, maxContinuations }) => {
+      opts.onStatus?.({
+        phase: "continuing",
+        detail: `Continuing long reply (${continuation}/${maxContinuations})…`,
+        continuations: continuation,
+      });
+    },
+    onDelta: opts.onDelta,
+  });
+  if (!out.text.trim()) throw new ProviderUnavailable("The engine returned an empty reply.");
+  return { text: out.text, usedWorkers: 0, fallback: true, continuations: out.continuations, truncated: out.truncated };
 }
