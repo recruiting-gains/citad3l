@@ -3575,3 +3575,51 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   .daily-count[data-left="0"] { border-radius: var(--r-lg); }
   .daily-count[data-left="0"] .daily-count-reset { padding-left: 26px; }
 }
+
+/* =========================================================
+   Custom instructions + Save as image (2026-11-26)
+   ========================================================= */
+@layer components {
+  .side-instructions { display: block; padding: 6px 8px; border-radius: 10px; font-size: var(--t-13); color: var(--fg-2); }
+  .side-instructions:hover { background: var(--surface); color: var(--fg); }
+
+  .ci-switch { display: inline-flex; align-items: flex-start; gap: 12px; cursor: pointer; position: relative; }
+  .ci-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .ci-switch-track { flex: none; width: 38px; height: 22px; border-radius: 999px; background: var(--line-2); position: relative; transition: background-color var(--dur-1); margin-top: 1px; }
+  .ci-switch-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform var(--dur-1); }
+  .ci-switch input:checked + .ci-switch-track { background: var(--fg); }
+  .ci-switch input:checked + .ci-switch-track .ci-switch-thumb { transform: translateX(16px); }
+  .ci-switch input:focus-visible + .ci-switch-track { box-shadow: 0 0 0 3px rgba(20, 20, 20, 0.18); }
+  .ci-switch input:disabled + .ci-switch-track { opacity: .5; }
+
+  .code-copy:disabled { opacity: .6; cursor: progress; }
+  .img-save-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.72); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; }
+  .img-save-overlay img { max-width: 100%; max-height: 70vh; border-radius: 10px; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.4); -webkit-touch-callout: default; }
+  .img-save-overlay p { color: #e8edf3; font-size: var(--t-13); text-align: center; margin: 0; }
+  .img-save-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .img-save-list { display: flex; gap: 16px; overflow-x: auto; max-width: 100%; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .img-save-item { margin: 0; flex: none; width: min(80vw, 420px); scroll-snap-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .img-save-item img { width: 100%; height: auto; max-height: 62vh; object-fit: contain; }
+
+  /* Rendered designs and carousels inside a code block */
+  .graphic-preview { padding: 12px; border-bottom: 1px solid #1c2128; background: #0b0e12; }
+  .graphic-note { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: var(--t-sm); color: #aab4c3; }
+  .graphic-link { color: #fff; text-decoration: underline; }
+  .graphic-single .graphic-slide { max-width: 520px; margin: 0 auto; }
+  .graphic-strip { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: #2b3340 transparent; }
+  .graphic-strip .graphic-slide { flex: none; width: min(72%, 300px); scroll-snap-align: start; }
+  .graphic-slide { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+  .graphic-slide img { display: block; width: 100%; height: auto; border-radius: 8px; background: #fff; box-shadow: 0 1px 0 #1c2128; -webkit-touch-callout: default; }
+  .graphic-slide figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--t-xs); color: #8a96a8; }
+  .graphic-btn { height: 24px; padding: 0 9px; border-radius: 7px; font-size: var(--t-sm); color: #dfe5ee; background: #1a2029; }
+  .graphic-btn:hover { background: #262e3a; color: #fff; }
+  .graphic-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .code-toggle { display: block; width: 100%; text-align: left; padding: 8px 14px; font-size: var(--t-sm); color: #aab4c3; background: #0d1014; }
+  .code-toggle:hover { color: #fff; }
+}
+@media (max-width: 520px) {
+  @layer components {
+    .code-head { height: auto; min-height: 36px; flex-wrap: wrap; padding: 4px 6px 4px 14px; }
+    .code-actions { flex-wrap: wrap; justify-content: flex-end; }
+  }
+}

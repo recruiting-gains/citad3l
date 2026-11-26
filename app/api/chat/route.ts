@@ -32,6 +32,7 @@ import { logFilterRefusal } from "@/lib/filter-log";
 import { getPublicModel, isGuestModelId } from "@/lib/models";
 import { resolveSkills } from "@/lib/skills";
 import { canUseModelSettings, getModelSettings } from "@/lib/model-settings";
+import { loadActiveInstructions } from "@/lib/custom-instructions";
 import { bannedMessage } from "@/lib/banned";
 import {
   clientIp,
@@ -157,9 +158,11 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
   if (body.attachments?.length && !body.retryAssistantMessageId) message = composeMessage(message, body.attachments);
   const usageNow = await getUsage(userId);
   const privileged = usageNow.admin === true || usageNow.owner === true || admin;
-  const settings = canUseModelSettings(usageNow.plan, privileged)
-    ? await getModelSettings(userId, resolved.publicId)
-    : null;
+  const [settings, customInstructions] = await Promise.all([
+    canUseModelSettings(usageNow.plan, privileged) ? getModelSettings(userId, resolved.publicId) : Promise.resolve(null),
+    // Account-wide custom instructions (signed-in only; null when off or empty). Never logged.
+    loadActiveInstructions(userId),
+  ]);
 
   let conversation = body.conversationId
     ? await prisma.conversation.findFirst({ where: { id: body.conversationId, userId }, include: { project: true } })
@@ -194,9 +197,10 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       return jerr(409, COMPUTER_CHAT_CODE, computerChatRefusal(prompt, admin)!, admin ? { task: prompt } : {});
     }
   }
-  // The filter sees everything the model will see that the user controls: the new message, their custom system prompt
-  // and the project instructions (full review), plus every earlier turn of this chat (keyword check).
-  const steering = [settings?.systemPrompt, projectInstructions].filter((t): t is string => !!t && !!t.trim());
+  // The filter sees everything the model will see that the user controls: the new message, their saved custom
+  // instructions, their custom system prompt and the project instructions (full review), plus every earlier turn of
+  // this chat (keyword check).
+  const steering = [customInstructions, settings?.systemPrompt, projectInstructions].filter((t): t is string => !!t && !!t.trim());
   const inputFilter = await reviewOrKeyword([...steering, prompt].join("\n\n"), req.signal, { privateMode: resolved.requiresClientE2EE });
   if (!inputFilter.allowed) {
     await logFilterRefusal({ userId, direction: "input", verdict: inputFilter, modelId: resolved.publicId });
@@ -276,6 +280,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
     const turns = buildTurns(history, projectInstructions, resolved.name, {
       coding: skills.coding,
       customSystem: settings?.systemPrompt,
+      customInstructions,
     });
     const lastTurn = turns[turns.length - 1];
     if (attImages.length && lastTurn?.role === "user") lastTurn.images = attImages;

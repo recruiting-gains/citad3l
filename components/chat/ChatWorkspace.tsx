@@ -1784,6 +1784,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             <a href={signedIn ? "/account/usage" : "/pricing"} className="usage-meter-link">
               <UsageMeters usage={usage} compact />
             </a>
+            <a className="side-instructions" href="/account/instructions" data-testid="side-custom-instructions" title={signedIn ? "Tell Citad3L who to be in every chat" : "Sign in to set custom instructions"}>
+              Custom instructions
+            </a>
             {signedIn ? (
               <a className="side-user" href="/account">
                 <span className="nav-avatar">{initials(userLabel)}</span>
