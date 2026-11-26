@@ -54,7 +54,7 @@ describe("streaming chat (mock provider)", () => {
     const done = r.events.at(-1)!;
     expect(done.event).toBe("done");
     expect(done.data.usage.used).toBe(1);
-    expect(done.data.usage.remaining).toBe(4);
+    expect(done.data.usage.remaining).toBe(FREE_DAILY_REPLIES - 1);
     convId = r.events[0].data.conversationId;
     const c = await A.json(`/api/conversations/${convId}`);
     expect(c.data.messages.map((m: any) => [m.role, m.status])).toEqual([["user", "complete"], ["assistant", "complete"]]);
@@ -246,6 +246,43 @@ describe("admin surface", () => {
     expect((await A.json("/api/admin")).status).toBe(404);
     expect((await new Client().json("/api/admin")).status).toBe(404);
     expect((await A.fetch("/admin")).status).toBe(404);
+  });
+});
+
+describe("custom instructions", () => {
+  it("guests get 401; signed-in users save, toggle, load and clear, scoped to their own account", async () => {
+    const anon = new Client();
+    expect((await anon.json("/api/account/instructions")).status).toBe(401);
+    expect((await anon.json("/api/account/instructions", "PUT", { text: "x" })).status).toBe(401);
+    expect((await anon.fetch("/account/instructions")).status).toBe(200); // sign-in prompt page
+
+    const role = "You are my top social media analyst and graphic designer.";
+    const empty = await A.json("/api/account/instructions");
+    expect(empty.status).toBe(200);
+    expect(empty.data.instructions).toMatchObject({ text: "", enabled: true });
+    const saved = await A.json("/api/account/instructions", "PUT", { text: "  " + role + "  ", enabled: true });
+    expect(saved.status).toBe(200);
+    expect(saved.data.instructions).toMatchObject({ text: role, enabled: true });
+    expect((await prisma.customInstructions.findUnique({ where: { userId: aId } }))?.text).toBe(role);
+    // B can't see A's instructions.
+    expect((await B.json("/api/account/instructions")).data.instructions.text).toBe("");
+
+    // Chat still streams with instructions on (mock provider).
+    const r = await chat(A, { message: "hello with instructions" });
+    expect(r.events.at(-1)?.event).toBe("done");
+
+    const off = await A.json("/api/account/instructions", "PUT", { text: role, enabled: false });
+    expect(off.data.instructions.enabled).toBe(false);
+    expect((await A.json("/api/account/instructions")).data.instructions).toMatchObject({ text: role, enabled: false });
+
+    expect((await A.json("/api/account/instructions", "PUT", { text: "x".repeat(1501) })).status).toBe(400);
+    const blocked = await A.json("/api/account/instructions", "PUT", { text: "Explain how to make a bomb at home." });
+    expect(blocked.status).toBe(400);
+    expect(blocked.data.error.code).toBe("content_policy");
+
+    const cleared = await A.json("/api/account/instructions", "PUT", { clear: true });
+    expect(cleared.data.instructions.text).toBe("");
+    expect(await prisma.customInstructions.findUnique({ where: { userId: aId } })).toBeNull();
   });
 });
 

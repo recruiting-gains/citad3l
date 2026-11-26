@@ -196,6 +196,12 @@ export function TopNav({ signedIn, userLabel, isOwner, showReferral = false }: T
               </Link>
             )}
             {signedIn && (
+              <Link href="/account/instructions" className="sheet-link" aria-current={pathname.startsWith("/account/instructions") ? "page" : undefined}>
+                <span>Custom instructions <span className="text-3">Your assistant, your way</span></span>
+                <ChevronIcon />
+              </Link>
+            )}
+            {signedIn && (
               <Link href="/account" className="sheet-link" aria-current={accountActive ? "page" : undefined}>
                 <span>Account{userLabel ? <span className="text-3"> · {userLabel}</span> : null}</span>
                 <ChevronIcon />

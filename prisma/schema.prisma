@@ -57,6 +57,7 @@ model User {
   messages      Message[]
   reservations  UsageReservation[]
   modelSettings UserModelSettings[]
+  customInstructions CustomInstructions?
   loginSessions LoginSession[]
   referral      Referral?
   referralsMade ReferralAttribution[] @relation("ReferralReferrer")
@@ -220,6 +221,16 @@ model UserModelSettings {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, modelId])
+}
+
+/// Account-wide "Custom instructions": who the user wants the assistant to be. One row per user.
+/// Prepended (after the site rules) to every chat's system prompt while enabled. Never logged.
+model CustomInstructions {
+  userId    String   @id
+  text      String   @default("")
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model LoginSession {

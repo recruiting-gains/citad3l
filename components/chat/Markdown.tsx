@@ -7,6 +7,8 @@ import rehypeHighlight from "rehype-highlight";
 import { safeImageSrc, safeLinkHref } from "@/lib/safe-url";
 import { videoIdFromSrc } from "@/lib/video-content";
 import { codeBlockFilename, triggerBlobDownload } from "@/lib/downloads";
+import { imageKindFor, pngFilename, renderGraphic } from "@/lib/html-image";
+import { GraphicStrip, SaveImageSheet, savePngs, useGraphicPreview, type PreviewImage } from "@/components/chat/GraphicPreview";
 
 type HNode = {
   type: string;
@@ -55,9 +57,22 @@ function CheckIcon() {
   );
 }
 
+function ImageIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="2.5" width="12" height="11" rx="2" />
+      <circle cx="5.75" cy="6.25" r="1.25" />
+      <path d="M14 10.5l-3.5-3.5L4 13.5" />
+    </svg>
+  );
+}
+
 function CodeBlock({ lang, text, children }: { lang: string; text: string; children: React.ReactNode }) {
   const [done, setDone] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [imaging, setImaging] = useState<"idle" | "busy" | "done" | "error">("idle");
+  const [sheet, setSheet] = useState<PreviewImage[] | null>(null);
+  const [showCode, setShowCode] = useState(false);
   const clean = text.replace(/\n$/, "");
   const copy = async () => {
     try {
@@ -74,11 +89,53 @@ function CodeBlock({ lang, text, children }: { lang: string; text: string; child
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1600);
   };
+  const kind = imageKindFor(lang, clean);
+  const imageName = pngFilename(codeBlockFilename(lang, clean), kind);
+  // HTML/SVG designs are drawn into the chat as PNGs (one per carousel slide) once the block stops changing.
+  const graphic = useGraphicPreview(clean, lang, imageName, kind === "page");
+  const previewReady = kind === "page" && graphic.images.length > 0;
+  const codeHidden = previewReady && !showCode;
+
+  const save = async (imgs: PreviewImage[]) => {
+    const zipName = imageName.replace(/\.png$/i, "") + "-slides.zip";
+    const r = await savePngs(imgs, zipName);
+    if (r === "fallback") setSheet(imgs);
+    if (r === "done") { setImaging("done"); window.setTimeout(() => setImaging("idle"), 1800); }
+  };
+  const saveImage = async () => {
+    if (imaging === "busy") return;
+    // Already drawn: save right away (keeps the tap "fresh", so the iPhone share sheet opens).
+    if (previewReady) return save(graphic.images);
+    setImaging("busy");
+    try {
+      const imgs = kind === "page"
+        ? await graphic.render()
+        : (await renderGraphic(clean, lang, { baseName: imageName })).map((r) => ({ url: URL.createObjectURL(r.blob), file: new File([r.blob], r.name, { type: "image/png" }), width: r.width, height: r.height }));
+      if (!imgs.length) throw new Error("render_failed");
+      setImaging("idle");
+      await save(imgs);
+    } catch {
+      setImaging("error");
+      window.setTimeout(() => setImaging("idle"), 2200);
+    }
+  };
   return (
     <div className="code-block">
       <div className="code-head">
         <span className="code-lang">{lang}</span>
         <div className="code-actions">
+          <button
+            type="button"
+            className={`code-copy${imaging === "done" ? " is-done" : ""}`}
+            onClick={() => void saveImage()}
+            disabled={imaging === "busy"}
+            data-testid="code-save-image"
+            aria-label={kind === "page" ? "Save this page as an image" : "Save this code as an image"}
+            title={imaging === "error" ? "Couldn't make an image in this browser" : `Save as image (${imageName})`}
+          >
+            {imaging === "done" ? <CheckIcon /> : imaging === "busy" ? <span className="spinner" /> : <ImageIcon />}
+            {imaging === "busy" ? "Making image…" : imaging === "done" ? "Saved" : imaging === "error" ? "Couldn't save" : "Save as image"}
+          </button>
           <button
             type="button"
             className={`code-copy${saved ? " is-done" : ""}`}
@@ -96,7 +153,24 @@ function CodeBlock({ lang, text, children }: { lang: string; text: string; child
           </button>
         </div>
       </div>
-      <pre>{children}</pre>
+      {kind === "page" && (
+        <GraphicStrip
+          images={graphic.images}
+          status={graphic.status}
+          photoSlots={graphic.photoSlots}
+          photoCount={graphic.photos.length}
+          onAddPhotos={(f) => void graphic.addPhotos(f)}
+          onSave={(imgs) => void save(imgs)}
+          onRetry={() => void graphic.render()}
+        />
+      )}
+      {previewReady && (
+        <button type="button" className="code-toggle" onClick={() => setShowCode((v) => !v)} aria-expanded={!codeHidden} data-testid="code-toggle">
+          {codeHidden ? "Show code" : "Hide code"}
+        </button>
+      )}
+      {!codeHidden && <pre>{children}</pre>}
+      {sheet && <SaveImageSheet images={sheet} onClose={() => setSheet(null)} />}
     </div>
   );
 }

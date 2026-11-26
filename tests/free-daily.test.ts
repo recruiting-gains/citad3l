@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
 import { chicagoDayWindow } from "@/lib/chicago-day";
 import { FREE_DAILY_REPLIES, TRIAL_REPLIES } from "@/lib/config";
 import { FREE_DAILY_GLOBAL_BUCKET, freeDailyGlobalGuard, freeDailyGlobalRule } from "@/lib/free-daily-cap";
@@ -25,6 +25,9 @@ const trial = {
 
 describe("signed-in free daily allowance", () => {
   it("uses the Chicago-day window, not the lifetime trialUsed counter", () => {
+    // summarize() reads the clock; pin it inside the window this test builds (it went stale after 2026-11-25).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-25T20:00:00.000Z"));
     const day = chicagoDayWindow(new Date("2026-11-25T20:00:00.000Z"));
     const e = { ...trial, windowStart: day.start, windowEnd: day.end, windowUsed: 2 };
     const rolled = rolledWindows(e, new Date("2026-11-25T20:00:00.000Z"));
@@ -36,6 +39,7 @@ describe("signed-in free daily allowance", () => {
     expect(u.remaining).toBe(1);
     expect(u.resetAt).toBe(day.end.toISOString());
     expect(u.window?.label).toBe("Free messages today");
+    vi.useRealTimers();
   });
 
   it("resets used to 0 when the stored window is a previous Chicago day", () => {

@@ -311,3 +311,117 @@ export function ReferralsView() {
     </section>
   );
 }
+
+export const CUSTOM_INSTRUCTIONS_PLACEHOLDER =
+  "You are my top social media analyst and graphic designer. Study what's working on Instagram, Threads and TikTok, tell me why it works, and design posts, carousels and graphics for me.";
+
+type InstructionsState = { text: string; enabled: boolean; updatedAt: string | null };
+
+export function CustomInstructionsView({ max = 1500 }: { max?: number }) {
+  const [loaded, setLoaded] = useState(false);
+  const [text, setText] = useState("");
+  const [enabled, setEnabled] = useState(true);
+  const [saved, setSaved] = useState<InstructionsState | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/account/instructions", { cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(await errMsg(r));
+        const j = (await r.json()) as { instructions: InstructionsState };
+        setText(j.instructions.text);
+        setEnabled(j.instructions.enabled);
+        setSaved(j.instructions);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Couldn't load your custom instructions."))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  const count = Array.from(text).length;
+  const over = count > max;
+  const dirty = !saved || saved.text !== text || saved.enabled !== enabled;
+
+  const put = async (body: Record<string, unknown>, done: string) => {
+    setBusy(true); setError(null); setStatus(null);
+    try {
+      const res = await fetch("/api/account/instructions", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(await errMsg(res));
+      const j = (await res.json()) as { instructions: InstructionsState };
+      setText(j.instructions.text);
+      setEnabled(j.instructions.enabled);
+      setSaved(j.instructions);
+      setStatus(done);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save. Try again.");
+    }
+    setBusy(false);
+  };
+
+  const save = () => { if (!over) void put({ text, enabled }, "Saved. New messages will use these instructions."); };
+  const clear = () => {
+    if (!window.confirm("Clear your custom instructions?")) return;
+    void put({ clear: true }, "Cleared.");
+  };
+
+  return (
+    <section className="account-section account-card" data-testid="custom-instructions">
+      <p className="account-card-sub">
+        Tell Citad3L who you want it to be and how to help you. ItThis is added to every chat on every model, so you don&apos;t have to paste it into each new chat. Site rules still come first.apos;s added to every chat, so you donThis is added to every chat on every model, so you don&apos;t have to paste it into each new chat. Site rules still come first.apos;t have to paste it into each new one. Site rules still come first.
+      </p>
+      {error && <p className="notice notice-danger" role="alert" style={{ marginTop: 12 }}>{error}</p>}
+      <form
+        style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}
+        onSubmit={(e) => { e.preventDefault(); save(); }}
+      >
+        <label className="ci-switch">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={enabled}
+            disabled={!loaded || busy}
+            onChange={(e) => setEnabled(e.target.checked)}
+            aria-describedby="ci-switch-hint"
+          />
+          <span className="ci-switch-track" aria-hidden="true"><span className="ci-switch-thumb" /></span>
+          <span>
+            <span className="label">Use custom instructions</span>
+            <span id="ci-switch-hint" className="field-hint" style={{ display: "block" }}>{enabled ? "On: used in every chat." : "Off: saved, but not used."}</span>
+          </span>
+        </label>
+        <div className="field">
+          <div className="label-row">
+            <label className="label" htmlFor="ci-text">Who should Citad3L be for you?</label>
+            <span className="char-count" aria-live="polite" style={over ? { color: "var(--danger)" } : undefined}>
+              {count.toLocaleString()} / {max.toLocaleString()}
+            </span>
+          </div>
+          <textarea
+            id="ci-text"
+            className="textarea"
+            rows={8}
+            value={text}
+            disabled={!loaded}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={CUSTOM_INSTRUCTIONS_PLACEHOLDER}
+            aria-invalid={over}
+          />
+          <span className="field-hint">
+            Saved to your account, like your chats. Changes apply to your next message, including in chats you already started.
+          </span>
+        </div>
+        {over && <p className="field-error" role="alert">That&apos;s over {max.toLocaleString()} characters. Shorten it to save.</p>}
+        {status && !error && <p className="tiny" role="status">{status}</p>}
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary btn-sm" disabled={!loaded || busy || over || !dirty}>
+            {busy && <span className="spinner" />} Save
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" disabled={!loaded || busy || (!saved?.text && !text)} onClick={clear}>
+            Clear
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
