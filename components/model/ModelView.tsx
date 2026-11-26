@@ -72,7 +72,7 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
     : signedIn || unlocked
       ? howTo
       : tier === "guest"
-        ? "Start with 5 free successful replies. No card needed."
+        ? "Try 5 messages with no account, or create a free account for 3 every day. No card needed."
         : tier === "signin"
           ? "Sign in with your email to use it. No card needed."
           : `Sign in, then pick ${tier === "max" ? "Max" : "Pro or Max"} on the pricing page to use ${model.name}.`;

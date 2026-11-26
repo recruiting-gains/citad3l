@@ -35,7 +35,11 @@ export function UsageMeter({ meter, compact }: { meter: Meter; compact?: boolean
       </div>
       <div className="usage-meter-track"><span className={`usage-meter-fill${clsFor(meter)}`} style={{ width: `${pct}%` }} /></div>
       <div className="usage-meter-foot">
-        {meter.remaining <= 0
+        {meter.label === "Free messages today"
+          ? (meter.remaining <= 0
+            ? "You've used today's 3 free messages. More at midnight Central."
+            : `${meter.remaining} of ${meter.limit} left today · resets at midnight Central`)
+          : meter.remaining <= 0
           ? (meter.label === "Weekly cap" ? `This week's cap is reached. It resets ${fmtReset(meter.resetAt)}.` : `Window spent. You're back at ${fmtReset(meter.resetAt)}.`)
           : meter.resetAt
             ? (meter.label === "Weekly cap" ? `Resets ${fmtReset(meter.resetAt)}` : `Refreshes at ${fmtReset(meter.resetAt)}`)
@@ -49,10 +53,47 @@ export function UsageMeters({ usage, compact }: { usage: UsageSummary; compact?:
   if (usage.unlimited) {
     return compact ? <div className="usage-meter-sm" title="Unlimited">Unlimited</div> : <p className="tiny">Operator access — no usage cap.</p>;
   }
-  if (usage.guest || usage.plan === "trial") {
+  if (usage.guest) {
     if (compact) return <span className="guest-count">{usage.remaining} of {usage.limit} free messages left</span>;
     return (
       <UsageMeter meter={{ used: usage.used, limit: usage.limit, remaining: usage.remaining, resetAt: null, label: "Free messages" }} />
+    );
+  }
+  if (usage.plan === "trial") {
+    const reset = "midnight Central";
+    if (compact) {
+      const left = Math.max(0, usage.remaining);
+      return (
+        <span className="daily-count" data-left={left} title={`Resets at ${reset}`} role="status" aria-live="polite">
+          <span className="daily-count-pips" aria-hidden="true">
+            {Array.from({ length: Math.max(0, usage.limit) }, (_, i) => (
+              <i key={i} className={i < left ? "" : "is-used"} />
+            ))}
+          </span>
+          {left > 0 ? (
+            <>
+              <span>{left} of {usage.limit} free messages left today</span>
+              <span className="daily-count-reset">resets at {reset}</span>
+            </>
+          ) : (
+            <>
+              <span>You&apos;ve used today&apos;s {usage.limit} free messages</span>
+              <span className="daily-count-reset">More at {reset}.</span>
+            </>
+          )}
+        </span>
+      );
+    }
+    return (
+      <UsageMeter
+        meter={{
+          used: usage.used,
+          limit: usage.limit,
+          remaining: usage.remaining,
+          resetAt: usage.resetAt,
+          label: "Free messages today",
+        }}
+      />
     );
   }
   const window = usage.window;

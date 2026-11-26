@@ -16,15 +16,18 @@ export function LimitReached({ usage }: { usage: UsageSummary }) {
   if (usage.guest) {
     return (
       <div className="limit-card guest-cta" role="alert" data-testid="guest-limit">
-        <div className="guest-cta-mark"><LockIcon /></div>
-        <div>
-          <div className="limit-title">That&apos;s your five.</div>
-          <p className="limit-body">Make an account to keep this conversation and pick up where you left off. It&apos;s free to start, and no card is needed.</p>
-          <div className="limit-actions guest-cta-actions">
-            <Link href="/login?next=/chat" className="btn btn-primary btn-sm">Create an account</Link>
-            <Link href="/pricing" className="btn btn-secondary btn-sm">See plans</Link>
-          </div>
-          <p className="tiny" style={{ marginTop: 8 }}><Link href="/login?next=/chat">Already have one? Sign in</Link></p>
+        <p className="guest-cta-kicker">You&apos;ve used your 5 free messages</p>
+        <span className="guest-meter" aria-hidden="true">
+          <i className="is-used" /><i className="is-used" /><i className="is-used" /><i className="is-used" /><i className="is-used" />
+          <span className="guest-meter-arrow" />
+          <i className="is-daily" /><i className="is-daily" /><i className="is-daily" />
+        </span>
+        <h2 className="guest-cta-title">Create a free account for 3 messages every day</h2>
+        <p className="guest-cta-body">Keep this chat, come back tomorrow, and use Fast or Private. No card needed.</p>
+        <div className="guest-cta-actions">
+          <Link href="/login?next=/chat" className="btn btn-primary btn-sm">Create an account</Link>
+          <Link href="/pricing" className="btn btn-secondary btn-sm">See plans</Link>
+          <p className="tiny" style={{ marginTop: 4, width: "100%", textAlign: "center" }}><Link href="/login?next=/chat">Already have one? Sign in</Link></p>
         </div>
       </div>
     );
@@ -38,8 +41,10 @@ export function LimitReached({ usage }: { usage: UsageSummary }) {
     usage.plan === "trial" ? null : { href: "/account/usage", label: "View usage" };
 
   if (usage.plan === "trial") {
-    title = "Your free messages are used up";
-    body = `You've used all ${usage.limit} free ${usage.unitLabel}. Pro and Max refresh every 5 hours, with a weekly cap. Failed replies never count.`;
+    title = "You've used today's 3 free messages";
+    body = reset
+      ? `More at midnight Central (${reset}). Pro and Max refresh every 5 hours if you want to keep going now.`
+      : "More at midnight Central. Pro and Max refresh every 5 hours if you want to keep going now.";
     primary = { href: "/pricing", label: "See plans" };
   } else if (usage.plan === "pro") {
     title = "You've reached this allowance";

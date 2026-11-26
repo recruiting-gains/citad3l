@@ -89,8 +89,8 @@ export function LoginView({ demoEnabled, providers, next, mode }: Props) {
             {step === "code"
               ? "Enter the 6-digit code from your email."
               : save
-                ? "Enter your email and we'll send a 6-digit code. Your chat is saved to your account and you can keep going."
-                : "Start with 5 free replies. No card required."}
+                ? "Enter your email and we'll send a 6-digit code. Your chat is saved, and a free account gives you 3 messages every day."
+                : "Try 5 messages with no account, or create a free account for 3 every day. No card needed."}
           </p>
         </div>
 

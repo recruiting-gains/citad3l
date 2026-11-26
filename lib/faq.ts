@@ -33,7 +33,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How much does it cost?",
-    a: "Free lets you try Citad3L with a few messages, and a free account adds Citad3L Private and Swarm mode. Pro is $20 a month (25 replies every 5 hours, up to 150 a week) and adds Citad3L Image. Max is $50 a month, at 2.5× those windows, and adds Citad3L Video and per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
+    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week) and adds Citad3L Image. Max is $50 a month, at 2.5× those windows, and adds Citad3L Video and per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
   },
   {
     q: "Is there a public API?",
@@ -41,7 +41,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How do usage caps work?",
-    a: "Guests get 5 free messages, one time, with no account. A free account keeps that same 5-message try and unlocks Private and Swarm. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week, plus Image (up to 10 images a day). Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus Video (up to 2 clips a day) and per-model settings. Each image or video clip also uses 1 reply of your allowance. Failed or stopped replies do not count. Swarm uses 4 replies of your allowance. Caps do not roll over.",
+    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week, plus Image (up to 10 images a day). Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus Video (up to 2 clips a day) and per-model settings. Each image or video clip also uses 1 reply of your allowance. Failed or stopped replies do not count. Caps do not roll over.",
   },
   {
     q: "How do I sign in?",
@@ -49,7 +49,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How many messages can I send without an account?",
-    a: "Guests get a few free messages (five successful replies) with no account and no card. After that, sign in with your email to keep going. Failed or stopped replies never count.",
+    a: "Guests get 5 free messages, one time, with no account and no card. After that, create a free account for 3 messages every day. Failed or stopped replies never count.",
   },
   {
     q: "Can I generate images?",

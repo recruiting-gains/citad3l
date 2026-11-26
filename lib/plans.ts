@@ -1,4 +1,4 @@
-import { proWeeklyUnits, maxWeeklyUnits, proWindowUnits, maxWindowUnits, TRIAL_REPLIES } from "./config";
+import { proWeeklyUnits, maxWeeklyUnits, proWindowUnits, maxWindowUnits, TRIAL_REPLIES, FREE_DAILY_REPLIES } from "./config";
 import type { PlanCard } from "./types";
 
 export function planCatalog(): PlanCard[] {
@@ -11,13 +11,14 @@ export function planCatalog(): PlanCard[] {
       id: "trial",
       name: "Free",
       priceUsd: 0,
-      blurb: "Try Citad3L with five messages, no account required.",
-      allowance: `${TRIAL_REPLIES} messages, one time`,
+      blurb: "5 messages to try, then 3 every day with a free account.",
+      allowance: `Guests: ${TRIAL_REPLIES} messages, one time. Free account: ${FREE_DAILY_REPLIES} messages every day, reset at midnight Central.`,
       features: [
-        "Chat with Citad3L V1 or Fast, no sign-in needed",
-        "Free account unlocks Citad3L Private and Swarm",
+        `${TRIAL_REPLIES} guest messages on Citad3L Fast, no sign-in needed`,
+        `A free account gives you ${FREE_DAILY_REPLIES} messages every day on Fast and Private`,
+        "Resets at midnight Central. Failed replies never count",
         "Create an account any time to save chats",
-        "Failed replies never count",
+        "Swarm uses 4 replies, so it is on Pro and Max",
       ],
       cta: "Start chatting",
     },

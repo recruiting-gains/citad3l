@@ -7,7 +7,24 @@ function envInt(name: string, fallback: number): number {
 
 /** Central, env-configurable plan + limit settings. Paid allowances MUST be load-tested before sale. */
 export const TRIAL_REPLIES = 5;
+/** Guest (signed-out) one-time allowance. Kept as an alias of TRIAL_REPLIES. */
 export const FREE_MESSAGES = TRIAL_REPLIES;
+
+/**
+ * Signed-in Free accounts: successful replies per America/Chicago calendar day, shared across Fast and Private.
+ * Override with FREE_DAILY_REPLIES. Set to 0 to pause the daily allowance (kill switch, with FREE_DAILY_GLOBAL_CAP).
+ */
+export const FREE_DAILY_REPLIES = Math.max(0, Number(process.env.FREE_DAILY_REPLIES ?? 3) || 0);
+
+/**
+ * Site-wide ceiling on attempted Free-account daily messages (every free user combined) per Chicago day.
+ * Kill switch: set FREE_DAILY_GLOBAL_CAP=0 to pause free daily chat for everyone.
+ * Default 2500 is generous (~$50/day at the $0.02/reply admin estimate) and can be raised in wrangler vars.
+ */
+export const FREE_DAILY_GLOBAL_CAP = Math.max(0, Number(process.env.FREE_DAILY_GLOBAL_CAP ?? 2500) || 0);
+
+/** Admin/planning estimate only, matching lib/admin.ts. Not a provider invoice. */
+export const FREE_DAILY_USD_PER_REPLY = 0.02;
 
 /** Owner email lives only here. Everywhere else must call ownerEmail() / isOwnerEmail(). */
 export function ownerEmail(): string {
