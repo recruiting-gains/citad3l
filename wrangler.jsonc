@@ -76,6 +76,10 @@
     // Public launch (2026-11-21): Private + Swarm for any account, Image for Pro/Max, Video for Max (lib/access.ts).
     // Kill switch: "admins" puts all four back to admin-only.
     "PUBLIC_FEATURES": "all",
+    // Signed-in Free accounts: 3 messages/day (America/Chicago midnight). Site-wide ceiling on attempted free-daily
+    // messages; set FREE_DAILY_GLOBAL_CAP or FREE_DAILY_REPLIES to 0 to pause. 2500 is ~$50/day at the $0.02/reply estimate.
+    "FREE_DAILY_REPLIES": "3",
+    "FREE_DAILY_GLOBAL_CAP": "2500",
     // Spend guards (lib/spend-guard.ts). PROVIDER_MONTHLY_BUDGET_USD must match the provider key's monthly cap ($20 as of
     // 2026-11-21); 30-day global ceilings: Video = 50% of it / $1.60 (6 clips), Image = 25% / $0.10 (50 images).
     // Daily caps reset 00:00 UTC. Raise the budget here together with the provider cap.
