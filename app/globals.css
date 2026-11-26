@@ -3339,7 +3339,7 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
 .limit-card.guest-cta {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
