@@ -65,6 +65,7 @@ export async function generateImage(prompt: string, signal: AbortSignal): Promis
       headers: { "content-type": "application/json", authorization: `Bearer ${key}`, accept: "application/json" },
       body: JSON.stringify({
         model: resolved.providerModelId,
+        // Caller's words, unchanged. Explicit prompts are refused before this runs; never substitute another scene.
         prompt,
         // The image model is resolution-tiered: sized by aspect_ratio + resolution (1K = 1024×1024 at
         // 1:1, $0.10), not width/height. Verified live 2026-11-19: HTTP 200, 1024×1024 WebP.

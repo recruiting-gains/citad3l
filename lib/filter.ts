@@ -3,8 +3,10 @@
  *
  * Hard lines (never disable): sexual content involving minors, and
  * instructional help for bombs or explosives.
- * Adult sexual content is banned by default (see legal/drafts/acceptable-use.md)
+ * Adult sexual text is banned by default (see legal/drafts/acceptable-use.md)
  * and can only be relaxed with CITAD3L_ALLOW_ADULT=true — hard lines stay on.
+ * Image prompts are stricter: nude and explicit sexual images are refused even
+ * when that flag is on (checkImagePrompt). The prompt is never rewritten.
  *
  * Filter refusals never ban, pause, or suspend an account; only a human admin can do that.
  * This is a keyword/regex pass. An optional Fast-model classifier can be
@@ -24,6 +26,9 @@ export const REFUSAL: Record<FilterCategory, string> = {
   // Fail-closed: the check could not finish, so nothing is sent. Friendly retry; not a topic refusal.
   check_failed: "We couldn't finish the safety check on this message, so it wasn't sent. Please try sending it again.",
 };
+
+/** Chat copy when an image prompt asks for nude or explicit sexual content. Not the text-chat refusal. */
+export const IMAGE_EXPLICIT_REFUSAL = "Citad3L doesn't make explicit images.";
 
 export function adultContentAllowed(): boolean {
   return process.env.CITAD3L_ALLOW_ADULT === "true";
@@ -202,6 +207,40 @@ export function checkText(input: string): FilterVerdict {
   if (hitsCsam(text)) return refused("csam");
   if (hitsExplosives(text)) return refused("explosives");
   if (!adultContentAllowed() && hitsAdult(text)) return refused("adult_sexual");
+  return { allowed: true };
+}
+
+const IMAGE_NUDE = /\b(nudes?|nudity|nakedness|naked|topless|bottomless|unclothed|undress(?:ed|ing)?|full[-\s]?frontal)\b/;
+const IMAGE_PORN = /\b(porn(?:ography|ographic)?|xxx|nsfw|hentai|erotic(?:a)?|lewd|hardcore)\b/;
+const IMAGE_ACT = /\b(intercourse|orgasms?|masturbat(?:e|ing|ion)|genitals?|penis(?:es)?|vaginas?|nipples?)\b/;
+const IMAGE_EXPLICIT_PHRASE =
+  /\bexplicit(?:ly)?\b[\s\S]{0,48}\b(sex(?:ual|ually)?|nude|naked)\b|\b(sex(?:ual|ually)?|nude|naked)\b[\s\S]{0,48}\bexplicit(?:ly)?\b|\b(?:have|having|had)\s+sex\b|\bsex\s+with\b|\bsex\s+(?:scene|photo|image|picture|pic|pics|video)s?\b|\bsexual\s+(?:image|photo|picture|scene|act|content|pose)s?\b/;
+/** Same sexual terms as the minor block, minus bare "explicit" (that word also means "sharp detail" in a portrait). */
+const IMAGE_MINOR_SEXUAL = /\b(sex|sexual|sexually|sexy|erotic|erotica|nsfw|lewd|horny|aroused|arousing|orgasm|intercourse|molest|molesting|fondle|fondling|seduce|seducing|seduction|naked|nude|nudes|undress|undressing|genitals?|penis|vagina|breasts?|porn|pornographic|hentai|r34|rule 34)\b/;
+/** "girl"/"boy" with a sexual request stays on the minor block. Not applied to ordinary portraits. */
+const IMAGE_MINOR_WORD = /\b(?:girls?|boys?)\b/;
+
+function imageExplicit(text: string): boolean {
+  return IMAGE_NUDE.test(text) || IMAGE_PORN.test(text) || IMAGE_ACT.test(text) || IMAGE_EXPLICIT_PHRASE.test(text);
+}
+
+/**
+ * Image and video prompts. CSAM and explosives use the same rules as chat.
+ * Nude and explicit sexual requests are refused even when adult text is allowed,
+ * so they are never sent off to be turned into some other picture.
+ * "girl" or "boy" together with a sexual request stays a minor block.
+ */
+export function checkImagePrompt(input: string): FilterVerdict {
+  const first = checkText(input);
+  if (!first.allowed && first.category !== "adult_sexual") return first;
+  const text = normalizeForFilter(input);
+  if (!text) {
+    return first.allowed ? { allowed: true } : { allowed: false, category: "adult_sexual", message: IMAGE_EXPLICIT_REFUSAL };
+  }
+  if (IMAGE_MINOR_WORD.test(text) && (IMAGE_MINOR_SEXUAL.test(text) || imageExplicit(text))) return refused("csam");
+  if (!first.allowed || imageExplicit(text)) {
+    return { allowed: false, category: "adult_sexual", message: IMAGE_EXPLICIT_REFUSAL };
+  }
   return { allowed: true };
 }
 

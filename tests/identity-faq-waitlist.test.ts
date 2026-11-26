@@ -99,6 +99,9 @@ describe("FAQ", () => {
     expect(blob).toMatch(/private, less-filtered/i);
     expect(blob).toMatch(/Image mode keeps a safety filter/);
     expect(blob).toMatch(/will not produce explicit nude or sexual images/);
+    expect(blob).toMatch(/Can Citad3L make explicit or nude images/);
+    expect(blob).toMatch(/safe-for-work/);
+    expect(blob).toMatch(/anything sexual involving minors is always blocked/i);
     expect(blob).toMatch(/Adult text chat between adults is allowed/);
     expect(blob).toMatch(/no public API today/i);
     expect(blob).toMatch(/not end-to-end encrypted from your device/i);
