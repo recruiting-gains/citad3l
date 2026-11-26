@@ -10,6 +10,8 @@ import { checkVerifyLimits, verifyEmailCode } from "@/lib/auth/email-code";
 import { clientIpFrom } from "@/lib/client-ip";
 import { ADMIN_SESSION_MAX_AGE_SEC, checkAndRollSession, createLoginSession } from "@/lib/sessions";
 import { captureReferralAtSignup, REF_COOKIE, referralsEnabled } from "@/lib/referrals";
+import { recordSignupSource } from "@/lib/source-tracking";
+import { UTM_COOKIE } from "@/lib/utm";
 
 class EmailCodeSigninError extends CredentialsSignin {
   constructor(code: "invalid_code" | "expired_code" | "locked" | "invalid_email") {
@@ -85,6 +87,18 @@ async function captureReferralFromCookie(userId: string) {
   }
 }
 
+/** Attaches the first-touch source (c3_utm cookie) to a brand-new account. Never blocks sign-in. */
+async function captureSignupSource(userId: string) {
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    const raw = jar.get(UTM_COOKIE)?.value;
+    await recordSignupSource(userId, raw ? `${UTM_COOKIE}=${encodeURIComponent(raw)}` : null);
+  } catch (e) {
+    console.error("[sources] signup capture failed", e instanceof Error ? e.message : "error");
+  }
+}
+
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
   // 365-day ceiling so admin cookies can last a year. LoginSession + the jwt
@@ -98,6 +112,7 @@ export const authConfig = {
       if (user?.id) {
         token.uid = user.id;
         await captureReferralFromCookie(user.id);
+        await captureSignupSource(user.id);
         if (user.email) token.email = user.email;
         try {
           const s = await createLoginSession(user.id, { email: user.email, isAdmin: isAdminEmail(user.email) });

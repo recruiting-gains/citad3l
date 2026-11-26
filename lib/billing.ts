@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { getStripe, planForPrice } from "./stripe";
 import { referralOnInvoicePaid, referralOnPaymentReversal } from "./referrals";
+import { recordPaymentSource } from "./source-tracking";
 
 type Sub = Stripe.Subscription & { current_period_start?: number; current_period_end?: number };
 
@@ -166,6 +167,13 @@ async function handle(event: Stripe.Event): Promise<"processed" | "ignored"> {
       // Referral rewards ride on paid invoices (see lib/referrals.ts). Runs after the plan update so a credit
       // failure (which makes Stripe retry) never holds back the friend's paid access.
       const refChanged = await referralOnInvoicePaid(inv, userId);
+      // Source tracking (first payment only). Best-effort: never throws, never changes billing.
+      const subMeta = (inv.parent?.subscription_details?.metadata ?? null) as Record<string, string> | null;
+      try {
+        await recordPaymentSource(userId, { amountCents: inv.amount_paid ?? 0, plan: subMeta?.plan ?? null, metadata: subMeta });
+      } catch {
+        /* best-effort */
+      }
       return entResult === "processed" || refChanged ? "processed" : "ignored";
     }
     case "charge.refunded": {
