@@ -3564,6 +3564,7 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   }
   .limit-card.guest-cta .guest-cta-actions > *,
   .try-save-actions > * {
+    flex: 0 0 auto;
     width: 100%;
     justify-content: center;
   }
