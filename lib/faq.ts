@@ -56,6 +56,10 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     a: "Yes, on Pro and Max. Choose Citad3L Image, or type /image followed by a prompt in chat. Images have a daily limit per account. Image mode keeps a safety filter and will not produce explicit nude or sexual images. Citad3L V1 and Fast can also look at images you upload on any plan. Citad3L Private is text only and cannot read images.",
   },
   {
+    q: "Can Citad3L make explicit or nude images?",
+    a: "No. Citad3L keeps image generation safe-for-work, and anything sexual involving minors is always blocked.",
+  },
+  {
     q: "Can I make videos?",
     a: "Yes, on Max. Choose Citad3L Video and describe a clip. Each clip is 5 seconds at 720p, with sound, and there is a daily clip limit per account.",
   },

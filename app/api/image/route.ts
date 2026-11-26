@@ -79,6 +79,7 @@ export async function POST(req: Request) {
   }
   if (!prompt) return jerr(400, "bad_request", "Message is empty.");
 
+  // Explicit and minor-sexual prompts stop here, before the daily image credit or a reply is reserved.
   const inputFilter = await reviewImagePrompt(prompt, req.signal);
   if (!inputFilter.allowed) {
     await logFilterRefusal({ userId, direction: "input", verdict: inputFilter, modelId: "citad3l-image" });

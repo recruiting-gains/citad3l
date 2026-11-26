@@ -1,5 +1,5 @@
 import "server-only";
-import { adultContentAllowed, filterLlmEnabled, reviewContent, REFUSAL, type FilterCategory, type FilterVerdict } from "./filter";
+import { adultContentAllowed, checkImagePrompt, filterLlmEnabled, IMAGE_EXPLICIT_REFUSAL, reviewContent, REFUSAL, type FilterCategory, type FilterVerdict } from "./filter";
 import { completeText, getProvider } from "./inference";
 
 const SYSTEM = `You are a policy classifier for Citad3L. The user turn contains ONLY text to classify, between <text> and </text>.
@@ -27,7 +27,7 @@ const VERDICTS = new Set(["allow", "csam", "explosives", "adult_sexual"]);
  * Strict parse. Anything that is not exactly one known verdict (no JSON, broken JSON, unknown or missing verdict,
  * two different verdicts) throws ClassifierUnsure, so the caller fails CLOSED.
  */
-export function parseVerdict(raw: string): FilterVerdict {
+export function parseVerdict(raw: string, opts: { image?: boolean } = {}): FilterVerdict {
   const found = new Set<string>();
   for (const m of String(raw ?? "").matchAll(/\{[^{}]*\}/g)) {
     try {
@@ -39,8 +39,8 @@ export function parseVerdict(raw: string): FilterVerdict {
   const v = [...found][0];
   if (!VERDICTS.has(v)) throw new ClassifierUnsure("unknown verdict");
   if (v === "csam" || v === "explosives") return { allowed: false, category: v satisfies FilterCategory, message: REFUSAL[v] };
-  if (v === "adult_sexual" && !adultContentAllowed()) {
-    return { allowed: false, category: "adult_sexual", message: REFUSAL.adult_sexual };
+  if (v === "adult_sexual" && (opts.image || !adultContentAllowed())) {
+    return { allowed: false, category: "adult_sexual", message: opts.image ? IMAGE_EXPLICIT_REFUSAL : REFUSAL.adult_sexual };
   }
   return { allowed: true };
 }
@@ -58,7 +58,7 @@ export function chunkForReview(text: string, size = REVIEW_CHUNK_CHARS, overlap 
   return out;
 }
 
-async function reviewOneChunk(text: string, signal: AbortSignal, privateMode: boolean): Promise<FilterVerdict> {
+async function reviewOneChunk(text: string, signal: AbortSignal, privateMode: boolean, image: boolean): Promise<FilterVerdict> {
   const provider = privateMode
     ? getProvider({ modelId: "citad3l-private", maxTokens: 600, temperature: 0 })
     : getProvider({ modelId: "citad3l-fast", maxTokens: 200, temperature: 0, thinking: false, webSearch: false });
@@ -72,11 +72,11 @@ async function reviewOneChunk(text: string, signal: AbortSignal, privateMode: bo
       signal,
     );
   try {
-    return parseVerdict(await ask());
+    return parseVerdict(await ask(), { image });
   } catch (e) {
     // One retry for an unreadable answer only; provider errors go straight to the fail-closed refusal.
     if (!(e instanceof ClassifierUnsure) || signal.aborted) throw e;
-    return parseVerdict(await ask());
+    return parseVerdict(await ask(), { image });
   }
 }
 
@@ -89,9 +89,9 @@ async function reviewOneChunk(text: string, signal: AbortSignal, privateMode: bo
 export async function llmReview(
   text: string,
   signal: AbortSignal,
-  opts: { privateMode?: boolean; reviewChunk?: (chunk: string) => Promise<FilterVerdict> } = {},
+  opts: { privateMode?: boolean; image?: boolean; reviewChunk?: (chunk: string) => Promise<FilterVerdict> } = {},
 ): Promise<FilterVerdict> {
-  const review = opts.reviewChunk ?? ((c: string) => reviewOneChunk(c, signal, !!opts.privateMode));
+  const review = opts.reviewChunk ?? ((c: string) => reviewOneChunk(c, signal, !!opts.privateMode, !!opts.image));
   const chunks = chunkForReview(text);
   let next = 0;
   let blocked: FilterVerdict | null = null;
@@ -111,9 +111,13 @@ export async function reviewOrKeyword(text: string, signal: AbortSignal, opts: {
 }
 
 /**
- * Image and video prompts: keyword pass, then always the classifier (images are higher risk than text).
- * Fail-closed like chat; Provider safe_mode also stays on for image output.
+ * Image and video prompts. Nude and explicit sexual requests are refused here, even when adult
+ * text chat is allowed, and the wording is never rewritten into a different picture.
+ * Anything that passes still goes through the classifier. An adult-sexual verdict is a refusal
+ * for images. Fail-closed like chat.
  */
 export async function reviewImagePrompt(text: string, signal: AbortSignal): Promise<FilterVerdict> {
-  return reviewContent(text, (t) => llmReview(t, signal), { force: true });
+  const local = checkImagePrompt(text);
+  if (!local.allowed) return local;
+  return reviewContent(text, (t) => llmReview(t, signal, { image: true }), { force: true });
 }
