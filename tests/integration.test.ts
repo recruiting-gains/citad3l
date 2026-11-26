@@ -5,6 +5,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
+import { chicagoDayWindow } from "@/lib/chicago-day";
+import { FREE_DAILY_REPLIES } from "@/lib/config";
 import { Client, chat, sleep, BASE } from "./helpers";
 
 
@@ -125,19 +127,25 @@ describe("history, projects, cross-user isolation", () => {
 });
 
 describe("atomic usage limits under concurrency", () => {
-  it("trial: 20 parallel requests with 1 reply remaining → exactly 1 succeeds", async () => {
+  it("trial: 20 parallel requests with 1 daily reply remaining → exactly 1 succeeds", async () => {
     const C = new Client(); const cId = await C.login(`carol-${run}@test.local`);
-    await prisma.entitlement.upsert({ where: { userId: cId }, create: { userId: cId, trialUsed: 4 }, update: { trialUsed: 4 } });
+    const day = chicagoDayWindow();
+    await prisma.entitlement.upsert({
+      where: { userId: cId },
+      create: { userId: cId, windowUsed: FREE_DAILY_REPLIES - 1, windowStart: day.start, windowEnd: day.end },
+      update: { windowUsed: FREE_DAILY_REPLIES - 1, windowStart: day.start, windowEnd: day.end },
+    });
     const results = await Promise.all(Array.from({ length: 20 }, (_, i) => chat(C, { message: `parallel ${i}` })));
     const ok = results.filter((r) => r.status === 200 && r.events.at(-1)?.event === "done");
     const limited = results.filter((r) => r.status === 402 && r.json?.error?.code === "limit_reached");
     expect(ok.length).toBe(1);
     expect(limited.length).toBe(19);
     const e = await prisma.entitlement.findUniqueOrThrow({ where: { userId: cId } });
-    expect(e.trialUsed).toBe(5);
+    expect(e.windowUsed).toBe(FREE_DAILY_REPLIES);
     expect(e.reserved).toBe(0);
     const u = (await C.json("/api/usage")).data.usage;
     expect(u.remaining).toBe(0);
+    expect(u.limit).toBe(FREE_DAILY_REPLIES);
     // 21st request this minute: blocked either by the exhausted allowance (402) or the 20/min rate limiter (429)
     const again = await chat(C, { message: "one more" });
     expect([402, 429]).toContain(again.status);

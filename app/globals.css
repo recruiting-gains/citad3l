@@ -3279,3 +3279,299 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   .try-input { padding: 10px; }
   .try-soft-save, .upgrade-card { padding: 12px; }
 }
+
+
+/* =========================================================
+   Free daily allowance — Opus 5.5 design (2026-11-25)
+   ========================================================= */
+/* =========================================================
+   Shared: guest meter (5 used, arrow, 3 daily)
+   ========================================================= */
+.guest-meter {
+  grid-area: meter;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: center;
+}
+.guest-meter i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.guest-meter .is-used  { background: var(--line-2); }
+.guest-meter .is-daily { background: var(--fg); }
+.guest-meter-arrow {
+  position: relative;
+  width: 14px;
+  height: 1px;
+  margin: 0 4px;
+  background: var(--fg-2);
+  opacity: .55;
+}
+.guest-meter-arrow::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-top: 1px solid var(--fg-2);
+  border-right: 1px solid var(--fg-2);
+  transform: translateY(-50%) rotate(45deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .guest-meter .is-daily {
+    animation: guest-pip-in .45s cubic-bezier(.2,.7,.2,1) .2s both;
+  }
+  .guest-meter .is-daily + .is-daily { animation-delay: .32s; }
+  .guest-meter .is-daily + .is-daily + .is-daily { animation-delay: .44s; }
+}
+@keyframes guest-pip-in {
+  from { opacity: 0; transform: scale(.3); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* =========================================================
+   1. Chat guest wall: .limit-card.guest-cta
+   ========================================================= */
+.limit-card.guest-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "kicker  meter"
+    "title   title"
+    "body    body"
+    "actions actions";
+  gap: 8px 16px;
+  padding: 24px 24px 20px;
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-soft);
+}
+/* rail */
+.limit-card.guest-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--art-cyan), var(--art-violet));
+  opacity: .85;
+}
+/* faint corner wash, barely there */
+.limit-card.guest-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 0% 0%,
+    color-mix(in srgb, var(--art-cyan) 6%, transparent), transparent 60%);
+}
+.limit-card.guest-cta .guest-cta-kicker,
+.try-save-kicker {
+  grid-area: kicker;
+  align-self: center;
+  margin: 0;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.limit-card.guest-cta .guest-cta-title,
+.try-save-title {
+  grid-area: title;
+  margin: 4px 0 0;
+  font-size: var(--t-xl);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+.limit-card.guest-cta .guest-cta-body,
+.try-save-sub {
+  grid-area: body;
+  margin: 0;
+  max-width: 52ch;
+  line-height: 1.5;
+  color: var(--fg-2);
+  text-wrap: pretty;
+}
+.limit-card.guest-cta .guest-cta-actions,
+.try-save-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* =========================================================
+   2. Homepage try-box wall: .try-save
+   Sits inside the try-box, replacing the transcript footer.
+   ========================================================= */
+.try-save {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "kicker  meter"
+    "title   title"
+    "sub     sub"
+    "actions actions";
+  gap: 8px 16px;
+  padding: 24px;
+  background: var(--surface-3);
+  border-top: 1px solid var(--line);
+}
+.try-save::before {
+  content: "";
+  position: absolute;
+  inset: -1px 0 auto 0;       /* sits on the divider */
+  height: 2px;
+  background: linear-gradient(90deg, var(--art-cyan), var(--art-violet));
+  opacity: .85;
+}
+.try-save-sub { grid-area: sub; }
+
+/* =========================================================
+   3. Composer remainder: .daily-count
+   Markup: pips + count text + .daily-count-reset
+   Set data-left="0|1|2|3" on .daily-count
+   ========================================================= */
+.daily-count {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.daily-count-pips {
+  display: inline-flex;
+  gap: 4px;
+}
+.daily-count-pips i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg);
+  transition: background-color .25s ease, box-shadow .25s ease;
+}
+.daily-count-pips i.is-used {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.daily-count-reset::before {
+  content: "\00B7";            /* middle dot */
+  margin-right: 8px;
+  color: var(--fg-2);
+}
+/* empty state: quiet amber pill */
+.daily-count[data-left="0"] {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--amber-bg);
+  color: var(--amber-fg);
+}
+.daily-count[data-left="0"] .daily-count-pips i.is-used {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber-fg) 45%, transparent);
+}
+.daily-count[data-left="0"] .daily-count-reset::before { content: none; }
+
+/* =========================================================
+   4. Free plan card (optional)
+   ========================================================= */
+.plan-card[data-plan="trial"] {
+  border-color: color-mix(in srgb, var(--fg) 18%, var(--line-2));
+}
+.plan-card[data-plan="trial"] .plan-allowance {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface-3);
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: var(--fg-2);
+}
+.plan-card[data-plan="trial"] .plan-allowance strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* =========================================================
+   Dark
+   ========================================================= */
+:root[data-theme="dark"] .limit-card.guest-cta {
+  background: var(--surface-3);
+  box-shadow: none;
+}
+:root[data-theme="dark"] .limit-card.guest-cta::after {
+  background: radial-gradient(120% 90% at 0% 0%,
+    color-mix(in srgb, var(--art-violet) 9%, transparent), transparent 60%);
+}
+:root[data-theme="dark"] .limit-card.guest-cta::before,
+:root[data-theme="dark"] .try-save::before { opacity: .7; }
+:root[data-theme="dark"] .daily-count[data-left="0"] {
+  background: color-mix(in srgb, var(--art-amber) 12%, transparent);
+  color: var(--art-amber);
+}
+:root[data-theme="dark"] .daily-count[data-left="0"] .daily-count-pips i.is-used {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--art-amber) 40%, transparent);
+}
+:root[data-theme="dark"] .plan-card[data-plan="trial"] {
+  border-color: color-mix(in srgb, var(--fg) 22%, var(--line-2));
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+@media (max-width: 640px) {
+  .limit-card.guest-cta,
+  .try-save {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 20px 18px 18px;
+  }
+  .limit-card.guest-cta {
+    grid-template-areas: "meter" "kicker" "title" "body" "actions";
+  }
+  .try-save {
+    grid-template-areas: "meter" "kicker" "title" "sub" "actions";
+  }
+  .guest-meter { justify-self: start; margin-bottom: 2px; }
+
+  .limit-card.guest-cta .guest-cta-body,
+  .try-save-sub { max-width: none; }
+
+  .limit-card.guest-cta .guest-cta-actions,
+  .try-save-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .limit-card.guest-cta .guest-cta-actions > *,
+  .try-save-actions > * {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* reset line drops under the count instead of wrapping mid-phrase */
+  .daily-count-reset { flex-basis: 100%; padding-left: 26px; } /* aligns under text past 3 pips */
+  .daily-count-reset::before { content: none; }
+  .daily-count[data-left="0"] { border-radius: var(--r-lg); }
+  .daily-count[data-left="0"] .daily-count-reset { padding-left: 26px; }
+}

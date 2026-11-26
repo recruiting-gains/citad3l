@@ -199,7 +199,7 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
         <div className="try-soft-save" role="region" aria-label="Save your chat">
           <div className="try-soft-save-row">
             <p className="try-soft-save-text">
-              <strong>Save your chat</strong> — keep this thread and unlock Private mode with a free email code (no card).
+              <strong>Save your chat</strong> and get 3 messages every day with a free account. No card needed.
             </p>
             <div className="try-soft-save-actions">
               {!softSaveOpen && (
@@ -240,9 +240,17 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
 
       {capped ? (
         <div className="try-save">
-          <p className="try-save-title">Save your chat and keep going</p>
-          <p className="try-save-sub">{notice && !/used your/i.test(notice) ? notice : `You've used your ${freeLimit} free messages.`} Enter your email and we&apos;ll send a 6-digit code. Your chat moves into your account so you can pick up where you left off.</p>
-          <EmailCodeForm callbackUrl="/chat/saved" sendLabel="Save my chat" idPrefix="try" compact beforeRedirect={() => saveGuestChat(turns.filter((t) => t.status !== "error"))} />
+          <p className="try-save-kicker">You&apos;ve used your {freeLimit} free messages</p>
+          <span className="guest-meter" aria-hidden="true">
+            <i className="is-used" /><i className="is-used" /><i className="is-used" /><i className="is-used" /><i className="is-used" />
+            <span className="guest-meter-arrow" />
+            <i className="is-daily" /><i className="is-daily" /><i className="is-daily" />
+          </span>
+          <p className="try-save-title">Create a free account for 3 messages every day</p>
+          <p className="try-save-sub">{notice && !/used your/i.test(notice) ? notice : "Keep this chat and come back tomorrow on Fast or Private. We'll email a 6-digit code. No card needed."}</p>
+          <div className="try-save-actions">
+            <EmailCodeForm callbackUrl="/chat/saved" sendLabel="Save my chat" idPrefix="try" compact beforeRedirect={() => saveGuestChat(turns.filter((t) => t.status !== "error"))} />
+          </div>
         </div>
       ) : (
         <form className="try-input" onSubmit={(e) => { e.preventDefault(); void send(text); }}>

@@ -1186,7 +1186,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
 
   /* ---------- render pieces ---------- */
   const limitPlaceholder =
-    usage.guest ? "Free messages used — create an account to keep chatting" : usage.plan === "trial" ? "Free messages used — see plans to keep chatting" : "Allowance used — refreshes on the 5-hour window or weekly cap";
+    usage.guest ? "You've used your 5 free messages. Create a free account for 3 messages every day." : usage.plan === "trial" ? "You've used today's 3 free messages. More at midnight Central." : "Allowance used. It refreshes on the 5-hour window or weekly cap.";
 
   async function addFiles(files: FileList | File[]) {
     const list = Array.from(files);
@@ -1484,7 +1484,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const softSaveEl = showSoftSave ? (
     <div className="try-soft-save chat-soft-save" role="region" aria-label="Save your chat">
       <div className="try-soft-save-row">
-        <p className="try-soft-save-text"><strong>Save your chat</strong> — sign in with a 6-digit email code to keep this thread and unlock Private mode.</p>
+        <p className="try-soft-save-text"><strong>Save your chat</strong> and get 3 messages every day with a free account. No card needed.</p>
         <div className="try-soft-save-actions">
           <a className="btn btn-secondary btn-sm" href="/login?next=/chat" onClick={() => trackFunnelEvent("soft_save_clicked", "/chat")}>Save my chat</a>
           <button type="button" className="try-soft-save-dismiss" onClick={() => setSoftSaveDismissed(true)}>Not now</button>

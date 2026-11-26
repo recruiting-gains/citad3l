@@ -184,14 +184,14 @@ export async function reserveGuest(
     const used = Math.max(state.used, row?.used ?? 0);
     const reserved = row?.reserved ?? state.reserved;
     if (used + reserved >= FREE_MESSAGES) {
-      throw new GuestError("limit_reached", "You've used your 5 free messages. Create an account to keep going.");
+      throw new GuestError("limit_reached", "You've used your 5 free messages. Create a free account for 3 messages every day.");
     }
     const now = new Date();
     const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const ipHash = hashIp(ip);
     const ipUsed = await store.ipDayUsed(ipHash, dayStart);
     if (ipUsed >= GUEST_IP_DAILY_CAP) {
-      throw new GuestError("limit_reached", "You've used your 5 free messages. Create an account to keep going.");
+      throw new GuestError("limit_reached", "You've used your 5 free messages. Create a free account for 3 messages every day.");
     }
     const current = inflight.get(state.id) ?? 0;
     if (current >= 1) throw new GuestError("busy", "A reply is already in progress.");

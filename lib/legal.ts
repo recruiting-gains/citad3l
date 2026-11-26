@@ -35,7 +35,7 @@ export const TERMS: LegalDoc = {
       "Don't use Citad3L where it's illegal, or if we've banned you before.",
     ] },
     { h: "3. Plans, billing and renewal", p: [
-      "Free: a few free messages to try Citad3L, plus Citad3L Private and Swarm mode with a free account. Pro: $20 per month, adds Citad3L Image. Max: $50 per month, 2.5× the Pro allowance, plus Citad3L Video and per-model settings. The current allowances are on the pricing page.",
+      "Free: guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro: $20 per month, adds Citad3L Image. Max: $50 per month, 2.5× the Pro allowance, plus Citad3L Video and per-model settings. The current allowances are on the pricing page.",
       "Paid plans are billed in advance through our payment processor, Stripe, and renew automatically every month until you cancel. Taxes may be added where required.",
       "Allowances reset on a rolling 5-hour window and a weekly cap and don't roll over. Images and video clips also have daily limits per account and across the service, so one account can't use up capacity for everyone. Failed or stopped replies don't count against your allowance.",
       "We may change prices for future billing periods. We'll tell you before your next renewal, and you can cancel before the new price applies.",

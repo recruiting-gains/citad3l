@@ -5,7 +5,7 @@ import {
   isOwnerEmail,
   planLimit,
   planWindowLimit,
-  TRIAL_REPLIES,
+  FREE_DAILY_REPLIES,
   UNIT_LABEL,
   MAX_CONCURRENT_STREAMS_PER_USER,
   STALE_RESERVATION_MS,
@@ -13,6 +13,8 @@ import {
   usageWeekMs,
   usageWindowMs,
 } from "./config";
+import { chicagoDayWindow } from "./chicago-day";
+import { freeDailyGlobalGuard, freeDailyPaused } from "./free-daily-cap";
 import { spendLimits, spendPeek } from "./spend-guard";
 import type { UsageMeter, UsageSummary } from "./types";
 
@@ -46,27 +48,39 @@ export function isPaidActive(e: Pick<EntitlementWindows, "plan" | "status">): bo
 }
 
 /** Which pool the user draws from right now (trial vs paid vs blocked). */
-export function poolFor(e: Pick<EntitlementWindows, "plan" | "status" | "trialUsed" | "periodUsed">) {
+export function poolFor(e: Pick<EntitlementWindows, "plan" | "status" | "trialUsed" | "periodUsed" | "windowUsed">) {
   const paid = isPaidActive(e);
   if (paid) return { pool: "period" as const, used: e.periodUsed, limit: planLimit(e.plan) };
   if (e.plan !== "trial" && e.status === "past_due") return { pool: "blocked" as const, used: e.periodUsed, limit: 0 };
-  return { pool: "trial" as const, used: e.trialUsed, limit: TRIAL_REPLIES };
+  return { pool: "trial" as const, used: e.windowUsed, limit: FREE_DAILY_REPLIES };
 }
 
 export function rolledWindows<T extends EntitlementWindows>(e: T, now = new Date()): T {
-  if (!isPaidActive(e)) return e;
-  const next = { ...e };
-  if (!next.windowEnd || now.getTime() >= next.windowEnd.getTime()) {
-    next.windowUsed = 0;
-    next.windowStart = now;
-    next.windowEnd = new Date(now.getTime() + usageWindowMs());
+  if (isPaidActive(e)) {
+    const next = { ...e };
+    if (!next.windowEnd || now.getTime() >= next.windowEnd.getTime()) {
+      next.windowUsed = 0;
+      next.windowStart = now;
+      next.windowEnd = new Date(now.getTime() + usageWindowMs());
+    }
+    if (!next.weekEnd || now.getTime() >= next.weekEnd.getTime()) {
+      next.weekUsed = 0;
+      next.weekStart = now;
+      next.weekEnd = new Date(now.getTime() + usageWeekMs());
+    }
+    return next;
   }
-  if (!next.weekEnd || now.getTime() >= next.weekEnd.getTime()) {
-    next.weekUsed = 0;
-    next.weekStart = now;
-    next.weekEnd = new Date(now.getTime() + usageWeekMs());
-  }
-  return next;
+  if (e.plan !== "trial" && e.status === "past_due") return e;
+  // Signed-in Free: calendar day in America/Chicago (resets at midnight Central).
+  const day = chicagoDayWindow(now);
+  const aligned =
+    !!e.windowStart &&
+    !!e.windowEnd &&
+    e.windowStart.getTime() === day.start.getTime() &&
+    e.windowEnd.getTime() === day.end.getTime() &&
+    now.getTime() < day.end.getTime();
+  if (aligned) return e;
+  return { ...e, windowUsed: 0, windowStart: day.start, windowEnd: day.end };
 }
 
 function meter(used: number, limit: number, reserved: number, resetAt: Date | null, label: string): UsageMeter {
@@ -120,16 +134,20 @@ export function summarize(e: EntitlementWindows, opts: { owner?: boolean; admin?
     };
   }
   const remaining = Math.max(0, p.limit - p.used - rolled.reserved);
+  const dayMeter = p.pool === "trial"
+    ? meter(rolled.windowUsed, FREE_DAILY_REPLIES, rolled.reserved, rolled.windowEnd, "Free messages today")
+    : undefined;
   return {
     plan: p.pool === "trial" ? "trial" : rolled.plan,
     status: rolled.status,
     used: p.used,
     limit: p.limit,
     remaining,
-    resetAt: p.pool === "trial" ? null : periodEnd,
+    resetAt: p.pool === "trial" ? (rolled.windowEnd?.toISOString() ?? null) : periodEnd,
     periodEnd,
     cancelAtPeriodEnd: rolled.cancelAtPeriodEnd,
     unitLabel: UNIT_LABEL,
+    window: dayMeter,
   };
 }
 
@@ -277,8 +295,25 @@ export async function reserve(userId: string, units = 1): Promise<{ reservationI
         if (units > windowLeft || units > weekLeft) {
           throw new UsageError("limit_reached", windowLeft <= weekLeft ? "You've used this window's allowance. It refreshes every 5 hours." : "You've used this week's allowance.");
         }
+      } else if (p.pool === "trial") {
+        if (freeDailyPaused()) {
+          throw new UsageError("limit_reached", "Free daily messages are paused right now. See plans to keep chatting.");
+        }
+        if (units > FREE_DAILY_REPLIES) {
+          throw new UsageError(
+            "limit_reached",
+            units >= SWARM_UNITS
+              ? `Swarm uses ${SWARM_UNITS} replies. Free accounts get ${FREE_DAILY_REPLIES} messages a day, so Swarm is on Pro and Max.`
+              : `You've used today's ${FREE_DAILY_REPLIES} free messages. More at midnight Central.`,
+          );
+        }
+        if (p.used + e.reserved + units > p.limit) {
+          throw new UsageError("limit_reached", `You've used today's ${FREE_DAILY_REPLIES} free messages. More at midnight Central.`);
+        }
+        const cap = await freeDailyGlobalGuard();
+        if (cap) throw new UsageError("limit_reached", cap.message);
       } else if (p.used + e.reserved + units > p.limit) {
-        throw new UsageError("limit_reached", p.pool === "trial" ? "You've used all 5 free messages." : "You've used this period's allowance.");
+        throw new UsageError("limit_reached", "You've used this period's allowance.");
       }
     }
     if (!owner && inflight >= MAX_CONCURRENT_STREAMS_PER_USER) throw new UsageError("busy", "Too many replies in progress. Wait for one to finish.");
@@ -301,7 +336,11 @@ export async function settle(reservationId: string, success: boolean, assistantM
     if (claimed.count !== 1) return; // already settled/released (or reaped)
     const data: Prisma.EntitlementUpdateInput = { reserved: { decrement: r.units } };
     if (success) {
-      if (r.pool === "trial") data.trialUsed = { increment: r.units };
+      if (r.pool === "trial") {
+        // windowUsed is the Chicago-day counter. trialUsed stays a lifetime total for admin views.
+        data.trialUsed = { increment: r.units };
+        data.windowUsed = { increment: r.units };
+      }
       else {
         data.periodUsed = { increment: r.units };
         data.windowUsed = { increment: r.units };

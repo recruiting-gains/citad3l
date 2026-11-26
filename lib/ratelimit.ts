@@ -47,6 +47,8 @@ export interface RateLimitRule {
   id: string;
   limit: number;
   windowMs: number;
+  /** Optional fixed window start (ms). Use for timezone-aligned days instead of UTC floor(now/windowMs). */
+  windowStartMs?: number;
 }
 
 export interface RateLimitStore {
@@ -125,8 +127,9 @@ export async function limitDurable(
   for (const r of rules) {
     if (!r.id) continue;
     const key = bucketKey(r.name, r.id);
-    const ws = windowStartFor(nowMs, r.windowMs);
-    const retryAfterSec = Math.max(1, Math.ceil((ws + r.windowMs - nowMs) / 1000));
+    const ws = r.windowStartMs ?? windowStartFor(nowMs, r.windowMs);
+    const windowEndMs = r.windowStartMs != null ? r.windowStartMs + r.windowMs : ws + r.windowMs;
+    const retryAfterSec = Math.max(1, Math.ceil((windowEndMs - nowMs) / 1000));
     let over: boolean;
     try {
       if (!store) throw new Error("no store");
@@ -157,7 +160,8 @@ export async function peekDurable(rule: RateLimitRule, nowMs = Date.now()): Prom
   const store = await resolveStore();
   if (!store?.peek) return null;
   try {
-    return await store.peek(bucketKey(rule.name, rule.id), new Date(windowStartFor(nowMs, rule.windowMs)));
+    const ws = rule.windowStartMs ?? windowStartFor(nowMs, rule.windowMs);
+    return await store.peek(bucketKey(rule.name, rule.id), new Date(ws));
   } catch {
     return null;
   }

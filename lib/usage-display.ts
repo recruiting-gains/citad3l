@@ -4,10 +4,20 @@ import type { UsageSummary } from "./types";
 
 export type ComposerUsageMode = "chat" | "image" | "video";
 
+function freeResetPhrase(): string {
+  return "midnight Central";
+}
+
 function chatLine(usage: UsageSummary): string {
   if (usage.unlimited) return "Unlimited";
-  if (usage.guest || usage.plan === "trial") {
+  if (usage.guest) {
     return `${usage.remaining} of ${usage.limit} free messages left`;
+  }
+  if (usage.plan === "trial") {
+    if (usage.remaining <= 0) {
+      return `You've used today's ${usage.limit} free messages. More at ${freeResetPhrase()}`;
+    }
+    return `${usage.remaining} of ${usage.limit} free messages left today · resets at ${freeResetPhrase()}`;
   }
   if (usage.window && usage.week) {
     return `${usage.window.remaining.toLocaleString()} of ${usage.window.limit.toLocaleString()} left this 5-hour window · ${usage.week.remaining.toLocaleString()} of ${usage.week.limit.toLocaleString()} left this week`;
@@ -18,8 +28,12 @@ function chatLine(usage: UsageSummary): string {
 /** Short chat remainder, or empty when unlimited / unknown. */
 function chatShort(usage: UsageSummary): string {
   if (usage.unlimited) return "";
-  if (usage.guest || usage.plan === "trial") {
+  if (usage.guest) {
     return `${usage.remaining} of ${usage.limit} free messages left`;
+  }
+  if (usage.plan === "trial") {
+    if (usage.remaining <= 0) return `You've used today's ${usage.limit} free messages`;
+    return `${usage.remaining} of ${usage.limit} free messages left today`;
   }
   if (usage.window) {
     return `${usage.window.remaining.toLocaleString()} of ${usage.window.limit.toLocaleString()} replies left this window`;

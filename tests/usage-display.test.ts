@@ -30,6 +30,16 @@ describe("usageLine / relevantLimitHit", () => {
     expect(usageLine(guest, { mode: "chat" })).toBe("3 of 5 free messages left");
   });
 
+  it("shows signed-in free daily counts and reset time", () => {
+    const free: UsageSummary = { ...base, plan: "trial", status: "trialing", used: 1, limit: 3, remaining: 2, resetAt: "2099-01-01T06:00:00.000Z", window: undefined, week: undefined };
+    expect(usageLine(free, { mode: "chat" })).toBe("2 of 3 free messages left today · resets at midnight Central");
+    const spent: UsageSummary = { ...free, used: 3, remaining: 0 };
+    expect(usageLine(spent, { mode: "chat" })).toBe("You've used today's 3 free messages. More at midnight Central");
+    expect(relevantLimitHit(spent, { mode: "chat" })).toBe(true);
+    expect(relevantLimitHit(free, { mode: "chat", swarm: true })).toBe(true);
+    expect(relevantLimitHit(free, { mode: "chat" })).toBe(false);
+  });
+
   it("shows image and video daily remaining plus the chat window", () => {
     const u: UsageSummary = {
       ...base,

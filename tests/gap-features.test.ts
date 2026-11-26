@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { isOwnerEmail, ownerEmail, TRIAL_REPLIES, proWindowUnits, maxWindowUnits, proWeeklyUnits, maxWeeklyUnits } from "@/lib/config";
+import { isOwnerEmail, ownerEmail, FREE_DAILY_REPLIES, proWindowUnits, maxWindowUnits, proWeeklyUnits, maxWeeklyUnits } from "@/lib/config";
 import { timeOfDayGreeting, formatGreeting } from "@/lib/greeting";
 import { availableSkills, resolveSkills } from "@/lib/skills";
 import { getPublicModel, isGuestModelId } from "@/lib/models";
@@ -206,7 +206,8 @@ describe("usage windows", () => {
     expect(admin.admin).toBe(true);
     expect(admin.owner).toBe(false);
     expect(admin.remaining).toBe(Number.MAX_SAFE_INTEGER);
-    expect(poolFor({ plan: "trial", status: "trialing", trialUsed: 2, periodUsed: 0 }).limit).toBe(TRIAL_REPLIES);
+    expect(poolFor({ plan: "trial", status: "trialing", trialUsed: 2, periodUsed: 0, windowUsed: 1 }).limit).toBe(FREE_DAILY_REPLIES);
+    expect(poolFor({ plan: "trial", status: "trialing", trialUsed: 2, periodUsed: 0, windowUsed: 1 }).used).toBe(1);
     expect(maxWindowUnits()).toBe(Math.floor(proWindowUnits() * 2.5));
     expect(maxWeeklyUnits()).toBe(Math.floor(proWeeklyUnits() * 2.5));
   });
