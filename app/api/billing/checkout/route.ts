@@ -8,7 +8,7 @@ import { LIMITS, limitDurable, rule } from "@/lib/ratelimit";
 import { billingOpenFor, getStripe, planForPrice, priceFor } from "@/lib/stripe";
 import { appUrl } from "@/lib/config";
 import { ensureEntitlement } from "@/lib/usage";
-import { readUtmCookieHeader, utmMetadata } from "@/lib/utm";
+import { readFirstTouchCookieHeader, readUtmCookieHeader, utmMetadata } from "@/lib/utm";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -57,7 +57,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: `${appUrl()}/account/billing?checkout=success` });
   }
   const utmMeta = utmMetadata(readUtmCookieHeader(req.headers.get("cookie")));
-  const meta = { userId, plan: parsed.data.plan, ...utmMeta };
+  const refHost = readFirstTouchCookieHeader(req.headers.get("cookie"))?.referrerHost;
+  const meta = { userId, plan: parsed.data.plan, ...utmMeta, ...(refHost ? { utm_ref: refHost } : {}) };
   console.info("[funnel]", JSON.stringify({ event: "checkout_started", plan: parsed.data.plan, ...utmMeta }));
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",

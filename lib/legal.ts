@@ -103,7 +103,8 @@ export const PRIVACY: LegalDoc = {
       "We don't use your chats to train models.",
     ] },
     { h: "Cookies", p: [
-      "We use only the cookies needed to run the site: a sign-in session cookie, a guest-message cookie, and security cookies from Cloudflare. No advertising or cross-site tracking cookies.",
+      "We use only a few cookies: a sign-in session cookie, a guest-message cookie, and security cookies from Cloudflare.",
+      "We also set two first-party cookies for up to 30 days that remember which link or referral brought you here. They stay on citad3l.io, contain no personal info, and are never used for ads or cross-site tracking. We also keep a simple count of which links bring visitors, using only the link's tags, the referring site's name and a random ID we store in scrambled form, never your IP address.",
     ] },
     { h: "Who we share data with", p: [
       "Service providers that run Citad3L for us: our hosting and security provider (Cloudflare), database host, email delivery for sign-in codes, Stripe for payments, and the third-party AI providers that generate replies. Each gets only what it needs for its job.",

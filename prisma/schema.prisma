@@ -346,3 +346,47 @@ model RateLimitBucket {
   @@id([key, windowStart])
   @@index([expiresAt])
 }
+
+// First-party visitor source tracking (2026-11-25). One row per landing (once per browser session).
+// No IP, no full URLs, no message text: only link tags, the referring site's host name, the landing path,
+// and a keyed hash of the random first-touch id from the c3_utm cookie (null for plain direct visits).
+model VisitSource {
+  id           String   @id @default(cuid())
+  day          String // YYYY-MM-DD, America/Chicago
+  source       String // utm_source, else referring site, else "direct"
+  medium       String?
+  campaign     String?
+  content      String?
+  referrerHost String?
+  landingPath  String   @default("/")
+  tagged       Boolean  @default(false)
+  visitorHash  String?
+  createdAt    DateTime @default(now())
+
+  @@index([day, source])
+  @@index([createdAt])
+}
+
+// First-touch source attached to a conversion. kind: "guest_start" | "signup" | "payment".
+// One row per guest (guest_start) or per account and kind (first signup / first payment only).
+// No foreign keys on purpose: deleting an account leaves only an anonymous count behind.
+model SourceAttribution {
+  id           String   @id @default(cuid())
+  kind         String
+  day          String // YYYY-MM-DD, America/Chicago
+  userId       String?
+  guestId      String?
+  source       String
+  medium       String?
+  campaign     String?
+  content      String?
+  referrerHost String?
+  visitorHash  String?
+  plan         String?
+  amountCents  Int?
+  createdAt    DateTime @default(now())
+
+  @@unique([kind, userId])
+  @@unique([kind, guestId])
+  @@index([day, kind, source])
+}
