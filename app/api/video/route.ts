@@ -9,7 +9,7 @@ import { LIMITS, limitDurable, rateLimit, rule } from "@/lib/ratelimit";
 import { reserve, settle, getUsage, UsageError, userIsAdmin } from "@/lib/usage";
 import { ProviderUnavailable } from "@/lib/inference";
 import { queueVideo, quoteVideo, videoMaxPerDay, videoMaxUsdPerClip } from "@/lib/inference/video";
-import { finalizeVideo } from "@/lib/video-store";
+import { finalizeVideo, isVideoStorageConfigured, VIDEO_STORAGE_UNAVAILABLE_CODE, VIDEO_STORAGE_UNAVAILABLE_MESSAGE } from "@/lib/video-store";
 import { videoContent } from "@/lib/video-content";
 import { titleFrom } from "@/lib/prompt";
 import { reviewImagePrompt } from "@/lib/filter-llm";
@@ -72,6 +72,8 @@ export async function POST(req: Request) {
   if (att.images.length > MAX_VIDEO_IMAGES) return jerr(413, "too_large", "Attach one picture as the starting frame.");
   const imageUrl = att.images[0] ?? null;
   const storedPrompt = body.attachments?.length ? composeMessage(prompt, body.attachments) : prompt;
+  // Fail closed before quote/queue/reserve: without R2 the clip cannot be kept or played (bytes would be discarded).
+  if (!isVideoStorageConfigured()) return jerr(503, VIDEO_STORAGE_UNAVAILABLE_CODE, VIDEO_STORAGE_UNAVAILABLE_MESSAGE);
   if (!rateLimit(`video:${userId}`, 3)) return tooMany("Slow down — too many videos this minute.");
   const lim = await limitDurable([rule(LIMITS.imageUserMin, userId), rule(LIMITS.imageUserHour, userId)]);
   if (!lim.ok) return tooMany("Slow down — too many requests right now.", lim.retryAfterSec);

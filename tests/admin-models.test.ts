@@ -50,9 +50,13 @@ vi.mock("@/lib/inference/video", () => ({
   videoMaxUsdPerClip: () => 1.6,
   videoMaxPerDay: () => 5,
 }));
+const storage = { configured: true };
 vi.mock("@/lib/video-store", () => ({
   finalizeVideo: async ({ messageId }: any) => ({ status: "ready", content: `![Generated video](/api/videos/${messageId} "c3l-video:r2")` }),
   serveVideo: async () => new Response(Buffer.from([0, 0, 0, 24, 102, 116, 121, 112]), { headers: { "content-type": "video/mp4" } }),
+  isVideoStorageConfigured: () => storage.configured,
+  VIDEO_STORAGE_UNAVAILABLE_CODE: "storage_unavailable",
+  VIDEO_STORAGE_UNAVAILABLE_MESSAGE: "Video storage isn't configured.",
 }));
 let msgN = 0;
 vi.mock("@/lib/db", () => ({
@@ -88,7 +92,7 @@ beforeAll(async () => {
   await import("@/app/api/video/route");
 });
 afterAll(() => { delete process.env.MEDIA_GENERATION_ENABLED; });
-beforeEach(() => { Object.assign(calls, { provider: [], reserve: 0, swarm: 0, swarmWebSearch: undefined, image: 0, quote: 0, queue: 0 }); });
+beforeEach(() => { storage.configured = true; Object.assign(calls, { provider: [], reserve: 0, swarm: 0, swarmWebSearch: undefined, image: 0, quote: 0, queue: 0 }); });
 
 describe("who is an admin", () => {
   it("ADMIN_EMAILS is exactly the owner and one other admin", async () => {
@@ -230,6 +234,18 @@ describe("public launch: plan rules are enforced by the server, whatever the cli
     expect(calls.image).toBe(1);
     expect(calls.queue).toBe(1);
   }, 20000);
+  it("refuses Video with 503 before quote, queue, or reserve when R2 storage is not configured", async () => {
+    storage.configured = false;
+    userId = "u-max";
+    const v = await video({ message: "a cat" });
+    expect(v.status).toBe(503);
+    const body = await v.json();
+    expect(body.error.code).toBe("storage_unavailable");
+    expect(calls.quote + calls.queue + calls.reserve).toBe(0);
+    userId = "u-cruz";
+    expect((await video({ message: "a cat" })).status).toBe(503);
+    expect(calls.quote + calls.queue + calls.reserve).toBe(0);
+  });
   it("kill switch PUBLIC_FEATURES=admins puts Private, Image, Video and Swarm back to admins only", async () => {
     process.env.PUBLIC_FEATURES = "admins";
     try {

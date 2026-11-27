@@ -30,15 +30,35 @@ vi.mock("@/lib/db", () => ({
     message: {
       findFirst: async (q: any) => rows.find((r) => r.id === q.where.id && (q.where.userId === undefined || r.userId === q.where.userId) && (q.where.role === undefined || r.role === q.where.role)) ?? null,
       update: async (q: any) => { const r = rows.find((x) => x.id === q.where.id)!; Object.assign(r, q.data); return r; },
+      updateMany: async (q: any) => {
+        const w = q.where ?? {};
+        let count = 0;
+        for (const r of rows) {
+          if (w.id && r.id !== w.id) continue;
+          if (w.status && typeof w.status === "string" && r.status !== w.status) continue;
+          if (w.status?.not && r.status === w.status.not) continue;
+          if (w.content?.contains && !(r.content ?? "").includes(w.content.contains)) continue;
+          Object.assign(r, q.data);
+          count++;
+        }
+        return { count };
+      },
     },
   },
 }));
 const providerDl = vi.fn();
-vi.mock("@/lib/inference/video", () => ({
-  pollVideo: async () => ({ status: "done", bytes: CLIP, mime: "video/mp4" }),
-  downloadVideo: async (...a: unknown[]) => { providerDl(...a); return { bytes: CLIP, mime: "video/mp4" }; },
-}));
 const CLIP = new Uint8Array(Array.from({ length: 1000 }, (_, i) => i % 251));
+const pollState: { result: { status: "done"; bytes: Uint8Array; mime: string; downloadUrl: string | null; downloadUrlVerified: boolean } } = {
+  result: { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null, downloadUrlVerified: false },
+};
+vi.mock("@/lib/inference/video", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/inference/video")>();
+  return {
+    ...real,
+    pollVideo: async () => pollState.result,
+    downloadVideo: async (...a: unknown[]) => { providerDl(...a); return { bytes: CLIP, mime: "video/mp4" }; },
+  };
+});
 
 const { videoContent } = await import("@/lib/video-content");
 const { finalizeVideo, serveVideo, videoObjectKey } = await import("@/lib/video-store");
@@ -48,6 +68,7 @@ const job = { queueId: "q1", downloadUrl: "https://private-share.media.provider.
 beforeEach(() => {
   rows.length = 0;
   providerDl.mockClear();
+  pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null, downloadUrlVerified: false };
   rows.push({ id: "vcruz", userId: "u-cruz", role: "assistant", content: videoContent("vcruz", job, { pending: true }) });
   rows.push({ id: "vcousin", userId: "u-cousin", role: "assistant", content: videoContent("vcousin", job) });
 });
@@ -98,6 +119,83 @@ describe("videos in R2", () => {
     expect(r.status).toBe(206);
     expect(rows[1].content).not.toContain('"c3l-video:r2"');
   });
+  it("persists a retrieve-time download_url when queue had none, and stays ready without R2 via that 24h link", async () => {
+    const late = "https://private-share.media.provider.test/late.mp4";
+    rows[0].content = videoContent("vcruz", { queueId: "q1", downloadUrl: null }, { pending: true });
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: late, downloadUrlVerified: true };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: null });
+    expect(r.status).toBe("ready");
+    expect(rows[0].status).toBe("complete");
+    expect(rows[0].content).not.toContain('"c3l-video:r2"');
+    expect(rows[0].content).toContain("/api/videos/vcruz");
+    const served = (await serveVideo({ userId: "u-cruz", messageId: "vcruz", range: "bytes=0-1", bucket: null })) as Response;
+    expect(served.status).toBe(206);
+    expect(providerDl).toHaveBeenCalled();
+  });
+  it("marks the message error (not ready) when bytes were fetched but there is no R2 and no download URL to serve later", async () => {
+    rows[0].content = videoContent("vcruz", { queueId: "q1", downloadUrl: null }, { pending: true });
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null, downloadUrlVerified: false };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: null });
+    expect(r.status).toBe("error");
+    expect(rows[0].status).toBe("error");
+    expect(rows[0].content).toContain("pending=1"); // still the pending markdown, not a dead ready player
+    const served = await serveVideo({ userId: "u-cruz", messageId: "vcruz", range: null, bucket: null });
+    expect(served).toEqual({ error: "pending" });
+  });
+  it("treats an unverified queue-time URL as not serveable when R2 put fails (direct retrieve bytes)", async () => {
+    const failing: R2Bucket = {
+      async put() { throw new Error("R2 down"); },
+      async get() { return null; },
+      async delete() {},
+    };
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: job.downloadUrl, downloadUrlVerified: false };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: failing });
+    expect(r.status).toBe("error");
+    expect(rows[0].status).toBe("error");
+    expect(rows[0].content).toContain("pending=1");
+  });
+  it("stays ready from a just-fetched retrieve URL when R2 put fails", async () => {
+    const late = "https://private-share.media.provider.test/late.mp4";
+    const failing: R2Bucket = {
+      async put() { throw new Error("R2 down"); },
+      async get() { return null; },
+      async delete() {},
+    };
+    rows[0].content = videoContent("vcruz", { queueId: "q1", downloadUrl: null }, { pending: true });
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: late, downloadUrlVerified: true };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: failing });
+    expect(r.status).toBe("ready");
+    expect(rows[0].status).toBe("complete");
+    expect(rows[0].content).not.toContain('"c3l-video:r2"');
+  });
+  it("a failed second finalizer cannot overwrite a completed R2 copy", async () => {
+    const b = new MemoryR2();
+    let puts = 0;
+    const orig = b.put.bind(b);
+    b.put = async (key, value, opts) => {
+      puts++;
+      if (puts > 1) throw new Error("second put fails");
+      return orig(key, value, opts);
+    };
+    const first = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: b });
+    expect(first.status).toBe("ready");
+    expect(rows[0].status).toBe("complete");
+    const saved = rows[0].content;
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null, downloadUrlVerified: false };
+    // content is no longer pending, so the second call should report ready and leave the R2 record
+    const second = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: b });
+    expect(second.status).toBe("ready");
+    expect(rows[0].status).toBe("complete");
+    expect(rows[0].content).toBe(saved);
+    expect(rows[0].content).toContain('"c3l-video:r2"');
+    // simulate a racer that already read pending content and now tries the error write
+    const { prisma } = await import("@/lib/db");
+    await prisma.message.updateMany({
+      where: { id: "vcruz", status: { not: "complete" }, content: { contains: "?pending=1" } },
+      data: { status: "error" },
+    });
+    expect(rows[0].status).toBe("complete");
+  });
 });
 
 describe("images in R2 (backward compatible) and cleanup", () => {
@@ -130,7 +228,12 @@ describe("images in R2 (backward compatible) and cleanup", () => {
 });
 
 describe("routes", () => {
-  it("/api/videos and /api/images: signed-in owner only (401 signed out); wrangler binding ready but off until R2 is enabled", async () => {
+  it("isVideoStorageConfigured is true only when a bucket is bound", async () => {
+    const { isVideoStorageConfigured } = await import("@/lib/video-store");
+    expect(isVideoStorageConfigured(new MemoryR2())).toBe(true);
+    expect(isVideoStorageConfigured(null)).toBe(false);
+  });
+  it("/api/videos and /api/images: signed-in owner only (401 signed out); wrangler IMAGES binding points at citad3l-images", async () => {
     const { readFileSync } = await import("node:fs");
     const v = readFileSync(new URL("../app/api/videos/[id]/route.ts", import.meta.url), "utf8");
     const i = readFileSync(new URL("../app/api/images/[id]/route.ts", import.meta.url), "utf8");

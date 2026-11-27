@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { parseVideoContent, videoContent, videoIdFromSrc } from "@/lib/video-content";
-import { downloadVideo, pollVideo, queueVideo, quoteVideo, VIDEO_PARAMS, videoMaxPerDay, videoMaxUsdPerClip, videoModelId, videoRequestBody } from "@/lib/inference/video";
+import { downloadVideo, pollVideo, queueVideo, quoteVideo, resolveVideoDownloadUrl, VIDEO_PARAMS, videoMaxPerDay, videoMaxUsdPerClip, videoModelId, videoRequestBody } from "@/lib/inference/video";
 import { parseRange, rangeResponse } from "@/lib/video-store";
 import { LEAK_RE, LEAK_WORDS } from "./leak-words";
 import { isProviderMediaUrl } from "@/lib/inference/provider-models";
@@ -83,8 +83,58 @@ describe("provider async video client", () => {
   });
   it("accepts an mp4 body straight from /video/retrieve, and refuses non-provider hosts", async () => {
     const { f } = fakeFetch(() => new Response(new Uint8Array([1, 2, 3]), { headers: { "content-type": "video/mp4" } }));
-    expect((await pollVideo({ queueId: "q", downloadUrl: null }, undefined, f)).status).toBe("done");
+    const done = await pollVideo({ queueId: "q", downloadUrl: null }, undefined, f);
+    expect(done.status).toBe("done");
+    if (done.status === "done") {
+      expect(done.downloadUrl).toBeNull();
+      expect(done.downloadUrlVerified).toBe(false);
+    }
     await expect(downloadVideo("https://evil.example/v.mp4", undefined, f)).rejects.toThrow(/Unexpected video host/);
+  });
+  it("uses download_url from retrieve/COMPLETED when the queue-time link was missing, and ignores a non-provider host", async () => {
+    const mp4 = new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]);
+    const url = "https://private-share.media.provider.test/from-retrieve.mp4";
+    const { f, calls } = fakeFetch((u) => {
+      if (u.endsWith("/video/retrieve")) return Response.json({ status: "COMPLETED", download_url: url });
+      return new Response(mp4, { headers: { "content-type": "video/mp4" } });
+    });
+    const done = await pollVideo({ queueId: "q-late", downloadUrl: null }, undefined, f);
+    expect(done.status).toBe("done");
+    if (done.status === "done") {
+      expect(done.downloadUrl).toBe(url);
+      expect(done.downloadUrlVerified).toBe(true);
+      expect(Array.from(done.bytes)).toEqual(Array.from(mp4));
+    }
+    expect(calls.some((c) => c.url === url)).toBe(true);
+    expect(resolveVideoDownloadUrl("https://evil.example/v.mp4", "https://private-share.media.provider.test/ok.mp4")).toBe("https://private-share.media.provider.test/ok.mp4");
+    expect(resolveVideoDownloadUrl("https://evil.example/v.mp4")).toBeNull();
+    expect(resolveVideoDownloadUrl(url)).toBe(url);
+    const { f: fBad } = fakeFetch(() => Response.json({ status: "COMPLETED", download_url: "https://evil.example/v.mp4" }));
+    await expect(pollVideo({ queueId: "q-evil", downloadUrl: null }, undefined, fBad)).rejects.toThrow(/no file was returned/);
+  });
+  it("prefers retrieve download_url over a queue-time link, and refuses a redirect off the provider host", async () => {
+    const mp4 = new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]);
+    const retrieveUrl = "https://private-share.media.provider.test/from-retrieve.mp4";
+    const queueUrl = "https://private-share.media.provider.test/from-queue.mp4";
+    const { f, calls } = fakeFetch((u) => {
+      if (u.endsWith("/video/retrieve")) return Response.json({ status: "COMPLETED", download_url: retrieveUrl });
+      return new Response(mp4, { headers: { "content-type": "video/mp4" } });
+    });
+    const done = await pollVideo({ queueId: "q-both", downloadUrl: queueUrl }, undefined, f);
+    expect(done.status).toBe("done");
+    if (done.status === "done") {
+      expect(done.downloadUrl).toBe(retrieveUrl);
+      expect(done.downloadUrlVerified).toBe(true);
+    }
+    expect(calls.some((c) => c.url === retrieveUrl)).toBe(true);
+    expect(calls.some((c) => c.url === queueUrl)).toBe(false);
+
+    const { f: fRedir } = fakeFetch(() => {
+      const res = new Response(mp4, { headers: { "content-type": "video/mp4" } });
+      Object.defineProperty(res, "url", { value: "https://evil.example/stolen.mp4" });
+      return res;
+    });
+    await expect(downloadVideo(queueUrl, undefined, fRedir)).rejects.toThrow(/Unexpected video host/);
   });
   it("an over-budget or failed quote throws instead of queueing", async () => {
     const { f } = fakeFetch(() => Response.json({ error: "nope" }, { status: 500 }));
@@ -117,6 +167,13 @@ describe("video route wiring", () => {
     expect(route).toContain("quoteVideo(req.signal, fetch, imageUrl)");
     expect(route).toContain("queueVideo(prompt, req.signal, fetch, imageUrl)");
     expect(route).toContain("MAX_VIDEO_IMAGES");
+    expect(route).toContain("isVideoStorageConfigured");
+    expect(route).toContain("VIDEO_STORAGE_UNAVAILABLE_CODE");
+    expect(route.indexOf("isVideoStorageConfigured()")).toBeGreaterThan(0);
+    expect(route.indexOf("isVideoStorageConfigured()")).toBeLessThan(route.indexOf("quoteVideo("));
+    expect(route.indexOf("isVideoStorageConfigured()")).toBeLessThan(route.indexOf("spendGuard("));
+    expect(route.indexOf("isVideoStorageConfigured()")).toBeLessThan(route.indexOf("reserve("));
+    expect(route.indexOf("isVideoStorageConfigured()")).toBeLessThan(route.indexOf("queueVideo("));
     expect(route).not.toMatch(/providerModelId/i);
     expect(route).not.toMatch(LEAK_RE);
     const ws = readFileSync(new URL("../components/chat/ChatWorkspace.tsx", import.meta.url), "utf8");

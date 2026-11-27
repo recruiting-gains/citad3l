@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { imagesBucket, VIDEO_KEY_PREFIX, type R2Bucket, type R2Range } from "@/lib/images-r2";
 import { parseVideoContent, videoContent, VIDEO_PATH } from "@/lib/video-content";
 import { isProviderMediaUrl } from "@/lib/inference/provider-models";
-import { downloadVideo, pollVideo } from "@/lib/inference/video";
+import { downloadVideo, pollVideo, resolveVideoDownloadUrl } from "@/lib/inference/video";
 
 /**
  * Durable copy in R2 (the IMAGES bucket, key videos/{userId}/{messageId}) when the binding exists. Without R2 the
@@ -14,7 +14,32 @@ export function videoObjectKey(userId: string, messageId: string): string {
   return `${VIDEO_KEY_PREFIX}${userId}/${messageId}`;
 }
 
+/** True when generated-media R2 is bound (IMAGES). Video generation must not queue without this. */
+export function isVideoStorageConfigured(bucket?: R2Bucket | null): boolean {
+  return !!imagesBucket(bucket);
+}
+
+export const VIDEO_STORAGE_UNAVAILABLE_CODE = "storage_unavailable";
+export const VIDEO_STORAGE_UNAVAILABLE_MESSAGE = "Video storage isn't configured.";
+
 export type VideoStatus = "processing" | "ready" | "error" | "not_found";
+
+
+/** Update only while the message is still the pending job, so a failed poll cannot overwrite a completed clip. */
+async function markVideoError(messageId: string): Promise<void> {
+  await prisma.message.updateMany({
+    where: { id: messageId, status: { not: "complete" }, content: { contains: "?pending=1" } },
+    data: { status: "error" },
+  }).catch(() => {});
+}
+
+async function markVideoReady(messageId: string, content: string): Promise<boolean> {
+  const r = await prisma.message.updateMany({
+    where: { id: messageId, content: { contains: "?pending=1" } },
+    data: { content, status: "complete" },
+  });
+  return (r.count ?? 0) > 0;
+}
 
 /**
  * Check a pending video once and, if the provider finished, mark the message complete (and copy it to R2 if possible).
@@ -30,20 +55,39 @@ export async function finalizeVideo(opts: { userId: string; messageId: string; s
   try {
     poll = await pollVideo(parsed.job, opts.signal);
   } catch {
-    await prisma.message.update({ where: { id: msg.id }, data: { status: "error" } }).catch(() => {});
+    await markVideoError(msg.id);
     return { status: "error" };
   }
   if (poll.status === "processing") return { status: "processing" };
+  // Only a URL we actually fetched this poll is a safe 24h fallback. A queue-time URL on a direct mp4 retrieve is unverified.
+  const job = {
+    queueId: parsed.job.queueId,
+    downloadUrl: poll.downloadUrlVerified ? resolveVideoDownloadUrl(poll.downloadUrl) : null,
+  };
   const bucket = imagesBucket(opts.bucket);
   let stored = false;
   if (bucket) {
     stored = await bucket
       .put(videoObjectKey(opts.userId, msg.id), poll.bytes, { httpMetadata: { contentType: poll.mime } })
       .then(() => true)
-      .catch(() => false);
+      .catch((e) => {
+        console.error("[video] r2 put failed", e instanceof Error ? e.name : "error");
+        return false;
+      });
   }
-  const content = videoContent(msg.id, parsed.job, { stored });
-  await prisma.message.update({ where: { id: msg.id }, data: { content, status: "complete" } });
+  // Ready only when we can serve the clip later: an R2 copy, or a just-fetched provider link.
+  if (!stored && !job.downloadUrl) {
+    await markVideoError(msg.id);
+    return { status: "error" };
+  }
+  const content = videoContent(msg.id, job, { stored });
+  const wrote = await markVideoReady(msg.id, content);
+  if (!wrote) {
+    const again = await prisma.message.findFirst({ where: { id: msg.id, userId: opts.userId, role: "assistant" }, select: { content: true } });
+    const parsedAgain = parseVideoContent(again?.content, isProviderMediaUrl);
+    if (again && parsedAgain && !parsedAgain.pending) return { status: "ready", content: again.content };
+    return { status: "error" };
+  }
   return { status: "ready", content };
 }
 
