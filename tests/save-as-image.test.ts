@@ -174,4 +174,21 @@ describe("carousels", () => {
     expect(sys.indexOf(GRAPHICS_GUIDE)).toBeLessThan(sys.indexOf("Be my designer."));
     expect(buildTurns([{ role: "user", content: "hi" }], null, "Citad3L V1")[0].content).not.toContain(GRAPHICS_GUIDE);
   });
+  it("the design guide carries compact layout rules and a self-check", () => {
+    expect(GRAPHICS_GUIDE).toMatch(/One focal image/);
+    expect(GRAPHICS_GUIDE).toMatch(/Never use the same image or cover twice/);
+    expect(GRAPHICS_GUIDE).toMatch(/Never put text on a busy photo/);
+    expect(GRAPHICS_GUIDE).toMatch(/Max 2 fonts/);
+    expect(GRAPHICS_GUIDE).toMatch(/2-3 colors/);
+    expect(GRAPHICS_GUIDE).toMatch(/No thick frames or heavy borders/);
+    expect(GRAPHICS_GUIDE).toMatch(/1080x1920/);
+    expect(GRAPHICS_GUIDE).toMatch(/never invent stats/);
+    expect(GRAPHICS_GUIDE).toMatch(/check silently/);
+    expect(GRAPHICS_GUIDE).not.toMatch(/end-to-end|E2EE/i);
+    // Stays compact so it doesn't bloat every design turn.
+    expect(GRAPHICS_GUIDE.length).toBeLessThan(3200);
+    expect(wantsGraphicsGuide([{ role: "user", content: "Make a 1080x1350 post for Fort Week" }])).toBe(true);
+    expect(wantsGraphicsGuide([{ role: "user", content: "write a social post about our sale" }])).toBe(true);
+    expect(wantsGraphicsGuide([{ role: "user", content: "I posted 3 times today" }])).toBe(false);
+  });
 });

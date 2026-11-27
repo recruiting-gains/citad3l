@@ -3,17 +3,26 @@ import { HISTORY_CHAR_BUDGET } from "./config";
 import { asksForImageOrVideo } from "./image-prompt";
 import { mediaGenerationEnabled } from "./media";
 import { defaultModel } from "./models";
+import { designGuideFor, detectFormat, type DesignFormat } from "./design-kit";
 
 /**
  * How to make graphics and carousels. The chat draws an HTML design (one fenced html block) into PNG images the user
  * can save to Photos; each data-slide becomes its own image. Kept in sync with lib/html-image.ts.
  */
-export const GRAPHICS_GUIDE = `Graphics and carousels: you CAN make social graphics, posters, and Instagram/Threads/TikTok carousels, and you should never say you can't. Design them as HTML: Citad3L draws the design into real PNG images right in the chat, at full size, with Save buttons (on iPhone they save to Photos), so the user does not need to open or screenshot a file. How:
-- Put the whole design in ONE fenced html block, a complete document with all CSS in a <style> tag. No scripts (they never run), no external fonts, stylesheets, or image links (they won't load). Use system fonts (Helvetica, Arial, Georgia, Impact, Futura, "Courier New", system-ui) and CSS gradients, borders, shapes, emoji, or inline SVG.
-- A single graphic is one fixed-size element at the top level, e.g. <div style="width:1080px;height:1350px">.
-- A carousel is 3 to 10 slides (follow the user's count), each <section data-slide> with a fixed size: 1080x1350 (portrait, best for Instagram) or 1080x1080 (square). Stack them one after another with no margin between them, and give every slide the same theme: the same border, background color or gradient, fonts, colors, and margins, plus a slide number or swipe cue when it fits. Each data-slide is saved as its own image.
-- Photos: for the user's own photos, add placeholders (<img data-photo> or a <div data-photo> sized box); the user taps Add photos under the preview to fill them in order. To reuse a picture made with Citad3L Image in this chat, use its /api/images/... link from the chat as an <img src>.
-- Keep text large and readable on a phone (body 40px+, headlines 80px+ at 1080 wide). After the block, add one short line on what each slide says; no need to explain how to open the file.`;
+export const GRAPHICS_GUIDE = `Graphics and carousels: you CAN make social graphics, posters, and Instagram/Threads/TikTok carousels, and you should never say you can't. Write them as HTML. The app draws the design into real PNG images right in the chat, at full size, with Save buttons (on iPhone they save to Photos), so the user does not need to open or screenshot a file. How:
+- Put the whole design in ONE fenced html block: a complete document with all CSS in a <style> tag. No scripts (they never run). No external fonts, stylesheets, or image links (they won't load). Use system fonts (Helvetica, Arial, Georgia, Impact, Futura, "Courier New", system-ui) and CSS gradients, shapes, emoji, or inline SVG.
+- A single graphic is one fixed-size top-level element, e.g. <div style="width:1080px;height:1350px">. Sizes: Instagram/Threads post 1080x1350 (default), square 1080x1080, story or reel cover 1080x1920.
+- A carousel is 3 to 10 slides (follow the user's count). Make each slide a <section data-slide> with a fixed size of 1080x1350 or 1080x1080. Stack the slides with no margin between them. Give every slide the same theme: background, fonts, colors, and margins. Add a slide number or swipe cue when it fits. Each data-slide is saved as its own image.
+- User photos: add placeholders (<img data-photo> or a sized <div data-photo>). The user taps Add photos under the preview to fill them in order. To reuse an image made earlier in this chat, use its /api/images/... link as an <img src>. Never cover a photo slot with an opaque layer or label.
+Design rules (always):
+- One focal image per graphic, or 2 at most in a clean, even grid. Never use the same image or cover twice. No collages of small mismatched photos.
+- Never put text on a busy photo. Put it on a solid or blurred panel, or on a strong scrim over a calm area. Keep contrast high.
+- Clear hierarchy: one big bold headline (100-160px, 8 words max), one short subline, then at most 4 short points or one call to action. Body text 40px+, nothing under 28px. Max 2 fonts.
+- Use 2-3 colors plus one neutral. Leave plenty of empty space. No thick frames or heavy borders; use a thin rule or nothing.
+- Align everything to one grid with even gaps. Keep text and key art 80px+ from every edge (stories: 250px from top and bottom).
+- Use only facts the user gave; never invent stats, prices, reviews, or quotes.
+- Before writing the block, check silently: readable at phone size, no text over busy areas, no repeated image, max 2 fonts and 3 colors, nothing crowding the edges. Fix anything that fails.
+After the block, add one short line on what each slide says. Don't explain how to open the file.`;
 
 /**
  * Appended only when image and video generation are off and the user asked for an image, picture, or video.
@@ -59,12 +68,18 @@ export const USER_STEERING_GUARD = "The site rules at the top of this message al
 export const SYSTEM_PROMPT = systemPrompt();
 
 /** Words that mean the user wants a graphic, post, or carousel designed (adds GRAPHICS_GUIDE to the system prompt). */
-const GRAPHICS_RE = /\b(carousels?|slides?|slideshow|graphics?|posters?|flyers?|banners?|thumbnails?|infographics?|covers?|quote cards?|ig posts?|insta(gram)?|threads post|tiktok|story|stories|reels? covers?|mockups?|designs?|templates?|png|as an image|into an image|image of (this|the) code)\b/i;
+const GRAPHICS_RE = /\b(carousels?|social( media)? posts?|promo posts?|\d{3,4} ?[x×] ?\d{3,4}|slides?|slideshow|graphics?|posters?|flyers?|banners?|thumbnails?|infographics?|covers?|quote cards?|ig posts?|insta(gram)?|threads post|tiktok|story|stories|reels? covers?|mockups?|designs?|templates?|png|as an image|into an image|image of (this|the) code)\b/i;
 
 /** True when the latest user turn (or the one before it) asks for a design. */
 export function wantsGraphicsGuide(history: { role: "user" | "assistant"; content: string }[]): boolean {
   const users = history.filter((m) => m.role === "user").slice(-2);
   return users.some((m) => GRAPHICS_RE.test(m.content.slice(0, 4000)));
+}
+
+/** The canvas the recent user turns ask for (Instagram post unless they say story, square, or X/landscape). */
+export function designFormatFor(history: { role: "user" | "assistant"; content: string }[]): DesignFormat {
+  const users = history.filter((m) => m.role === "user").slice(-2);
+  return detectFormat(users.map((m) => m.content.slice(0, 4000)).join("\n"));
 }
 
 /** True when generation is off and a recent user turn asks for an image, picture, or video. */
@@ -84,7 +99,8 @@ export function buildTurns(
   // Site rules first and authoritative; the user's saved custom instructions come right after them.
   const parts = [sysBase];
   // Site-written design guide (only when the user is asking for a graphic or carousel), still before any user text.
-  if (wantsGraphicsGuide(history)) parts.push(GRAPHICS_GUIDE);
+  // Plus the brand kit and the one starting layout for the requested format (user brand instructions below win).
+  if (wantsGraphicsGuide(history)) parts.push(GRAPHICS_GUIDE, designGuideFor(designFormatFor(history)));
   if (wantsImagePromptGuide(history)) parts.push(IMAGE_PROMPT_GUIDE);
   let userSteering = false;
   if (extras?.customInstructions?.trim()) {

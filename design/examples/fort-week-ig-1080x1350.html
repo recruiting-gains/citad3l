@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fort Week</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #F5EFE3; }
+  .post {
+    width: 1080px; height: 1350px;
+    background: #F5EFE3;
+    color: #1E4A38;
+    font-family: Helvetica, Arial, sans-serif;
+    padding: 88px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kicker {
+    font-size: 28px; font-weight: 700;
+    letter-spacing: 8px;
+    color: #D9683A;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 116px; line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -2px;
+    margin-top: 36px;
+  }
+  h1 em { font-style: italic; color: #D9683A; }
+  .sub {
+    font-size: 44px; line-height: 1.2;
+    margin-top: 32px;
+  }
+  .middle {
+    position: absolute; left: 88px; right: 88px; top: 586px;
+    display: grid;
+    grid-template-columns: 384px 1fr;
+    column-gap: 72px;
+  }
+  .cover {
+    width: 384px; height: 512px;
+    background: #E4DDD0;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 18px 40px rgba(30, 74, 56, 0.12);
+    overflow: hidden;
+  }
+  .cover span {
+    font-size: 28px; letter-spacing: 1px;
+    color: rgba(30, 74, 56, 0.55);
+  }
+  .ways { list-style: none; align-self: center; }
+  .ways li {
+    display: flex; align-items: center;
+    gap: 26px;
+    min-height: 124px;
+    border-top: 2px solid rgba(30, 74, 56, 0.15);
+  }
+  .ways li:first-child { border-top: none; }
+  .num {
+    flex: 0 0 60px; height: 60px;
+    border-radius: 50%;
+    background: #D9683A; color: #F5EFE3;
+    font-size: 30px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ways .label { font-size: 40px; font-weight: 700; line-height: 1.12; }
+  .footer {
+    position: absolute; left: 88px; right: 88px; bottom: 88px;
+    padding-top: 30px;
+    border-top: 2px solid rgba(30, 74, 56, 0.2);
+    display: flex; align-items: center; gap: 22px;
+  }
+  .footer .tag { font-size: 36px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="post">
+    <div class="kicker">FORT WEEK</div>
+    <h1>The Fort and<br><em>the real thing.</em></h1>
+    <p class="sub">One story. Four ways to build it.</p>
+
+    <div class="middle">
+      <div class="cover" data-photo><span>Book cover photo</span></div>
+      <ul class="ways">
+        <li><div class="num">1</div><div class="label">Blanket fort</div></li>
+        <li><div class="num">2</div><div class="label">Cardboard box</div></li>
+        <li><div class="num">3</div><div class="label">Couch cushions</div></li>
+        <li><div class="num">4</div><div class="label">Outdoor stick fort</div></li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <svg width="64" height="52" viewBox="0 0 64 52" aria-hidden="true">
+        <path d="M32 4 L60 48 H4 Z" fill="#1E4A38"/>
+        <path d="M32 22 L42 48 H22 Z" fill="#F5EFE3"/>
+        <line x1="32" y1="4" x2="32" y2="0" stroke="#D9683A" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <div class="tag">Read it, build it</div>
+    </div>
+  </div>
+</body>
+</html>
