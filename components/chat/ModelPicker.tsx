@@ -170,6 +170,7 @@ export function ModelPicker({
             aria-checked={m.id === selected.id}
             aria-selected={m.id === selected.id}
             className={`mp-row${m.id === selected.id ? " is-selected" : ""}`}
+            data-locked={locked(m.id) ? "true" : undefined}
             onMouseEnter={() => setHovered(m.id)}
             onFocus={() => setHovered(m.id)}
             onClick={() => { onChange(m.id); setOpen(false); }}
@@ -178,7 +179,7 @@ export function ModelPicker({
             <span>
               <span className="mp-row-name">
                 {m.name}
-                {m.comingSoon ? <span className="mp-tag">Soon</span> : locked(m.id) ? <span className="mp-tag" data-testid="mp-plan-tag">{modelTier(m.id) === "max" ? "Max" : "Pro"}</span> : null}
+                {m.comingSoon ? <span className="mp-tag">Soon</span> : locked(m.id) ? <span className="mp-tag is-plan" data-testid="mp-plan-tag">{modelTier(m.id) === "max" ? "Max" : "Pro"}</span> : null}
               </span>
               <span className="mp-row-meta">{m.speed ? (SPEED[m.speed] ?? m.speed) : m.role}</span>
             </span>

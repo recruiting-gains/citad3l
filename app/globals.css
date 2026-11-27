@@ -2184,6 +2184,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
 /* =========================================================
    1. Model picker panel
    ========================================================= */
+/* The older .model-picker-menu rule caps menus at 320px, which squeezed the list column to zero and hid model names. */
+.model-picker-panel.model-picker-menu { max-width: none; }
 .model-picker-panel {
   width: min(500px, calc(100vw - 2 * var(--gutter)));
   max-height: min(640px, 82vh);
