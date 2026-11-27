@@ -27,6 +27,7 @@ import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
 import { streamWithAutoContinue } from "@/lib/inference/continue";
 import { buildTurns, designFormatFor, titleFrom, wantsGraphicsGuide } from "@/lib/prompt";
 import { critiqueAndFix } from "@/lib/design-check";
+import { DESIGN_CHECK_MAX_MS, DISCONNECT_GRACE_MS, HEARTBEAT_MS, STOP_POLL_MS, keepReplyAlive, timeoutSignal } from "@/lib/reply-lifeline";
 import { shouldCritique } from "@/lib/design-lint";
 import { imagePromptPlanFor } from "@/lib/image-prompt";
 import { noteImagePromptReply } from "@/lib/image-prompt-count";
@@ -292,15 +293,54 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
 
     const conv = conversation;
     const ac = new AbortController();
-    req.signal.addEventListener("abort", () => ac.abort(), { once: true });
     const enc = new TextEncoder();
-    const send = (c: ReadableStreamDefaultController, event: string, data: unknown) => {
-      try { c.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)); } catch { /* client gone */ }
+    // A phone can drop the connection mid-reply (app switch, screen lock, network blip). The reply keeps going in the
+    // background and is saved so the app can pick it up (lib/reply-lifeline.ts). It ends early only on an explicit
+    // Stop (POST /api/chat/stop) or when the disconnect grace runs out (then the partial is saved, not charged).
+    let ctrl: ReadableStreamDefaultController | null = null;
+    let gone = false; // the response stream was cancelled or a write failed: nobody is reading any more
+    let signalAborted = false; // req.signal fired (logged only: it is not proof the reader is gone)
+    let stopRequested = false;
+    let graceTimer: ReturnType<typeof setTimeout> | undefined;
+    const onGone = () => {
+      if (gone) return;
+      gone = true;
+      ctrl = null;
+      graceTimer = setTimeout(() => ac.abort(), DISCONNECT_GRACE_MS);
     };
+    // Before 2026-11-27 this aborted the model: any abort on the request signal ended the reply with no final
+    // event, which the app shows as "Connection lost". Now only a failed write or a cancelled stream counts.
+    req.signal.addEventListener("abort", () => { signalAborted = true; }, { once: true });
+    const write = (chunk: string) => {
+      if (!ctrl) return;
+      try { ctrl.enqueue(enc.encode(chunk)); } catch { onGone(); }
+    };
+    const send = (event: string, data: unknown) => write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    const heartbeat = setInterval(() => write(": ping\n\n"), HEARTBEAT_MS);
+    // Stop: the Stop button marks the message "stopped" (POST /api/chat/stop). Checked from inside the reply's own
+    // flow (throttled on each delta, and before the design check and the final save): DB calls from timer callbacks
+    // did not work on Workers in the preview test.
+    let lastStopCheck = Date.now();
+    let stopCheckFailed = false;
+    const checkStop = async () => {
+      lastStopCheck = Date.now();
+      try {
+        // now() keeps a Hyperdrive query cache (on in some previews) from answering with a stale "streaming".
+        const rows = await prisma.$queryRaw<{ status: string }[]>`SELECT "status"::text AS status, now() AS checked_at FROM "Message" WHERE "id" = ${assistantId}`;
+        if (rows[0]?.status === "stopped") { stopRequested = true; ac.abort(); }
+      } catch (e) {
+        if (!stopCheckFailed) console.error("[chat] stop check failed", (e as Error).name);
+        stopCheckFailed = true;
+      }
+    };
+    const maybeCheckStop = () => { if (!stopRequested && Date.now() - lastStopCheck >= STOP_POLL_MS) void checkStop(); };
 
     const stream = new ReadableStream({
-      async start(c) {
-        send(c, "meta", { conversationId: conv.id, userMessageId, assistantMessageId: assistantId, title: conv.title, swarm: swarm || undefined });
+      start(c) { ctrl = c; },
+      cancel() { onGone(); },
+    });
+    const work = (async () => {
+        send("meta", { conversationId: conv.id, userMessageId, assistantMessageId: assistantId, title: conv.title, swarm: swarm || undefined });
         let text = "";
         let continuations = 0;
         let truncated = false;
@@ -313,10 +353,11 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               history: turns,
               signal: ac.signal,
               webSearch: skills.webSearch,
-              onStatus: (s) => send(c, "status", s),
+              onStatus: (s) => send("status", s),
               onDelta: (t) => {
                 text += t;
-                send(c, "delta", { text: t });
+                send("delta", { text: t });
+                maybeCheckStop();
               },
             });
             if (!text) text = result.text;
@@ -336,7 +377,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
                 }
               },
               onContinue: ({ continuation, maxContinuations }) => {
-                send(c, "status", {
+                send("status", {
                   phase: "continuing",
                   detail: `Continuing long reply (${continuation}/${maxContinuations})…`,
                   continuations: continuation,
@@ -344,7 +385,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
               },
               onDelta: (t) => {
                 text += t;
-                send(c, "delta", { text: t });
+                send("delta", { text: t });
+                maybeCheckStop();
               },
             });
             if (!text) text = result.text;
@@ -356,13 +398,17 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
             errMsg = "The engine returned an empty reply.";
           } else {
             // Design self-check: grade the finished graphic and, if it breaks the layout rules, fix it once.
+            await checkStop();
             if (graphicsTurn && !ac.signal.aborted && shouldCritique(text)) {
-              send(c, "status", { phase: "design-check", detail: "Checking the design…" });
+              send("status", { phase: "design-check", detail: "Checking the design…" });
               const fixer = getProvider({ modelId: resolved.publicId, maxTokens: settings?.maxTokens });
-              const checked = await critiqueAndFix({ text, format: designFormatFor(history), complete: (m) => fixer.complete(m, ac.signal) });
+              // Capped: on timeout or a dropped connection's grace running out, the original reply is kept as is.
+              const capped = timeoutSignal(ac.signal, DESIGN_CHECK_MAX_MS);
+              const checked = await critiqueAndFix({ text, format: designFormatFor(history), complete: (m) => fixer.complete(m, capped.signal) })
+                .finally(capped.clear);
               if (checked.changed && checkText(checked.text).allowed) {
                 text = checked.text;
-                send(c, "replace", { text });
+                send("replace", { text });
               }
             }
             const exported = await maybeCreateAutoExports({
@@ -374,8 +420,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
             });
             if (exported) {
               text += exported.footer;
-              send(c, "delta", { text: exported.footer });
-              send(c, "exports", exported.bundle);
+              send("delta", { text: exported.footer });
+              send("exports", exported.bundle);
             }
           }
         } catch (e) {
@@ -388,20 +434,35 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
           } else if (ac.signal.aborted) outcome = "stopped";
           else { outcome = "error"; errMsg = e instanceof ProviderUnavailable ? "The inference engine is unavailable right now." : "Something went wrong generating this reply."; }
         }
-        // Successful replies are charged. Filter refusals, stops, and errors are not.
-        // No prompt/response content is logged.
-        await settle(reservationId, outcome === "complete", assistantId);
-        await prisma.message.update({ where: { id: assistantId }, data: { content: text, status: outcome === "refused" ? "complete" : outcome } }).catch(() => {});
-        // Count a finished reply that included an image-prompt card. Prompt text is not stored.
-        await noteImagePromptReply(text, imagePromptPlanFor(usageNow.plan));
-        const usage = await getUsage(userId);
-        if (outcome === "complete") send(c, "done", { usage, ...(continuations > 0 ? { continuations } : {}), ...(truncated ? { truncated: true } : {}) });
-        else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });
-        else if (outcome === "error") send(c, "error", { code: "provider_unavailable", message: errMsg, usage });
-        try { c.close(); } catch { /* closed */ }
-      },
-      cancel() { ac.abort(); },
-    });
+        // The user pressed Stop: never charge, even if the text happened to finish first.
+        if (!stopRequested && outcome === "complete") await checkStop();
+        if (stopRequested && outcome === "complete") outcome = "stopped";
+        try {
+          // Successful replies are charged. Filter refusals, stops, and errors are not.
+          // No prompt/response content is logged.
+          await settle(reservationId, outcome === "complete", assistantId);
+          await prisma.message.update({ where: { id: assistantId }, data: { content: text, status: outcome === "refused" ? "complete" : outcome } }).catch(() => {});
+          // Count a finished reply that included an image-prompt card. Prompt text is not stored.
+          await noteImagePromptReply(text, imagePromptPlanFor(usageNow.plan)).catch(() => false);
+          const usage = await getUsage(userId).catch(() => undefined);
+          if (outcome === "complete") send("done", { usage, ...(continuations > 0 ? { continuations } : {}), ...(truncated ? { truncated: true } : {}) });
+          else if (outcome === "refused") send("refused", { message: errMsg || text, usage });
+          else if (outcome === "error") send("error", { code: "provider_unavailable", message: errMsg, usage });
+          // Never end a stream silently: the app reads a missing final event as "Connection lost".
+          else if (outcome === "stopped") send("error", { code: "interrupted", message: "This reply was stopped before it finished. You weren't charged.", usage });
+        } catch (e) {
+          console.error("[chat] finalize failed", (e as Error).name);
+          send("error", { code: "internal", message: "Something went wrong saving this reply." });
+        } finally {
+          clearInterval(heartbeat);
+          clearTimeout(graceTimer);
+          // Shape only, never content: lets a "Connection lost" report be matched to what the server saw.
+          console.info("[chat] reply end", JSON.stringify({ outcome, clientGone: gone, signalAborted, stopRequested, chars: text.length, continuations }));
+          if (ctrl) { try { (ctrl as ReadableStreamDefaultController).close(); } catch { /* closed */ } }
+          ctrl = null;
+        }
+    })();
+    void keepReplyAlive(work);
     return new Response(stream, {
       headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" },
     });
@@ -543,6 +604,8 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
       if (outcome === "complete") send(c, "done", { usage });
       else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });
       else if (outcome === "error") send(c, "error", { code: "provider_unavailable", message: errMsg, usage });
+      // Never end a stream silently: the app reads a missing final event as "Connection lost".
+      else if (outcome === "stopped") send(c, "error", { code: "interrupted", message: "This reply was stopped before it finished. You weren't charged.", usage });
       try { c.close(); } catch { /* closed */ }
     },
     cancel() { ac.abort(); },

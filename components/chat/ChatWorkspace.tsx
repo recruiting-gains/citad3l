@@ -165,6 +165,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const projRef = useRef<string | null>(initialProjectId);
   const liveRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  /** Server id of the signed-in /api/chat reply in flight, so Stop can tell the server (it no longer stops on a drop). */
+  const chatLiveRef = useRef<string | null>(null);
   // Any chat switch or local reply start/end makes in-flight sync responses stale (they're dropped, not applied).
   const gateRef = useRef(createGate());
   const stopDictationRef = useRef<(() => void) | null>(null);
@@ -519,7 +521,10 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (abortRef.current) abortRef.current.abort();
+        if (abortRef.current) {
+          requestServerStop(chatLiveRef.current);
+          abortRef.current.abort();
+        }
         setMenuOpen(false);
       }
     };
@@ -622,6 +627,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     setStatusLine(null);
     let terminal = false;
     let rerouteTask: string | null = null;
+    let isChatRoute = false;
+    chatLiveRef.current = null;
 
     const fail = (code: string, message: string, u?: UsageSummary) => {
       terminal = true;
@@ -700,6 +707,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         const umid = String(d.userMessageId);
         const prev = liveRef.current;
         liveRef.current = aid;
+        if (isChatRoute && !d.guest && !cid.startsWith("guest-")) chatLiveRef.current = aid;
         setMessages((ms) =>
           ms.map((m) => (m.id === prev ? { ...m, id: aid } : userTmp && m.id === userTmp ? { ...m, id: umid } : m)),
         );
@@ -794,7 +802,9 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
           .slice(-16)
           .map((m) => ({ role: m.role, content: m.content }));
       }
-      const res = await fetch(hermesReady ? "/api/hermes" : videoReady ? "/api/video" : parsed.image ? "/api/image" : "/api/chat", {
+      const endpoint = hermesReady ? "/api/hermes" : videoReady ? "/api/video" : parsed.image ? "/api/image" : "/api/chat";
+      isChatRoute = endpoint === "/api/chat";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -829,9 +839,24 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
+      // The server sends a heartbeat every 10 s; a connection silent for much longer than that is dead (a phone that
+      // slept or switched networks often never errors). Cancel it and fall through to the recovery below.
+      let watchdog = 0;
+      const arm = () => {
+        window.clearTimeout(watchdog);
+        watchdog = window.setTimeout(() => void reader.cancel().catch(() => {}), STREAM_STALL_MS);
+      };
+      arm();
       for (;;) {
-        const { value, done } = await reader.read();
+        let chunk: ReadableStreamReadResult<Uint8Array>;
+        try {
+          chunk = await reader.read();
+        } finally {
+          window.clearTimeout(watchdog);
+        }
+        const { value, done } = chunk;
         if (done) break;
+        arm();
         buf += dec.decode(value, { stream: true }).replace(/\r\n/g, "\n");
         let i: number;
         while ((i = buf.indexOf("\n\n")) >= 0) {
@@ -847,6 +872,24 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         patchLive((m) => ({ ...m, status: "stopped" }));
       } else if (!terminal) {
         const id = liveRef.current;
+        // The connection dropped, but the server keeps the reply going and saves it. Pick it up from there.
+        const serverId = chatLiveRef.current;
+        const cid = convRef.current;
+        if (isChatRoute && serverId && serverId === id && cid && !cid.startsWith("guest-")) {
+          setStatusLine("Reconnecting…");
+          const saved = await recoverReply(cid, serverId, ac.signal);
+          if (saved && saved.status === "complete" && saved.content) {
+            patchLive((m) => ({ ...m, content: saved.content, status: "complete" }));
+            setErr(id, null);
+            void refreshUsage();
+            return;
+          }
+          if (saved?.content) patchLive((m) => ({ ...m, content: saved.content }));
+          if (ac.signal.aborted) {
+            patchLive((m) => ({ ...m, status: "stopped" }));
+            return;
+          }
+        }
         patchLive((m) => ({ ...m, status: "error" }));
         setErr(id, "Connection lost before the reply finished. You weren't charged.");
         setBanner({
@@ -858,6 +901,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       }
     } finally {
       abortRef.current = null;
+      chatLiveRef.current = null;
       gateRef.current.bump();
       setStatusLine(null);
       setStreaming(false);
@@ -929,6 +973,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   };
   const stop = () => {
     if (computerRunning.current) void fetch("/api/computer/stop", { method: "POST" }).catch(() => null);
+    if (abortRef.current) requestServerStop(chatLiveRef.current);
     abortRef.current?.abort();
   };
 
@@ -1969,3 +2014,46 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
 }
 
 export default ChatWorkspace;
+
+/** No bytes (not even the 10 s heartbeat) for this long means the reply connection is dead. */
+const STREAM_STALL_MS = 35_000;
+/** How long to wait for the server to finish and save a reply after the connection dropped. */
+const RECOVER_MAX_MS = 60_000;
+
+/** Tell the server the user pressed Stop (replies otherwise keep running through a dropped connection). */
+function requestServerStop(assistantMessageId: string | null) {
+  if (!assistantMessageId) return;
+  void fetch("/api/chat/stop", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assistantMessageId }),
+    keepalive: true,
+  }).catch(() => null);
+}
+
+/**
+ * After a dropped reply connection, poll the saved conversation until the server finishes the reply (or gives up).
+ * Wall-clock based, so time spent with the phone asleep counts. Returns the saved message, or null.
+ */
+async function recoverReply(conversationId: string, messageId: string, signal: AbortSignal): Promise<{ status: string; content: string } | null> {
+  const until = Date.now() + RECOVER_MAX_MS;
+  let last: { status: string; content: string } | null = null;
+  while (Date.now() < until && !signal.aborted) {
+    try {
+      const r = await fetch(`/api/conversations/${encodeURIComponent(conversationId)}`, { cache: "no-store", signal });
+      if (r.ok) {
+        const j = (await r.json()) as { messages?: { id: string; status: string; content: string }[] };
+        const m = j.messages?.find((x) => x.id === messageId);
+        if (!m) return null;
+        last = { status: m.status, content: m.content };
+        if (m.status !== "streaming") return last;
+      } else if (r.status === 401 || r.status === 404) {
+        return null;
+      }
+    } catch {
+      /* still offline: keep trying */
+    }
+    await new Promise((res) => setTimeout(res, 2_000));
+  }
+  return last;
+}
