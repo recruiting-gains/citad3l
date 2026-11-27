@@ -21,6 +21,7 @@ const testEnv = {
     "qwen4-max": "test-max-extra-a",
     "grok-4.7": "test-max-extra-b",
     "kimi-k3.1-pro": "test-max-extra-c",
+    "kimi-k2.7-code": "test-max-extra-d",
   }),
 };
 export default defineConfig({

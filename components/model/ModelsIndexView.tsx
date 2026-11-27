@@ -29,8 +29,8 @@ export function ModelsIndexView({ provider, signedIn, isAdmin = false }: ModelsI
               ? "Each model does a different job. Every model is unlocked on your admin account, including Image and Video, plus Swarm and @computer."
               : "Each model does a different job. Every chat model is unlocked on your admin account, plus Swarm and @computer."
             : media
-              ? "Each model does a different job. Free has Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2 (Private needs a free account). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Image. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro, plus Video."
-              : "Each model does a different job. Free has Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2 (Private needs a free account). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro."}</p>
+              ? "Each model does a different job. Free has Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2 (Private needs a free account). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Image. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus Video."
+              : "Each model does a different job. Free has Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2 (Private needs a free account). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code."}</p>
         </header>
         <div className="page-toolbar">
           <span className="tiny">{count} model{count === 1 ? "" : "s"}</span>

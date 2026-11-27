@@ -10,7 +10,7 @@ export function planCatalog(): PlanCard[] {
   const swarm = "Swarm mode (V1 leads, Fast workers)";
   const freeModels = "Free lineup: Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2";
   const proModels = "Pro models: Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B (8 chat models in all)";
-  const maxModels = "Max models: Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro on top of Pro";
+  const maxModels = "Max models: Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code on top of Pro";
   const shared = ["Streaming chat with saved history", "Projects with custom instructions", "Export or delete your data any time"];
   const proFeatures = media
     ? [lineup, proModels, privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]

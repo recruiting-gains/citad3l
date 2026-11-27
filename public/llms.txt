@@ -12,13 +12,13 @@ This file is a plain summary for AI tools and search engines. Everything here is
 - Citad3L Private: chat in a verified secure enclave (text only, signed-in). The browser sends the message to Citad3L's server over HTTPS. The server reads it, runs a safety check, then encrypts it to the enclave. This is not end-to-end encryption from the device.
 - Swarm mode: V1 plans, up to three Fast workers answer parts in parallel, V1 writes the reply (signed-in).
 - Citad3L Video: 5-second 720p clips with sound (Max plan).
-- More chat models. Free: Gemma 4 Uncensored and Uncensored 1.2 (no account needed). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro. These are not end-to-end encrypted.
+- More chat models. Free: Gemma 4 Uncensored and Uncensored 1.2 (no account needed). Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code. These are not end-to-end encrypted.
 
 ## Plans
 
 - Free: try Citad3L with no card. Guests get five successful replies without an account; failed or stopped replies never count. A free account gets 3 messages every day across the 5 Free models (V1, Fast, Private, Gemma 4 Uncensored, Uncensored 1.2), resetting at midnight Central.
 - Pro: $20 per month (25 replies every 5 hours, up to 150 a week), adds Role Play Uncensored, Inkling 2 Mini, Qwen 3.8 27B and Citad3L Image.
-- Max: $50 per month, 2.5x the Pro allowance, adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro, Citad3L Video and per-model settings.
+- Max: $50 per month, 2.5x the Pro allowance, adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro, Kimi K2.7 Code, Citad3L Video and per-model settings.
 - Paid plans are open. Subscribe on the pricing page. They renew monthly until you cancel. First-time buyers, through January 31, 2027: Pro is $10 the first month, then $20/month. Max is $25 the first month, then $50/month. Checkout applies that price.
 
 ## Sign-in

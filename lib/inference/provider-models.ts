@@ -11,7 +11,7 @@ import { DEFAULT_MODEL_ID, getPublicModel, isMemberModel, isSelectableModelId } 
  *   MODEL_IDS            JSON {"citad3l-v1","citad3l-fast","citad3l-private","citad3l-image","video-t2v","video-i2v","computer",
  *                        plus one key per lineup-v2 chat model, named by its public slug: "gemma4-uncensored",
  *                        "uncensored-1.2","roleplay-uncensored","inkling2-mini","qwen3.8-27b","qwen4-max","grok-4.7",
- *                        "kimi-k3.1-pro"}.
+ *                        "kimi-k3.1-pro","kimi-k2.7-code"}.
  * Unset values fail safe: no key -> mock/unavailable; no model id -> UnknownModel.
  */
 export function providerBaseUrl(): string {

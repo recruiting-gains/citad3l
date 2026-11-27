@@ -1,23 +1,25 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { MODELS, MAX_SLOT_12_PLACEHOLDER, chatModelsForPlan, getPublicModel, isGuestModelId, modelTier, planIncludesModel, pickerModels } from "@/lib/models";
+import { MODELS, chatModelsForPlan, getPublicModel, isGuestModelId, modelTier, planIncludesModel, pickerModels } from "@/lib/models";
 import { accessFor } from "@/lib/access";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
 const FREE = ["citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2"];
 const PRO_ADDS = ["roleplay-uncensored", "inkling2-mini", "qwen3.8-27b"];
-const MAX_ADDS = ["qwen4-max", "grok-4.7", "kimi-k3.1-pro"];
+const MAX_ADDS = ["qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"];
 
 describe("lineup v2 (2026-11-27)", () => {
-  it("Free has 5 chat models, Pro 8, Max 11 plus a hidden slot-12 placeholder", () => {
+  it("Free has 5 chat models, Pro 8, Max 12", () => {
     expect(chatModelsForPlan("trial").map((m) => m.id)).toEqual(FREE);
     expect(chatModelsForPlan("pro").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS]);
     expect(chatModelsForPlan("max").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS, ...MAX_ADDS]);
-    expect(MAX_SLOT_12_PLACEHOLDER.hidden).toBe(true);
-    expect(getPublicModel(MAX_SLOT_12_PLACEHOLDER.id)).toBeUndefined();
-    expect(pickerModels(true, true).some((m) => m.id === MAX_SLOT_12_PLACEHOLDER.id)).toBe(false);
+    expect(chatModelsForPlan("trial")).toHaveLength(5);
+    expect(chatModelsForPlan("pro")).toHaveLength(8);
+    expect(chatModelsForPlan("max")).toHaveLength(12);
+    expect(getPublicModel("max-slot-12")).toBeUndefined();
+    expect(pickerModels(true, true).filter((m) => m.modality === "chat")).toHaveLength(12);
   });
 
   it("tiers: Free extras open to guests (no sign-in wall), Pro adds need Pro/Max, Max adds need Max", () => {
@@ -50,7 +52,7 @@ describe("lineup v2 (2026-11-27)", () => {
       expect(r.requiresClientE2EE, id).toBe(false);
       ids.add(r.providerModelId);
     }
-    expect(ids.size).toBe(8);
+    expect(ids.size).toBe(9);
     expect(resolveModel("gemma4-uncensored").publicId).toBe("gemma4-uncensored"); // guests, no sign-in
     expect(MODELS.filter((m) => m.requiresClientE2EE).map((m) => m.id)).toEqual(["citad3l-private"]);
   });

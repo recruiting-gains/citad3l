@@ -234,6 +234,21 @@ export const MODELS: readonly PublicModel[] = [
     skills: { webSearch: true, thinking: false, coding: true },
   },
   {
+    id: "kimi-k2.7-code",
+    name: "Kimi K2.7 Code",
+    description: "Coding specialist with reasoning and image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Coding specialist",
+    summary: "A coding specialist for writing, fixing and explaining code, with step-by-step reasoning. It can read screenshots and images too.",
+    specs: ["Chat", "Image input", "Code"],
+    art: "robotics",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 3,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
     id: "citad3l-image",
     name: "Citad3L Image",
     description: "Detailed image generation with clean, legible text.",
@@ -290,10 +305,11 @@ export const MODEL_TIER: Record<string, ModelTier> = {
   "roleplay-uncensored": "pro",
   "inkling2-mini": "pro",
   "qwen3.8-27b": "pro",
-  // Max (12) adds four. Slot 12 is MAX_SLOT_12_PLACEHOLDER below (hidden until Cruz picks the model).
+  // Max (12) adds four (slot 12 = Kimi K2.7 Code, Cruz's pick 2026-11-27).
   "qwen4-max": "max",
   "grok-4.7": "max",
   "kimi-k3.1-pro": "max",
+  "kimi-k2.7-code": "max",
   "citad3l-image": "pro",
   [VIDEO_MODEL_ID]: "max",
 };
@@ -402,14 +418,8 @@ export function parseImageCommand(text: string, imageMode: boolean): { image: bo
 
 export const GUEST_MODEL_IDS = ["citad3l-fast", "gemma4-uncensored", "uncensored-1.2"] as const;
 
-/**
- * PLACEHOLDER — Max slot 12 (lineup v2). Deliberately NOT in MODELS, so it never shows in the picker, marketing pages
- * or the API. When Cruz picks the model: add a MODELS entry with this id (or a better slug), set MODEL_TIER[id] = "max",
- * and add the provider id under the same key in the MODEL_IDS secret.
- */
-export const MAX_SLOT_12_PLACEHOLDER = { id: "max-slot-12", tier: "max", hidden: true } as const;
 
-/** Chat models in a plan, in lineup order (Free 5, Pro 8, Max 11 today + the hidden slot 12). Image/Video excluded. */
+/** Chat models in a plan, in lineup order (Free 5, Pro 8, Max 12). Image/Video excluded. */
 export function chatModelsForPlan(plan: "trial" | "pro" | "max"): PublicModel[] {
   return MODELS.filter((m) => m.modality === "chat" && planIncludesModel(plan, m.id));
 }
