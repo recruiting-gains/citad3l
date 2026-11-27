@@ -10,7 +10,7 @@ import { LimitReached } from "@/components/LimitReached";
 import { Markdown } from "@/components/chat/Markdown";
 import { ModelPicker } from "@/components/chat/ModelPicker";
 import { ModelSettingsModal } from "@/components/chat/ModelSettingsModal";
-import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
+import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, modelForFollowUp, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
 import { timeOfDayGreeting, formatGreeting, type Greeting } from "@/lib/greeting";
 import { UsageMeters } from "@/components/UsageMeter";
 import { relevantLimitHit, usageLine } from "@/lib/usage-display";
@@ -475,12 +475,14 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedModel = catalog.find((m) => m.id === modelId) ?? catalog[0];
+  const activeModelId = modelForFollowUp(modelId, catalog, defaultModelId);
+  const selectedModel = catalog.find((m) => m.id === activeModelId) ?? catalog[0];
   const chatReady = isChatReady(selectedModel);
   // Image, Video and Swarm need an account; the server enforces the plan (Image = Pro/Max, Video = Max) and shows an
   // upgrade message (402 upgrade_required) whatever this says.
-  const imageReady = isImageReady(selectedModel) && signedIn;
-  const videoReady = isVideoReady(selectedModel) && signedIn;
+  const mediaOn = catalog.some((m) => m.modality === "image" || m.modality === "video");
+  const imageReady = mediaOn && isImageReady(selectedModel) && signedIn;
+  const videoReady = mediaOn && isVideoReady(selectedModel) && signedIn;
   const swarmAvailable = isSwarmAvailable(selectedModel) && signedIn;
   const hermesReady = selectedModel?.modality === "agent" && signedIn && hermesEnabled;
   const composerMode = videoReady ? "video" as const : imageReady ? "image" as const : "chat" as const;
@@ -761,12 +763,12 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
 
     try {
       // "/image …" is an admin shortcut; for anyone else it is just text sent to chat.
-      const parsed = videoReady || hermesReady ? { image: false, prompt: text } : signedIn ? parseImageCommand(text, imageReady) : { image: false, prompt: text };
+      const parsed = !mediaOn || videoReady || hermesReady ? { image: false, prompt: text } : signedIn ? parseImageCommand(text, imageReady) : { image: false, prompt: text };
       if (parsed.image && !parsed.prompt && !retryId) {
         fail("bad_request", "Add a prompt after /image, or describe the image you want.");
         return;
       }
-      const body: Record<string, unknown> = { message: parsed.image ? parsed.prompt : text, model: parsed.image ? "citad3l-image" : modelId };
+      const body: Record<string, unknown> = { message: parsed.image ? parsed.prompt : text, model: parsed.image ? "citad3l-image" : (selectedModel?.id ?? defaultModelId) };
       if (convRef.current && !String(convRef.current).startsWith("guest-")) body.conversationId = convRef.current;
       else if (projRef.current && signedIn) body.projectId = projRef.current;
       if (retryId && signedIn) body.retryAssistantMessageId = retryId;
@@ -904,7 +906,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     if (!canSend) return;
     stopDictation(); // nothing late may refill the draft after it's sent
     const text = input.trim();
-    if (isFreeUser && !imageReady && !videoReady && looksLikeImageRequest(text)) {
+    if (mediaOn && isFreeUser && !imageReady && !videoReady && looksLikeImageRequest(text)) {
       setUpgradeCard("pro");
       trackFunnelEvent("image_upgrade_shown", "/chat");
       if (isSlashImageCommand(text)) {
@@ -1787,6 +1789,15 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
             <a className="side-instructions" href="/account/instructions" data-testid="side-custom-instructions" title={signedIn ? "Tell Citad3L who to be in every chat" : "Sign in to set custom instructions"}>
               Custom instructions
             </a>
+            <nav className="side-instructions" aria-label="Company">
+              <a href="/about">About</a>
+              {" · "}
+              <a href="/contact">Contact</a>
+              {" · "}
+              <a href="/privacy">Privacy</a>
+              {" · "}
+              <a href="/terms">Terms</a>
+            </nav>
             {signedIn ? (
               <a className="side-user" href="/account">
                 <span className="nav-avatar">{initials(userLabel)}</span>

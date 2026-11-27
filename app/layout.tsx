@@ -5,6 +5,7 @@ import CommandPalette from "@/components/CommandPalette";
 import { isAdminEmail } from "@/lib/config";
 import { referralProgramVisible } from "@/lib/referrals";
 import { fontSans, fontMono } from "./fonts";
+import { visibleModels } from "@/lib/models";
 import { currentUser, labelFor } from "@/lib/session";
 import SessionKeepAlive from "@/components/auth/SessionKeepAlive";
 import RefCapture from "@/components/RefCapture";
@@ -28,8 +29,7 @@ export const metadata: Metadata = {
     title: "Citad3L",
     statusBarStyle: "black",
   },
-  // Preview: noindex until launch (also sent as X-Robots-Tag header)
-  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+  robots: { index: true, follow: true },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#000000" };
 
@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a href="#main" className="skip-link">Skip to content</a>
         <TopNav signedIn={!!u} userLabel={u ? labelFor(u) : undefined} isOwner={!!u && isAdminEmail(u.email)} showReferral={referralProgramVisible()} />
-        <CommandPalette signedIn={!!u} isOwner={!!u && isAdminEmail(u.email)} />
+        <CommandPalette signedIn={!!u} isOwner={!!u && isAdminEmail(u.email)} models={visibleModels()} />
         <SessionKeepAlive signedIn={!!u} />
         <RefCapture />
         <div id="main">{children}</div>

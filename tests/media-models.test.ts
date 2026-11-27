@@ -7,6 +7,7 @@ describe("Citad3L Image request body for test-image-model", () => {
   it("sends aspect_ratio 1:1 + resolution 1K (no width/height), webp, safe_mode, 1 variant, JSON", async () => {
     const saved = { key: process.env.PROVIDER_API_KEY, prov: process.env.INFERENCE_PROVIDER };
     process.env.PROVIDER_API_KEY = "test-key-not-real";
+    process.env.MEDIA_GENERATION_ENABLED = "true";
     delete process.env.INFERENCE_PROVIDER;
     const webp = Buffer.from("RIFF\0\0\0\0WEBPVP8 ", "latin1").toString("base64");
     const bodies: any[] = [];
@@ -23,6 +24,7 @@ describe("Citad3L Image request body for test-image-model", () => {
       globalThis.fetch = orig;
       if (saved.key === undefined) delete process.env.PROVIDER_API_KEY; else process.env.PROVIDER_API_KEY = saved.key;
       if (saved.prov === undefined) delete process.env.INFERENCE_PROVIDER; else process.env.INFERENCE_PROVIDER = saved.prov;
+      delete process.env.MEDIA_GENERATION_ENABLED;
     }
     expect(urls[0]).toMatch(/\/image\/generate$/);
     expect(bodies[0]).toEqual({ model: "test-image-model", prompt: "Q4 Revenue Forecast", aspect_ratio: "1:1", resolution: "1K", format: "webp", safe_mode: true, variants: 1, return_binary: false });

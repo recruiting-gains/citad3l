@@ -13,6 +13,7 @@ import { reviewImagePrompt } from "@/lib/filter-llm";
 import { bannedMessage } from "@/lib/banned";
 import { logFilterRefusal } from "@/lib/filter-log";
 import { checkAccess } from "@/lib/access";
+import { mediaGenerationEnabled } from "@/lib/media";
 import { spendGuard } from "@/lib/spend-guard";
 
 export const runtime = "nodejs";
@@ -27,6 +28,7 @@ const Body = z.object({
 });
 
 export async function POST(req: Request) {
+  if (!mediaGenerationEnabled()) return jerr(403, "media_disabled", "Image generation is turned off.");
   const userId = await requireUserId();
   if (!userId) return jerr(401, "unauthorized", "Sign in to generate images.");
   // Citad3L Image: active Pro or Max plan (admins always), checked here on the server for every request.

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { buildTurns, systemPrompt } from "@/lib/prompt";
 import { checkText } from "@/lib/filter";
-import { FAQ_ITEMS, faqJsonLd } from "@/lib/faq";
+import { FAQ_ITEMS, faqJsonLd, publicFaqItems } from "@/lib/faq";
 import { LEAK_RE, LEAK_WORDS } from "./leak-words";
 import {
   addWaitlistSignup,
@@ -40,11 +40,11 @@ describe("system prompt identity", () => {
       expect(text).toContain("Cruz Garza");
       expect(text).toMatch(/Citad3L V1/);
       expect(text).toMatch(/Citad3L Fast/);
-      expect(text).toMatch(/Citad3L Image/);
-      expect(text).toMatch(/Max only/i);
+      expect(text).not.toMatch(/Citad3L Image/);
       expect(text).toMatch(/Citad3L Private/);
       expect(text).toMatch(/Swarm/);
-      expect(text).toMatch(/Video/);
+      expect(text).toMatch(/Image and video generation are turned off/);
+      expect(text).not.toMatch(/Citad3L Video/);
       expect(text).toMatch(/web search/i);
       expect(text).toMatch(/extended thinking/i);
       expect(text).toMatch(/\$20/);
@@ -110,14 +110,17 @@ describe("FAQ", () => {
     for (const v of VENDORS) expect(blob).not.toContain(v);
   });
 
-  it("emits FAQPage JSON-LD", () => {
+  it("emits FAQPage JSON-LD from the public list", () => {
+    const shown = publicFaqItems();
     const ld = faqJsonLd("https://citad3l.io");
     expect(ld["@type"]).toBe("FAQPage");
-    expect(ld.mainEntity).toHaveLength(FAQ_ITEMS.length);
+    expect(ld.mainEntity).toHaveLength(shown.length);
+    expect(shown.map((i) => i.q)).not.toContain("Can I make videos?");
+    expect(shown.map((i) => i.q).join("\n")).not.toMatch(/Citad3L Image|Citad3L Video/);
     expect(ld.mainEntity[0]).toMatchObject({
       "@type": "Question",
-      name: FAQ_ITEMS[0].q,
-      acceptedAnswer: { "@type": "Answer", text: FAQ_ITEMS[0].a },
+      name: shown[0].q,
+      acceptedAnswer: { "@type": "Answer", text: shown[0].a },
     });
   });
 

@@ -1,4 +1,5 @@
 type Env = Record<string, string | undefined>;
+export function shouldNoIndex(pathname: string): boolean;
 export function allowedOrigins(env?: Env): Set<string>;
 export function csrfBlockReason(request: Request, env?: Env): string | null;
 export function httpsRedirect(request: Request): Response | null;

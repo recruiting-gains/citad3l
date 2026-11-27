@@ -18,14 +18,19 @@ export interface ModelsIndexViewProps {
 export function ModelsIndexView({ provider, signedIn, isAdmin = false }: ModelsIndexViewProps) {
   const list = marketingModels();
   const count = list.length;
+  const media = list.some((m) => m.modality === "image" || m.modality === "video");
   return (
     <>
       <main className="page-main container">
         <header className="page-head">
           <h1 className="page-title">Models</h1>
           <p className="page-sub">{isAdmin
-            ? "Each model does a different job. Every model is unlocked on your admin account: V1, Fast, Private, Image and Video, plus Swarm and @computer."
-            : "Each model does a different job. Citad3L V1 and Fast are open on every plan, Private comes with a free account, Image comes with Pro and Max, and Video is Max only."}</p>
+            ? media
+              ? "Each model does a different job. Every model is unlocked on your admin account: V1, Fast, Private, Image and Video, plus Swarm and @computer."
+              : "Each model does a different job. V1, Fast, and Private are unlocked on your admin account, plus Swarm and @computer."
+            : media
+              ? "Each model does a different job. Citad3L V1 and Fast are open on every plan, Private comes with a free account, Image comes with Pro and Max, and Video is Max only."
+              : "Each model does a different job. Citad3L V1 and Fast are open on every plan. Private comes with a free account."}</p>
         </header>
         <div className="page-toolbar">
           <span className="tiny">{count} model{count === 1 ? "" : "s"}</span>

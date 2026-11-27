@@ -38,8 +38,11 @@ export default async function Page() {
     );
   }
   return (
-    <AccountShell title="Custom instructions" intro={INTRO} isOwner={isAdminEmail(u.email)}>
-      <CustomInstructionsView max={MAX_CUSTOM_INSTRUCTIONS} />
-    </AccountShell>
+    <>
+      <AccountShell title="Custom instructions" intro={INTRO} isOwner={isAdminEmail(u.email)}>
+        <CustomInstructionsView max={MAX_CUSTOM_INSTRUCTIONS} />
+      </AccountShell>
+      <SiteFooter />
+    </>
   );
 }

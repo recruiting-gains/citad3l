@@ -1,10 +1,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { Rook } from "@/components/Rook";
-import { marketingModels } from "@/lib/models";
+import { marketingModels, type PublicModel } from "@/lib/models";
 export type FooterLink = { href: string; label: string; tag?: string };
 
-export function footerCols(showReferral: boolean): { title: string; links: FooterLink[] }[] {
+export function footerCols(showReferral: boolean, models: readonly PublicModel[] = marketingModels()): { title: string; links: FooterLink[] }[] {
   const product: FooterLink[] = [
     { href: "/chat", label: "Chat" },
     { href: "/projects", label: "Projects" },
@@ -19,7 +19,7 @@ export function footerCols(showReferral: boolean): { title: string; links: Foote
       title: "Engine",
       links: [
         { href: "/models", label: "Models" },
-        ...marketingModels().map((m) => ({ href: `/models/${m.id}`, label: m.name })),
+        ...models.map((m) => ({ href: `/models/${m.id}`, label: m.name })),
       ],
     },
     {
@@ -32,6 +32,8 @@ export function footerCols(showReferral: boolean): { title: string; links: Foote
     {
       title: "Legal",
       links: [
+        { href: "/about", label: "About" },
+        { href: "/contact", label: "Contact" },
         { href: "/terms", label: "Terms" },
         { href: "/privacy", label: "Privacy" },
       ],
@@ -43,9 +45,9 @@ export function footerCols(showReferral: boolean): { title: string; links: Foote
  * `showReferral` is decided by a server parent (`referralProgramVisible`) so the link is present in the HTML only
  * while the promo is on, and so client hydration can't flash it on or off.
  */
-export function Footer({ showReferral = false }: { showReferral?: boolean }) {
+export function Footer({ showReferral = false, models }: { showReferral?: boolean; models?: PublicModel[] }) {
   const year = new Date().getFullYear();
-  const COLS = footerCols(showReferral);
+  const COLS = footerCols(showReferral, models);
   return (
     <footer className="footer">
       <div className="container">
@@ -78,6 +80,8 @@ export function Footer({ showReferral = false }: { showReferral?: boolean }) {
         <div className="footer-bottom">
           <span>© {year} Citad3L</span>
           <nav aria-label="Legal">
+            <Link href="/about">About</Link>
+            <Link href="/contact">Contact</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/privacy">Privacy</Link>

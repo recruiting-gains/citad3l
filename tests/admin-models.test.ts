@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 
 /*
  * 2026-11-19 5:20 PM CT, Owner: "i need full access to everything all models me and my cousin both just us".
@@ -81,11 +81,13 @@ const video = async (body: object) => (await import("@/app/api/video/route")).PO
 const getVideo = async (id: string, q = "") => (await import("@/app/api/videos/[id]/route")).GET(new Request(`https://citad3l.test/api/videos/${id}${q}`), { params: Promise.resolve({ id }) });
 
 beforeAll(async () => {
+  process.env.MEDIA_GENERATION_ENABLED = "true";
   // warm the route modules (first import compiles them)
   await import("@/app/api/chat/route");
   await import("@/app/api/image/route");
   await import("@/app/api/video/route");
 });
+afterAll(() => { delete process.env.MEDIA_GENERATION_ENABLED; });
 beforeEach(() => { Object.assign(calls, { provider: [], reserve: 0, swarm: 0, swarmWebSearch: undefined, image: 0, quote: 0, queue: 0 }); });
 
 describe("who is an admin", () => {
@@ -265,8 +267,8 @@ describe("client gating source checks", () => {
     for (const p of ["../app/chat/page.tsx", "../app/chat/[id]/page.tsx"]) expect(readFileSync(new URL(p, import.meta.url), "utf8"), p).toMatch(/pickerModels\(/);
   });
   it("Image, Video and Swarm are offered to signed-in accounts (server enforces plans); Video posts to /api/video", () => {
-    expect(ws).toMatch(/imageReady = isImageReady\(selectedModel\) && signedIn;/);
-    expect(ws).toMatch(/videoReady = isVideoReady\(selectedModel\) && signedIn;/);
+    expect(ws).toMatch(/imageReady = mediaOn && isImageReady\(selectedModel\) && signedIn;/);
+    expect(ws).toMatch(/videoReady = mediaOn && isVideoReady\(selectedModel\) && signedIn;/);
     expect(ws).toMatch(/swarmAvailable = isSwarmAvailable\(selectedModel\) && signedIn;/);
     expect(ws).toContain('case "upgrade_required"');
     expect(ws).toContain('videoReady ? "/api/video"');

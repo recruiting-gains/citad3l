@@ -1,6 +1,6 @@
 # Citad3L
 
-> Citad3L is a private, less-filtered AI chat app at https://citad3l.io, founded by Cruz Garza. You can chat with text models, generate images, and make short video clips. Adult text chat between adults is allowed. The only hard lines are no sexual content involving minors and nothing about bombs or explosives. Image mode keeps a safety filter and will not produce explicit nude or sexual images.
+> Citad3L is a private, less-filtered AI chat app at https://citad3l.io, founded by Cruz Garza. Adult text chat between adults is allowed. The only hard lines are no sexual content involving minors and nothing about bombs or explosives.
 
 This file is a plain summary for AI tools and search engines. Everything here is also stated on the public pages linked below.
 
@@ -8,17 +8,15 @@ This file is a plain summary for AI tools and search engines. Everything here is
 
 - Citad3L V1: the default, best all-round chat model. Supports web search and extended thinking for signed-in users, and can look at uploaded images.
 - Citad3L Fast: a cheaper, quicker chat model for short tasks. Can look at uploaded images.
-- Citad3L Image: generates images from a written prompt (or type /image followed by a prompt in chat). Pro and Max. Keeps a safety filter and will not produce explicit nude or sexual images.
-- Citad3L Private: encrypted chat in a verified secure enclave (text only, signed-in).
+- Citad3L Private: chat in a verified secure enclave (text only, signed-in). The browser sends the message to Citad3L's server over HTTPS. The server reads it, runs a safety check, then encrypts it to the enclave. This is not end-to-end encryption from the device.
 - Swarm mode: V1 plans, up to three Fast workers answer parts in parallel, V1 writes the reply (signed-in).
-- Citad3L Video: 5-second 720p clips with sound (Max plan).
 
 ## Plans
 
-- Free: try Citad3L with no card. Guests get five successful replies without an account; failed or stopped replies never count.
-- Pro: $20 per month (25 replies every 5 hours, up to 150 a week), adds Citad3L Image.
-- Max: $50 per month, 2.5x the Pro allowance, plus Citad3L Video.
-- Paid plans are not open to the public yet. Join the early-access list on the pricing page to hear when they are.
+- Free: try Citad3L with no card. Guests get five successful replies without an account; failed or stopped replies never count. A free account gets 3 messages every day on Fast and Private, resetting at midnight Central.
+- Pro: $20 per month (25 replies every 5 hours, up to 150 a week).
+- Max: $50 per month, 2.5x the Pro allowance, plus per-model settings.
+- Paid plans are open. Subscribe on the pricing page. They renew monthly until you cancel. First-time buyers, through January 31, 2027: Pro is $10 the first month, then $20/month. Max is $25 the first month, then $50/month. Checkout applies that price.
 
 ## Sign-in
 
@@ -28,6 +26,10 @@ This file is a plain summary for AI tools and search engines. Everything here is
 ## Links
 
 - Home: https://citad3l.io/
+- About: https://citad3l.io/about
+- Contact: https://citad3l.io/contact
 - FAQ: https://citad3l.io/faq
 - Pricing: https://citad3l.io/pricing
+- Privacy: https://citad3l.io/privacy
+- Terms: https://citad3l.io/terms
 - Sign in: https://citad3l.io/login

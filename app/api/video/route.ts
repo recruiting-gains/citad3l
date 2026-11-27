@@ -16,6 +16,7 @@ import { reviewImagePrompt } from "@/lib/filter-llm";
 import { bannedMessage } from "@/lib/banned";
 import { logFilterRefusal } from "@/lib/filter-log";
 import { checkAccess } from "@/lib/access";
+import { mediaGenerationEnabled } from "@/lib/media";
 import { spendGuard } from "@/lib/spend-guard";
 
 export const runtime = "nodejs";
@@ -43,6 +44,7 @@ const sleep = (ms: number, signal: AbortSignal) =>
 
 /** Citad3L Video: Max plan (admins always), quoted and capped (per clip, per user per day, global per day), async on the provider. Streams meta → (status…) → delta → done like /api/image. */
 export async function POST(req: Request) {
+  if (!mediaGenerationEnabled()) return jerr(403, "media_disabled", "Video generation is turned off.");
   const userId = await requireUserId();
   if (!userId) return jerr(401, "unauthorized", "Sign in to generate videos.");
   const denied = await checkAccess(userId, "citad3l-video");

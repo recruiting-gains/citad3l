@@ -200,19 +200,20 @@ describe("holiday banner", () => {
 
   it("gates the banner and first-month lines, and leaves list prices alone", () => {
     expect(pricing).toContain("{holiday ? <HolidayBanner /> : null}");
-    expect(pricing).toContain('showHolidayPrices && (p.id === "pro" || p.id === "max")');
-    expect(pricing).toContain("holidayPriceLine(p.id)");
+    expect(pricing).toContain("checkoutRenewalLine(p.id, showHolidayPrices)");
+    expect(pricing).toContain("billingOpen && (p.id === \"pro\" || p.id === \"max\")");
     expect(pricing).toContain("${p.priceUsd}");
     expect(pricing).toContain('id="all-plans"');
     expect(home).toContain("<HolidayBanner compact />");
     expect(home).toContain('price: "$20"');
     expect(home).toContain('price: "$50"');
+    expect(home).toContain("checkoutRenewalLine(p.id, true)");
     expect(home).toContain("Private AI. Fast answers.");
     expect(banner).toContain('href="/pricing#plans"');
     expect(pricingPage).toContain("holidayActive()");
-    expect(pricingPage).toContain('plan !== "pro" && plan !== "max"');
+    expect(pricingPage).toContain("holidayIntroEligible");
     expect(homePage).toContain("holidayActive()");
-    expect(homePage).toContain('usage?.plan === "pro" || usage?.plan === "max"');
+    expect(homePage).toContain("holidayIntroEligible");
   });
 
   it("styles one cyan pass, then an even hairline, with no amber", () => {

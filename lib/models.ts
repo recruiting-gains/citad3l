@@ -4,6 +4,7 @@
  * Display names, picker copy and marketing copy only. Provider model IDs
  * live in the server-only inference layer and must never be imported here.
  */
+import { isGeneratedMediaModality, mediaGenerationEnabled } from "./media";
 
 export type ModelModality = "chat" | "image" | "video" | "agent";
 
@@ -50,8 +51,8 @@ export interface PublicModel {
 export const VIDEO_MODEL_ID = "citad3l-video";
 
 /**
- * Off-switch for Citad3L Video in the app (public launch: on, Max plan only). CITAD3L_VIDEO_ENABLED=false hides it
- * again without a code change. Marketing pages use marketingModels() and are not affected by this flag.
+ * Off-switch for Citad3L Video when media generation is on (Max plan only).
+ * CITAD3L_VIDEO_ENABLED=false hides Video again. MEDIA_GENERATION_ENABLED=false hides Image and Video together.
  */
 export const VIDEO_MODEL_ENABLED = true;
 
@@ -173,24 +174,35 @@ export function isMemberModel(id: string | null | undefined): boolean {
   return !!id && modelTier(id) !== "guest" && id in MODEL_TIER;
 }
 
-/** Public lineup list (models index, command palette). Video stays hidden if the flag is off. */
+function withoutGeneratedMedia(models: readonly PublicModel[]): PublicModel[] {
+  if (mediaGenerationEnabled()) return models.slice();
+  return models.filter((m) => !isGeneratedMediaModality(m.modality));
+}
+
+/** Public lineup list (models index, command palette). Video stays hidden if its flag is off. Image and Video both stay hidden while media generation is off. */
 export function visibleModels(): PublicModel[] {
-  return MODELS.filter((m) => m.id !== VIDEO_MODEL_ID || isVideoModelEnabled());
+  return withoutGeneratedMedia(MODELS.filter((m) => m.id !== VIDEO_MODEL_ID || isVideoModelEnabled()));
 }
 
 /**
  * What the chat picker offers. Guests get V1 and Fast; signed-in accounts see the whole lineup (plan locks are
- * enforced by the server with an upgrade message). Admins always get every model, Video included.
+ * enforced by the server with an upgrade message). Admins always get every model, Video included, unless media
+ * generation is turned off — then nobody can pick Image or Video.
  */
 export function pickerModels(signedIn: boolean, admin = false): PublicModel[] {
+  if (!mediaGenerationEnabled()) {
+    const chat = MODELS.filter((m) => !isGeneratedMediaModality(m.modality));
+    if (admin || signedIn) return chat.slice();
+    return chat.filter((m) => !isMemberModel(m.id));
+  }
   if (admin) return MODELS.slice();
   if (signedIn) return visibleModels();
   return visibleModels().filter((m) => !isMemberModel(m.id));
 }
 
-/** Full public lineup for marketing pages, including Video. Does not read the video flag. */
+/** Public lineup for marketing pages. Includes Image and Video only while media generation is on. */
 export function marketingModels(): PublicModel[] {
-  return MODELS.slice();
+  return withoutGeneratedMedia(MODELS);
 }
 
 export function modalityLabel(m: PublicModel): string {
@@ -215,6 +227,16 @@ export function planLabel(id: string): string | null {
 
 export function defaultModel(): PublicModel {
   return MODELS.find((m) => m.default) ?? MODELS[0];
+}
+
+/**
+ * Model id for the next message. A saved Image or Video chat falls back to the default text model
+ * when those modes are not in the catalog, so a text follow-up still sends.
+ */
+export function modelForFollowUp(savedId: string | null | undefined, catalog: readonly { id: string }[], fallback = DEFAULT_MODEL_ID): string {
+  if (savedId && catalog.some((m) => m.id === savedId)) return savedId;
+  if (catalog.some((m) => m.id === fallback)) return fallback;
+  return catalog[0]?.id ?? fallback;
 }
 
 export function modelAllowsImageUpload(model: PublicModel | undefined | null): boolean {

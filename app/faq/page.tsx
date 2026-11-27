@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
-import { FAQ_ITEMS, faqJsonLd } from "@/lib/faq";
+import { faqJsonLd, publicFaqItems } from "@/lib/faq";
 
 export const metadata: Metadata = {
   title: "FAQ · Citad3L",
-  description: "Answers about Citad3L: models, privacy, pricing, sign-in, images, video and refunds.",
+  description: "Answers about Citad3L: models, privacy, pricing, sign-in, and refunds.",
 };
 
 function PlusIcon() {
@@ -29,7 +29,7 @@ export default function Page() {
         <section className="faq-section container" aria-labelledby="faq-title">
           <h2 id="faq-title" className="sr-only">Frequently asked questions</h2>
           <div className="faq">
-            {FAQ_ITEMS.map((item) => (
+            {publicFaqItems().map((item) => (
               <details key={item.q}>
                 <summary>{item.q}<PlusIcon /></summary>
                 <p className="faq-body">{item.a}</p>

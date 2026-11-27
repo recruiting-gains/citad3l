@@ -25,9 +25,35 @@ export function holidayActive(now = Date.now()): boolean {
   return Math.floor(now / 1000) <= HOLIDAY_ENDS_AT_UNIX;
 }
 
+/** Ongoing list price stays $20 / $50. Kept in sync with planCatalog(). */
+export const LIST_PRICE_USD = { pro: 20, max: 50 } as const;
+
 /** Ongoing list price stays $20 / $50. This line is the first-month overlay. */
 export function holidayPriceLine(plan: "pro" | "max"): string {
   const first = HOLIDAY_FIRST_MONTH[plan];
-  const then = plan === "pro" ? 20 : 50;
+  const then = LIST_PRICE_USD[plan];
   return `First month $${first}, then $${then} per month`;
+}
+
+/**
+ * First-month prices are for people who have never paid us.
+ * Current Pro/Max (including a referral month) and anyone whose subscription was canceled or went past due
+ * have subscribed before, so they do not see the intro line. Guests and free accounts do.
+ * Checkout applies HOLIDAY50 itself for a first-time Stripe customer; they do not type the code.
+ */
+export function holidayIntroEligible(input?: { plan?: string | null; status?: string | null } | null): boolean {
+  if (!input) return true;
+  if (input.plan === "pro" || input.plan === "max") return false;
+  if (input.status === "canceled" || input.status === "past_due") return false;
+  return true;
+}
+
+/** One line for one plan card. Checkout auto-applies HOLIDAY50 for a first-time buyer. */
+export function checkoutRenewalLine(plan: "pro" | "max", showFirstMonth: boolean): string {
+  const then = LIST_PRICE_USD[plan];
+  const label = plan === "pro" ? "Pro" : "Max";
+  if (showFirstMonth) {
+    return `First-time buyers: ${label} $${HOLIDAY_FIRST_MONTH[plan]} first month, then $${then}/month.`;
+  }
+  return `${label}: $${then}/month. Cancel anytime.`;
 }

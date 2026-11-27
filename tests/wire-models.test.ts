@@ -51,6 +51,7 @@ describe("swarm planning parser", () => {
 
 describe("image generation", () => {
   it("returns a labelled mock placeholder when no key is set in development", async () => {
+    vi.stubEnv("MEDIA_GENERATION_ENABLED", "true");
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("PROVIDER_API_KEY", "");
     const r = await generateImage("a red cube", new AbortController().signal);
@@ -61,6 +62,7 @@ describe("image generation", () => {
   });
 
   it("refuses the mock in production without a key", async () => {
+    vi.stubEnv("MEDIA_GENERATION_ENABLED", "true");
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("PROVIDER_API_KEY", "");
     vi.resetModules();
@@ -73,6 +75,7 @@ describe("image generation", () => {
     const p = spawn("node", ["scripts/stub-compatible.mjs"], { env: { ...process.env, STUB_PORT: "8102", STUB_KEY: "stub-key" } });
     await new Promise((r) => p.stdout.once("data", r));
     try {
+      vi.stubEnv("MEDIA_GENERATION_ENABLED", "true");
       vi.stubEnv("NODE_ENV", "production");
       vi.stubEnv("PROVIDER_API_KEY", "stub-key");
       vi.stubEnv("PROVIDER_BASE_URL", "http://127.0.0.1:8102/v1");
