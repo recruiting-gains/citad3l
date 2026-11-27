@@ -8,24 +8,26 @@ import { MockBadge } from "@/components/MockBadge";
 import { LineupCard } from "@/components/model/LineupCard";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { GuestTryBox } from "@/components/marketing/GuestTryBox";
+import { HolidayBanner } from "@/components/marketing/HolidayBanner";
+import { holidayPriceLine } from "@/lib/holiday";
 
-export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean; showReferral?: boolean }
+export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean; showReferral?: boolean; holiday?: boolean; showHolidayPrices?: boolean }
 
 const sv = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const INodes = () => <svg {...sv}><circle cx="12" cy="5" r="2" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="18" r="2" /><path d="M12 7v4M12 11l-5 5M12 11l5 5" /></svg>;
 const IChevR = () => <svg {...sv} width={16} height={16}><path d="M9 6l6 6-6 6" /></svg>;
 
 const plans = [
-  { name: "Free", price: "$0", note: "once · 5 successful replies" },
-  { name: "Pro", price: "$20", note: "/ month · adds Image", highlight: true },
-  { name: "Max", price: "$50", note: "/ month · 2.5× Pro allowance, plus Video" },
-];
+  { id: "trial", name: "Free", price: "$0", note: "once · 5 successful replies" },
+  { id: "pro", name: "Pro", price: "$20", note: "/ month · adds Image", highlight: true },
+  { id: "max", name: "Max", price: "$50", note: "/ month · 2.5× Pro allowance, plus Video" },
+] as const;
 
 const lineup = marketingModels();
 const lead = lineup.find((m) => m.default) ?? lineup[0];
 const rest = lineup.filter((m) => m.id !== lead.id);
 
-export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true, showReferral = false }: HomeViewProps) {
+export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true, showReferral = false, holiday = false, showHolidayPrices = false }: HomeViewProps) {
   const showTry = !signedIn && guestChat;
   return (
     <>
@@ -105,7 +107,8 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
             <div className="step"><div className="step-num">03</div><div className="step-title">Make your move</div><p className="step-body">Ask, iterate, retry. Failed or stopped replies never count against you.</p></div>
           </div>
 
-          <div className="section-head" style={{ marginTop: 56 }}>
+          {holiday ? <HolidayBanner compact /> : null}
+          <div className="section-head" style={{ marginTop: holiday ? 8 : 56 }}>
             <div>
               <h2 className="section-title">Plans</h2>
               <p className="section-sub">Plans differ in allowance. Pro adds Citad3L Image; Max adds Citad3L Video.</p>
@@ -114,9 +117,12 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
           </div>
           <div className="plan-teaser">
             {plans.map((p) => (
-              <Link key={p.name} href="/pricing" className={`plan-mini${p.highlight ? " is-highlight" : ""}`}>
+              <Link key={p.name} href="/pricing" className={`plan-mini${"highlight" in p && p.highlight ? " is-highlight" : ""}`}>
                 <span className="h4">{p.name}</span>
                 <span className="plan-mini-price tnum">{p.price}</span>
+                {showHolidayPrices && (p.id === "pro" || p.id === "max") ? (
+                  <span className="plan-mini-holiday">{holidayPriceLine(p.id)}</span>
+                ) : null}
                 <span className="tiny text-3">{p.note}</span>
               </Link>
             ))}
