@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ComputerPanel } from "./ComputerPanel";
+import { IMAGE_PROMPT_PLANS, type ImagePromptPlan } from "@/lib/image-prompt";
 
 type UserRow = {
   id: string; email: string | null; name: string | null; createdAt: string;
@@ -10,11 +11,29 @@ type UserRow = {
   banned: boolean; bannedReason: string | null; refundMarkedAt: string | null; owner: boolean;
 };
 
+type ImagePromptTotals = {
+  days7: Record<ImagePromptPlan, number>;
+  days30: Record<ImagePromptPlan, number>;
+};
+
+const PLAN_LABEL: Record<ImagePromptPlan, string> = {
+  guest: "Guest",
+  free: "Free",
+  pro: "Pro",
+  max: "Max",
+};
+
+const EMPTY_PROMPTS: ImagePromptTotals = {
+  days7: { guest: 0, free: 0, pro: 0, max: 0 },
+  days30: { guest: 0, free: 0, pro: 0, max: 0 },
+};
+
 type Payload = {
   owner: { email: string };
   viewer?: { owner: boolean; computer?: boolean };
   users: UserRow[];
   spend: { usd: number; replies: number; note: string };
+  imagePrompts?: ImagePromptTotals;
   refusals: { id: string; createdAt: string; category: string; direction: string; modelId: string | null; email: string | null; guest: boolean }[];
   audits: { id: string; action: string; detail: string; createdAt: string; actorEmail: string | null; targetEmail: string | null }[];
   waitlist: { count: number; signups: { id: string; email: string; source: string; createdAt: string }[] };
@@ -71,6 +90,8 @@ export function AdminView() {
         <p className="account-plan-name tnum">${data.spend.usd.toFixed(2)}</p>
         <p className="account-card-sub">{data.spend.replies.toLocaleString()} settled replies. {data.spend.note}</p>
       </section>
+
+      <ImagePromptCounts totals={data.imagePrompts ?? EMPTY_PROMPTS} />
 
       <section className="account-card" style={{ marginBottom: 16 }}>
         <div className="account-card-title">Users</div>
@@ -152,6 +173,41 @@ export function AdminView() {
         </ul>
       </section>
     </main>
+  );
+}
+
+function ImagePromptCounts({ totals }: { totals: ImagePromptTotals }) {
+  const sum = (window: Record<ImagePromptPlan, number>) => IMAGE_PROMPT_PLANS.reduce((n, p) => n + (window[p] ?? 0), 0);
+  return (
+    <section className="account-card" style={{ marginBottom: 16 }} data-testid="admin-image-prompts">
+      <div className="account-card-title">Image prompt requests</div>
+      <p className="account-card-sub">Replies that included an image prompt, by plan. Image and video asks are both counted. Last 7 days and last 30 days. Prompt text is not stored.</p>
+      <div style={{ overflowX: "auto", marginTop: 12 }}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>7 days</th>
+              <th>30 days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {IMAGE_PROMPT_PLANS.map((plan) => (
+              <tr key={plan}>
+                <td>{PLAN_LABEL[plan]}</td>
+                <td className="tnum">{(totals.days7[plan] ?? 0).toLocaleString()}</td>
+                <td className="tnum">{(totals.days30[plan] ?? 0).toLocaleString()}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>Total</td>
+              <td className="tnum">{sum(totals.days7).toLocaleString()}</td>
+              <td className="tnum">{sum(totals.days30).toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
