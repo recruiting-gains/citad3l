@@ -43,9 +43,11 @@
   // Neon Postgres via Hyperdrive (config "citad3l-neon", origin = Neon direct endpoint). lib/db.ts prefers this binding.
   "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "0e60b104d3ee4f3e9abfa209c78aeb86" }],
   // Signed 24h zip/PDF exports (exports/{user}/{id}.zip|pdf). Bucket citad3l-exports has a 1-day lifecycle delete.
-  // Generated images/videos still need a separate citad3l-images bucket before the IMAGES binding can be added.
-  "r2_buckets": [{ "binding": "EXPORTS", "bucket_name": "citad3l-exports" }],
-  // "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "citad3l-images" }],
+  // Generated images/videos live in citad3l-images (key prefix images/ or videos/).
+  "r2_buckets": [
+    { "binding": "EXPORTS", "bucket_name": "citad3l-exports" },
+    { "binding": "IMAGES", "bucket_name": "citad3l-images" }
+  ],
   // @computer relay (admins only, one hub per user Mac control). SQLite-backed so it works on the Workers Free plan.
   "durable_objects": { "bindings": [{ "name": "COMPUTER_HUB", "class_name": "ComputerHub" }] },
   "migrations": [{ "tag": "v1-computer-hub", "new_sqlite_classes": ["ComputerHub"] }],

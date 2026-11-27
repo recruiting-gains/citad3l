@@ -233,7 +233,7 @@ describe("routes", () => {
     expect(isVideoStorageConfigured(new MemoryR2())).toBe(true);
     expect(isVideoStorageConfigured(null)).toBe(false);
   });
-  it("/api/videos and /api/images: signed-in owner only (401 signed out); wrangler binding ready but off until R2 is enabled", async () => {
+  it("/api/videos and /api/images: signed-in owner only (401 signed out); wrangler IMAGES binding points at citad3l-images", async () => {
     const { readFileSync } = await import("node:fs");
     const v = readFileSync(new URL("../app/api/videos/[id]/route.ts", import.meta.url), "utf8");
     const i = readFileSync(new URL("../app/api/images/[id]/route.ts", import.meta.url), "utf8");
