@@ -56,8 +56,8 @@
     "APP_URL": "https://citad3l.io",
     "AUTH_EMAIL_FROM": "Citad3L <login@citad3l.io>",
     "CITAD3L_VIDEO_ENABLED": "true",
-    // Image and video generation stay in the code but are off until this is "true".
-    "MEDIA_GENERATION_ENABLED": "false",
+    // Image and video generation on (restored to the pre-Nov-27 setup). Set "false" to hide them again.
+    "MEDIA_GENERATION_ENABLED": "true",
     // Only the hard lines (CSAM, bombs/explosives) are filtered: keyword pass + Fast classifier on input, keyword pass on output.
     // Images also keep provider safe_mode on (CITAD3L_IMAGE_SAFE_MODE).
     "CITAD3L_ALLOW_ADULT": "true",
