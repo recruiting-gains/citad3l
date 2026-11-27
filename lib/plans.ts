@@ -1,11 +1,20 @@
 import { proWeeklyUnits, maxWeeklyUnits, proWindowUnits, maxWindowUnits, TRIAL_REPLIES, FREE_DAILY_REPLIES } from "./config";
+import { LIST_PRICE_USD } from "./holiday";
+import { mediaGenerationEnabled } from "./media";
 import type { PlanCard } from "./types";
 
 export function planCatalog(): PlanCard[] {
-  const lineup = "Citad3L V1, Fast and Image";
+  const media = mediaGenerationEnabled();
+  const lineup = media ? "Citad3L V1, Fast and Image" : "Citad3L V1, Fast and Private";
   const privateChat = "Citad3L Private (encrypted, secure enclave)";
   const swarm = "Swarm mode (V1 leads, Fast workers)";
   const shared = ["Streaming chat with saved history", "Projects with custom instructions", "Export or delete your data any time"];
+  const proFeatures = media
+    ? [lineup, privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
+    : [lineup, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
+  const maxFeatures = media
+    ? [lineup, "Citad3L Video, Max only", "Per-model settings: prompt, temperature, length", privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
+    : [lineup, "Per-model settings: prompt, temperature, length", swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
   return [
     {
       id: "trial",
@@ -25,28 +34,20 @@ export function planCatalog(): PlanCard[] {
     {
       id: "pro",
       name: "Pro",
-      priceUsd: 20,
-      blurb: "For daily work across chat and images.",
+      priceUsd: LIST_PRICE_USD.pro,
+      blurb: media ? "For daily work across chat and images." : "For daily work.",
       allowance: `${proWindowUnits()} replies every 5 hours, up to ${proWeeklyUnits().toLocaleString()} a week`,
-      features: [lineup, privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"],
+      features: proFeatures,
       cta: "Get Pro",
       highlight: true,
     },
     {
       id: "max",
       name: "Max",
-      priceUsd: 50,
-      blurb: "2.5× the Pro allowance, plus Video and model controls.",
+      priceUsd: LIST_PRICE_USD.max,
+      blurb: media ? "2.5× the Pro allowance, plus Video and model controls." : "2.5× the Pro allowance, plus model controls.",
       allowance: `${maxWindowUnits()} replies every 5 hours, up to ${maxWeeklyUnits().toLocaleString()} a week`,
-      features: [
-        lineup,
-        "Citad3L Video, Max only",
-        "Per-model settings: prompt, temperature, length",
-        privateChat,
-        swarm,
-        ...shared,
-        "Allowance refreshes every 5 hours, with a weekly cap",
-      ],
+      features: maxFeatures,
       cta: "Get Max",
     },
   ];

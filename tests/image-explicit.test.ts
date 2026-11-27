@@ -92,6 +92,7 @@ beforeEach(() => {
   buckets.clear();
   fetchMock.mockClear();
   vi.stubEnv("CITAD3L_ALLOW_ADULT", "true");
+  vi.stubEnv("MEDIA_GENERATION_ENABLED", "true");
   vi.stubEnv("PROVIDER_API_KEY", "test-key-not-real");
   vi.stubGlobal("fetch", fetchMock);
 });

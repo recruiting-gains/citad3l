@@ -2,33 +2,31 @@
 
 import Link from "next/link";
 import type { ProviderInfo } from "@/lib/types";
-import { marketingModels } from "@/lib/models";
+import { type PublicModel } from "@/lib/models";
 import { Footer } from "@/components/Footer";
+import { checkoutRenewalLine, holidayPriceLine } from "@/lib/holiday";
 import { MockBadge } from "@/components/MockBadge";
 import { LineupCard } from "@/components/model/LineupCard";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { GuestTryBox } from "@/components/marketing/GuestTryBox";
 import { HolidayBanner } from "@/components/marketing/HolidayBanner";
-import { holidayPriceLine } from "@/lib/holiday";
 
-export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean; showReferral?: boolean; holiday?: boolean; showHolidayPrices?: boolean }
+export interface HomeViewProps { signedIn: boolean; provider: ProviderInfo; isAdmin?: boolean; guestUsed?: number; freeLimit?: number; guestChat?: boolean; showReferral?: boolean; holiday?: boolean; showHolidayPrices?: boolean; models: PublicModel[] }
 
 const sv = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
 const INodes = () => <svg {...sv}><circle cx="12" cy="5" r="2" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="18" r="2" /><path d="M12 7v4M12 11l-5 5M12 11l5 5" /></svg>;
 const IChevR = () => <svg {...sv} width={16} height={16}><path d="M9 6l6 6-6 6" /></svg>;
 
-const plans = [
-  { id: "trial", name: "Free", price: "$0", note: "once · 5 successful replies" },
-  { id: "pro", name: "Pro", price: "$20", note: "/ month · adds Image", highlight: true },
-  { id: "max", name: "Max", price: "$50", note: "/ month · 2.5× Pro allowance, plus Video" },
-] as const;
-
-const lineup = marketingModels();
-const lead = lineup.find((m) => m.default) ?? lineup[0];
-const rest = lineup.filter((m) => m.id !== lead.id);
-
-export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true, showReferral = false, holiday = false, showHolidayPrices = false }: HomeViewProps) {
+export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, freeLimit = 5, guestChat = true, showReferral = false, holiday = false, showHolidayPrices = false, models }: HomeViewProps) {
   const showTry = !signedIn && guestChat;
+  const media = models.some((m) => m.modality === "image" || m.modality === "video");
+  const plans = [
+    { id: "trial" as const, name: "Free", price: "$0", note: "once · 5 successful replies" },
+    { id: "pro" as const, name: "Pro", price: "$20", note: media ? "/ month · adds Image" : "/ month", highlight: true },
+    { id: "max" as const, name: "Max", price: "$50", note: media ? "/ month · 2.5× Pro allowance, plus Video" : "/ month · 2.5× Pro allowance" },
+  ];
+  const lead = models.find((m) => m.default) ?? models[0];
+  const rest = models.filter((m) => m.id !== lead?.id);
   return (
     <>
       <main className="page-main">
@@ -55,19 +53,19 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
             <Link href="/pricing" className="btn btn-secondary btn-lg">See plans <IChevR /></Link>
           </div>
           {provider.mock && <div className="hero-note"><MockBadge provider={provider} /></div>}
-          {showTry && <GuestTryBox freeLimit={freeLimit} initialUsed={guestUsed} />}
+          {showTry && <GuestTryBox freeLimit={freeLimit} initialUsed={guestUsed} mediaEnabled={media} />}
         </section>
 
         <section className="container" aria-labelledby="lineup-title">
           <div className="section-head">
             <div>
               <h2 id="lineup-title" className="section-title">Models</h2>
-              <p className="section-sub">Five models with different jobs. Private comes with a free account, Image with Pro, and Video with Max.</p>
+              <p className="section-sub">{media ? "Five models with different jobs. Private comes with a free account, Image with Pro, and Video with Max." : "Three chat models. Private comes with a free account."}</p>
             </div>
             <Link href="/models" className="btn btn-secondary btn-sm">All models <IChevR /></Link>
           </div>
           <div className="lineup">
-            <LineupCard model={lead} lead isAdmin={isAdmin} />
+            {lead ? <LineupCard model={lead} lead isAdmin={isAdmin} /> : null}
             {rest.map((m) => <LineupCard key={m.id} model={m} isAdmin={isAdmin} />)}
           </div>
 
@@ -111,7 +109,7 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
           <div className="section-head" style={{ marginTop: holiday ? 8 : 56 }}>
             <div>
               <h2 className="section-title">Plans</h2>
-              <p className="section-sub">Plans differ in allowance. Pro adds Citad3L Image; Max adds Citad3L Video.</p>
+              <p className="section-sub">{media ? "Plans differ in allowance. Pro adds Citad3L Image; Max adds Citad3L Video." : "Plans differ in allowance. Max adds per-model settings."}</p>
             </div>
             <Link href="/pricing" className="btn btn-secondary btn-sm">Compare <IChevR /></Link>
           </div>
@@ -127,13 +125,21 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
               </Link>
             ))}
           </div>
+          <p className="pricing-fine" style={{ marginTop: 16 }}>
+            {checkoutRenewalLine(showHolidayPrices)}{" "}
+            <Link href="/terms">Terms</Link>
+            {" · "}
+            <Link href="/privacy">Privacy</Link>
+            {" · "}
+            <a href="mailto:support@citad3l.io">support@citad3l.io</a>
+          </p>
         </section>
 
         <section className="section-lg container" aria-label="Updates">
           <WaitlistForm source="home" />
         </section>
       </main>
-      <Footer showReferral={showReferral} />
+      <Footer showReferral={showReferral} models={models} />
     </>
   );
 }

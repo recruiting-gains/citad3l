@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { PlanCard, PlanId } from "@/lib/types";
-import type { PublicModel } from "@/lib/models";
-import { marketingModels, modelTier } from "@/lib/models";
+import { modelTier, type PublicModel } from "@/lib/models";
 import { Footer } from "@/components/Footer";
 import { HeroChips } from "@/components/Art";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { HolidayBanner } from "@/components/marketing/HolidayBanner";
-import { holidayPriceLine } from "@/lib/holiday";
+import { checkoutRenewalLine, holidayPriceLine } from "@/lib/holiday";
 
 export interface PricingViewProps {
   plans: PlanCard[];
@@ -25,6 +24,7 @@ export interface PricingViewProps {
   holiday?: boolean;
   /** First-month price lines. False for someone already on Pro or Max. */
   showHolidayPrices?: boolean;
+  models: PublicModel[];
 }
 
 const sv = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -54,19 +54,31 @@ function LineupCell({ model, plan }: { model: PublicModel; plan: PlanId }) {
   return <span className="lineup-yes" role="img" aria-label="Included"><ICheck /></span>;
 }
 
-const faqs = [
-  { q: "Do the plans include different models?", a: "A free account includes Citad3L V1, Fast and Private. Swarm uses 4 replies, so it is on Pro and Max. Pro adds Citad3L Image. Max adds Citad3L Video and per-model settings on top of everything in Pro." },
-  { q: "What is Citad3L Video?", a: "Video generation for Max subscribers. Clips run 5 seconds at 720p, with sound. There is a daily clip limit to keep the service fast for everyone." },
-  { q: "Are there daily limits on images and video?", a: "Yes. On top of your plan's allowance, images and video clips have a daily limit per account so one heavy user can't slow things down for everyone. Limits reset every day at 6 PM Central." },
-  { q: "What is Swarm mode?", a: "A chat setting. Citad3L V1 splits a large request into parts, Fast workers handle the parts in parallel, and V1 assembles the answer. It uses 4 replies of allowance." },
-  { q: "Do failed or stopped replies count?", a: "Never. Only successful replies use your allowance. If a reply errors out or you stop it, nothing is charged." },
-  { q: "How do limits reset?", a: "Guests get 5 messages, one time, with no account. A free account gets 3 messages every day, reset at midnight Central. Paid plans have a rolling 5-hour window and a weekly cap." },
-  { q: "Can I change or cancel?", a: "Yes, any time from your account. Cancelling keeps your plan active until the end of the current period." },
-];
+function pricingFaqs(media: boolean) {
+  const shared = [
+    { q: "What is Swarm mode?", a: "A chat setting. Citad3L V1 splits a large request into parts, Fast workers handle the parts in parallel, and V1 assembles the answer. It uses 4 replies of allowance." },
+    { q: "Do failed or stopped replies count?", a: "Never. Only successful replies use your allowance. If a reply errors out or you stop it, nothing is charged." },
+    { q: "How do limits reset?", a: "Guests get 5 messages, one time, with no account. A free account gets 3 messages every day, reset at midnight Central. Paid plans have a rolling 5-hour window and a weekly cap." },
+    { q: "Can I change or cancel?", a: "Yes, any time from your account. Cancelling keeps your plan active until the end of the current period." },
+  ];
+  if (!media) {
+    return [
+      { q: "Do the plans include different models?", a: "A free account includes Citad3L V1, Fast and Private. Swarm uses 4 replies, so it is on Pro and Max. Max adds per-model settings on top of everything in Pro." },
+      ...shared,
+    ];
+  }
+  return [
+    { q: "Do the plans include different models?", a: "A free account includes Citad3L V1, Fast and Private. Swarm uses 4 replies, so it is on Pro and Max. Pro adds Citad3L Image. Max adds Citad3L Video and per-model settings on top of everything in Pro." },
+    { q: "What is Citad3L Video?", a: "Video generation for Max subscribers. Clips run 5 seconds at 720p, with sound. There is a daily clip limit to keep the service fast for everyone." },
+    { q: "Are there daily limits on images and video?", a: "Yes. On top of your plan's allowance, images and video clips have a daily limit per account so one heavy user can't slow things down for everyone. Limits reset every day at 6 PM Central." },
+    ...shared,
+  ];
+}
 
-const lineup = marketingModels();
-
-export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false, holiday = false, showHolidayPrices = false }: PricingViewProps) {
+export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false, holiday = false, showHolidayPrices = false, models }: PricingViewProps) {
+  const media = models.some((m) => m.modality === "image" || m.modality === "video");
+  const faqs = pricingFaqs(media);
+  const renewal = checkoutRenewalLine(showHolidayPrices);
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [notes, setNotes] = useState<Partial<Record<PlanId, string>>>({});
   const [canceled, setCanceled] = useState(false);
@@ -118,12 +130,16 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
       <main className="page-main">
         <section className="hero pricing-hero container">
           {isAdmin ? (
-            <p className="notice" role="status" data-testid="admin-unlocked">Your admin account already has every model and mode unlocked (V1, Fast, Private, Image, Video, Swarm and @computer), whatever the plan below says. These plans are for customers.</p>
+            <p className="notice" role="status" data-testid="admin-unlocked">{media
+              ? "Your admin account already has every model and mode unlocked (V1, Fast, Private, Image, Video, Swarm and @computer), whatever the plan below says. These plans are for customers."
+              : "Your admin account already has every chat mode unlocked (V1, Fast, Private, Swarm and @computer), whatever the plan below says. These plans are for customers."}</p>
           ) : null}
           <h1 className="display hero-title">
-            Free, Pro and Max. <HeroChips /> Image with Pro, Video with Max.
+            Free, Pro and Max. <HeroChips /> {media ? "Image with Pro, Video with Max." : "Private is included."}
           </h1>
-          <p className="hero-sub">Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private. Swarm is on Pro and Max. Pro adds Citad3L Image. Max adds 2.5× the Pro allowance, per-model settings, and Citad3L Video.</p>
+          <p className="hero-sub">{media
+            ? "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private. Swarm is on Pro and Max. Pro adds Citad3L Image. Max adds 2.5× the Pro allowance, per-model settings, and Citad3L Video."
+            : "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private. Swarm is on Pro and Max. Max adds 2.5× the Pro allowance and per-model settings."}</p>
           <div className="hero-ctas">
             <Link href="/chat" className="btn btn-primary btn-lg">Start chatting</Link>
             <a href="#plans" className="btn btn-secondary btn-lg">Compare plans <IChevR /></a>
@@ -182,6 +198,18 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                       {isCurrent ? "Current plan" : p.id !== "trial" && !billingOpen ? "Coming soon" : p.cta}
                     </button>
                     {notes[p.id] && <p className="plan-note" role="status">{notes[p.id]}</p>}
+                    {p.id === "pro" || p.id === "max" ? (
+                      <div className="plan-fine">
+                        <p>{renewal}</p>
+                        <p>
+                          <Link href="/terms">Terms</Link>
+                          {" · "}
+                          <Link href="/privacy">Privacy</Link>
+                          {" · "}
+                          <a href="mailto:support@citad3l.io">support@citad3l.io</a>
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="plan-section">
@@ -210,7 +238,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <div className="plan-lineup">
             <div className="plan-lineup-head">
               <h2 className="pricing-head-title">Models by plan</h2>
-              <p className="tiny">Private is listed for every plan and arrives when its encryption flow is ready.</p>
+              <p className="tiny">Private is included on every plan.</p>
             </div>
             <div className="plan-lineup-table">
               <table>
@@ -221,7 +249,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                   </tr>
                 </thead>
                 <tbody>
-                  {lineup.map((m) => (
+                  {models.map((m) => (
                     <tr key={m.id}>
                       <th scope="row">
                         <span className="plan-lineup-name">{m.name}</span>
@@ -238,7 +266,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <div className="pricing-legend">
             <span className="pricing-legend-line"><Dots n={2} /> Dots show relative allowance. Max is 2.5× Pro.</span>
             <p className="pricing-fine">
-              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 3 messages every day, reset at midnight Central. Citad3L Video and per-model settings are included with Max only.
+              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 3 messages every day, reset at midnight Central. {media ? "Citad3L Video and per-model settings are included with Max only." : "Per-model settings are included with Max only."} {renewal}
             </p>
           </div>
         </section>
@@ -262,7 +290,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <WaitlistForm source="pricing" />
         </section>
       </main>
-      <Footer showReferral={showReferral} />
+      <Footer showReferral={showReferral} models={models} />
     </>
   );
 }

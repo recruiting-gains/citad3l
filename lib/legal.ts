@@ -10,7 +10,7 @@ export type LegalDoc = { title: string; effective: string; intro: string; sectio
 
 export const LEGAL_OPERATOR = "Cruz Garza, doing business as Citad3L";
 export const LEGAL_CONTACT = "support@citad3l.io";
-export const LEGAL_EFFECTIVE = "November 21, 2026";
+export const LEGAL_EFFECTIVE = "November 27, 2026";
 
 /** Open questions for the owner before these pages go public. Not rendered. */
 export const LEGAL_REVIEW = [
@@ -27,7 +27,7 @@ export const TERMS: LegalDoc = {
   intro: `These Terms are an agreement between you and ${LEGAL_OPERATOR} ("Citad3L", "we", "us"). By creating an account, sending a message as a guest, or buying a plan, you accept these Terms and our Privacy Policy. If you don't accept them, don't use Citad3L.`,
   sections: [
     { h: "1. What Citad3L is", p: [
-      "Citad3L is an AI chat and media app at citad3l.io. It runs AI models with fewer built-in refusals than typical assistants, served through third-party AI providers. We don't train the base models, and we don't review replies before you see them, except for the narrow safety filter in section 5.",
+      "Citad3L is an AI chat app at citad3l.io. It runs AI models with fewer built-in refusals than typical assistants, served through third-party AI providers. We don't train the base models, and we don't review replies before you see them, except for the narrow safety filter in section 5. Image and video generation are turned off.",
     ] },
     { h: "2. Who can use it", p: [
       "You must be at least 18 years old and able to enter a contract where you live. We close accounts we believe belong to minors.",
@@ -35,26 +35,26 @@ export const TERMS: LegalDoc = {
       "Don't use Citad3L where it's illegal, or if we've banned you before.",
     ] },
     { h: "3. Plans, billing and renewal", p: [
-      "Free: guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro: $20 per month, adds Citad3L Image. Max: $50 per month, 2.5× the Pro allowance, plus Citad3L Video and per-model settings. The current allowances are on the pricing page.",
+      "Free: guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro: $20 per month. Max: $50 per month, 2.5× the Pro allowance, plus per-model settings. The current allowances are on the pricing page. A first-month discount, when we offer one, applies only to that first charge; the plan then renews at the listed price.",
       "Paid plans are billed in advance through our payment processor, Stripe, and renew automatically every month until you cancel. Taxes may be added where required.",
-      "Allowances reset on a rolling 5-hour window and a weekly cap and don't roll over. Images and video clips also have daily limits per account and across the service, so one account can't use up capacity for everyone. Failed or stopped replies don't count against your allowance.",
+      "Allowances reset on a rolling 5-hour window and a weekly cap and don't roll over. Failed or stopped replies don't count against your allowance.",
       "We may change prices for future billing periods. We'll tell you before your next renewal, and you can cancel before the new price applies.",
       "Cancel any time from your account page. You keep access until the end of the period you paid for. There are no cancellation fees.",
       `Refunds: if you ask within 7 days of your first charge, we'll refund that charge in full. Otherwise we don't refund partial periods, unless the law requires it. Accounts closed for breaking these Terms aren't refunded. Email ${LEGAL_CONTACT} before disputing a charge with your bank.`,
     ] },
     { h: "4. Your content", p: [
-      "You keep whatever rights you have in what you type or upload (\"Inputs\"). To the extent we have any rights in the replies, images and clips the models produce (\"Outputs\"), we assign them to you, subject to the underlying model's license.",
+      "You keep whatever rights you have in what you type or upload (\"Inputs\"). To the extent we have any rights in the replies the models produce, and in any images or clips already in your chats (\"Outputs\"), we assign them to you, subject to the underlying model's license.",
       "You let us and our third-party AI providers process your Inputs and Outputs only as needed to run, secure and support Citad3L and to enforce these Terms. We don't use your chats to train models.",
       "You confirm you have the rights to what you submit and that it doesn't infringe anyone's rights or break the law. Don't put a real person's name, image or likeness into a sexual or deceptive prompt without their consent.",
       "Outputs can be wrong, offensive, or similar to what other people get. You use them at your own risk.",
     ] },
     { h: "5. Acceptable use and safety", p: [
-      "Adult text chat between adults is allowed. Two lines are absolute under this acceptable use section: no sexual content involving anyone under 18 (real or fictional), and no help making bombs, explosives or other weapons capable of mass harm. Breaking either ends the conversation and gets the account banned permanently. Image mode keeps a safety filter and will not produce explicit nude or sexual images.",
+      "Adult text chat between adults is allowed. Two lines are absolute under this acceptable use section: no sexual content involving anyone under 18 (real or fictional), and no help making bombs, explosives or other weapons capable of mass harm. Breaking either ends the conversation and gets the account banned permanently. Image and video generation are turned off. If image generation is offered again, it keeps a safety filter and will not produce explicit nude or sexual images.",
       "Also don't use Citad3L to break the law, harass or threaten real people, defraud anyone, distribute malware, attack systems you don't own, get around our limits or safety filter, resell access, or for anything where a wrong reply could cause death, serious injury or major financial harm.",
       "We screen messages and replies for the two absolute categories. We may block a message, stop a reply, limit or close an account, and report to authorities where the law requires. Apparent child sexual abuse material is preserved and reported to the National Center for Missing & Exploited Children (NCMEC). Screening isn't a promise that we catch everything.",
     ] },
     { h: "6. Third-party AI providers", p: [
-      "Replies, images and clips are generated by third-party AI providers. You don't get an account, key or endpoint with them, and you may not try to extract or resell their access through Citad3L.",
+      "Replies are generated by Venice.ai. You don't get an account, key or endpoint with them, and you may not try to extract or resell their access through Citad3L.",
       "We make no promise about a provider's uptime, privacy, security or accuracy beyond what that provider itself states. A provider may change or withdraw a model at any time, and we may switch providers.",
       "Don't use Citad3L in a way that would put us in breach of a provider's terms. Our providers are intended third-party beneficiaries of sections 5, 9, 10 and 11, to the extent those sections protect them, and may enforce them directly.",
     ] },
@@ -90,7 +90,7 @@ export const PRIVACY: LegalDoc = {
   sections: [
     { h: "What we collect", p: [
       "Account: your email address, used for 6-digit sign-in codes and account notices. There are no passwords.",
-      "Your content: chats, projects, custom instructions, files you attach, and the images and clips you generate, stored so you can come back to them.",
+      "Your content: chats, projects, custom instructions, files you attach, and any images or clips already saved in your chats, stored so you can come back to them.",
       "Usage: which model you used, when, and how much of your allowance and daily limits you used.",
       "Billing: if you buy a plan, Stripe handles your card. We receive your plan, subscription status and a Stripe customer ID, never your full card number.",
       "Security: a hashed version of your IP address for rate limits and abuse prevention, and session records (device type, sign-in time). Sign-in is protected by Cloudflare Turnstile.",
@@ -98,16 +98,23 @@ export const PRIVACY: LegalDoc = {
       "Guests: guest chats aren't saved to an account. A signed cookie counts your free messages.",
     ] },
     { h: "How your messages are processed", p: [
-      "To answer you, your message is sent to the third-party AI provider that runs the model you picked, and to our safety check. Providers process prompts to return a reply; their own retention and training rules apply and can change. We don't promise more privacy than a provider itself states.",
-      "Citad3L V1, Fast, Image and Video are not end-to-end encrypted. Citad3L Private is encrypted from our server to a verified secure enclave at the model provider, so the provider's servers and logs only see encrypted text. Your browser still sends the message to our server over HTTPS, our server runs the safety check, and the chat is saved to your history in readable form like other chats.",
-      "We don't use your chats to train models.",
+      "To answer you, your message is sent to Venice.ai, the company that generates replies for Citad3L V1, Fast, and Private, and to our safety check. We don't use your chats to train models. Venice.ai's terms say it does not use your content to train models, and that it requires its language-model providers not to (https://venice.ai/legal/tos, section 10.2, last updated November 15, 2026). Venice.ai's API documentation says it does not store or log prompt and response content for normal inference (https://docs.venice.ai/overview/privacy). Its privacy policy says it does not store the content of prompts or outputs (https://venice.ai/legal/privacy-policy, effective November 26, 2026). For a model Venice marks as anonymized, the model host may keep prompts under that host's own rules. We don't promise more than Venice.ai publishes.",
+      "Citad3L V1 and Fast are not end-to-end encrypted. Citad3L Private is encrypted from our server to a verified secure enclave at the model provider, so the provider's servers and logs only see encrypted text. Your browser still sends the message to our server over HTTPS, our server runs the safety check, and the chat is saved to your history in readable form like other chats.",
+    ] },
+    { h: "Who processes your data", p: [
+      "These companies process data to run Citad3L. Each gets only what its job needs.",
+      "Venice.ai generates chat replies for Citad3L V1, Fast, and Private. It receives the message needed to answer. For Private, that is ciphertext after our server encrypts it. It also receives basic request details such as the time and size of the request. Venice.ai says it does not train on that content and does not store prompt or reply text for normal inference.",
+      "Stripe takes card payments if you buy a plan. Stripe receives your card details and billing email. We receive your plan, subscription status, and a Stripe customer id. We never receive your full card number.",
+      "Neon hosts our Postgres database. It stores your account, chats, projects, usage, and billing records.",
+      "Cloudflare hosts the app on Workers, stores export files in R2, checks sign-in with Turnstile, and can send login-code email through Cloudflare Email Sending. It also sees connection data such as IP address for hosting and security.",
+      "Resend sends login-code email when Cloudflare Email Sending is not the sender in use. It receives your email address and the message.",
     ] },
     { h: "Cookies", p: [
       "We use only a few cookies: a sign-in session cookie, a guest-message cookie, and security cookies from Cloudflare.",
       "We also set two first-party cookies for up to 30 days that remember which link or referral brought you here. They stay on citad3l.io, contain no personal info, and are never used for ads or cross-site tracking. We also keep a simple count of which links bring visitors, using only the link's tags, the referring site's name and a random ID we store in scrambled form, never your IP address.",
     ] },
     { h: "Who we share data with", p: [
-      "Service providers that run Citad3L for us: our hosting and security provider (Cloudflare), database host, email delivery for sign-in codes, Stripe for payments, and the third-party AI providers that generate replies. Each gets only what it needs for its job.",
+      "The companies named under \"Who processes your data.\" Each gets only what it needs for its job.",
       "Authorities, when the law requires it, including reports of apparent child sexual abuse material to NCMEC.",
       "A buyer or successor, if Citad3L is sold or reorganized, under this same policy.",
     ] },

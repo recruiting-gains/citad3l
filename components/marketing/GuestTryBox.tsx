@@ -25,9 +25,9 @@ const SUGGESTIONS = [
 let seq = 0;
 const nid = () => `t${Date.now().toString(36)}${(seq++).toString(36)}`;
 
-export interface GuestTryBoxProps { freeLimit: number; initialUsed: number }
+export interface GuestTryBoxProps { freeLimit: number; initialUsed: number; mediaEnabled?: boolean }
 
-export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
+export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: GuestTryBoxProps) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,7 +70,7 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
     if (!message || busy || capped) return;
     setNotice(null);
 
-    if (looksLikeImageRequest(message)) {
+    if (mediaEnabled && looksLikeImageRequest(message)) {
       setImageUpgradeOpen(true);
       trackFunnelEvent("image_upgrade_shown", "/");
       if (isSlashImageCommand(message)) {
@@ -179,7 +179,7 @@ export function GuestTryBox({ freeLimit, initialUsed }: GuestTryBoxProps) {
         )}
       </div>
 
-      {imageUpgradeOpen && (
+      {mediaEnabled && imageUpgradeOpen && (
         <div className="upgrade-card" role="region" aria-label="Citad3L Image upgrade">
           <div className="upgrade-card-top">
             <div>

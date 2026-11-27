@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { visibleModels } from "@/lib/models";
+import { visibleModels, type PublicModel } from "@/lib/models";
 
 type Item = { id: string; group: "Chats" | "Models" | "Pages"; label: string; sub?: string; href: string; hint: string };
 
@@ -11,6 +11,10 @@ const PAGES: Item[] = [
   { id: "p-models", group: "Pages", label: "Models", href: "/models", hint: "Go" },
   { id: "p-pricing", group: "Pages", label: "Pricing", href: "/pricing", hint: "Go" },
   { id: "p-faq", group: "Pages", label: "FAQ", href: "/faq", hint: "Go" },
+  { id: "p-about", group: "Pages", label: "About", href: "/about", hint: "Go" },
+  { id: "p-contact", group: "Pages", label: "Contact", href: "/contact", hint: "Go" },
+  { id: "p-privacy", group: "Pages", label: "Privacy", href: "/privacy", hint: "Go" },
+  { id: "p-terms", group: "Pages", label: "Terms", href: "/terms", hint: "Go" },
   { id: "p-projects", group: "Pages", label: "Projects", href: "/projects", hint: "Go" },
   { id: "p-account", group: "Pages", label: "Account", href: "/account", hint: "Go" },
   { id: "p-usage", group: "Pages", label: "Usage", href: "/account/usage", hint: "Go" },
@@ -23,9 +27,10 @@ const PAGES: Item[] = [
 export interface CommandPaletteProps {
   signedIn?: boolean;
   isOwner?: boolean;
+  models?: PublicModel[];
 }
 
-export function CommandPalette({ signedIn, isOwner }: CommandPaletteProps) {
+export function CommandPalette({ signedIn, isOwner, models }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
@@ -66,7 +71,8 @@ export function CommandPalette({ signedIn, isOwner }: CommandPaletteProps) {
 
   const items = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const models: Item[] = visibleModels().map((m) => ({
+    const lineup = models ?? visibleModels();
+    const modelItems: Item[] = lineup.map((m) => ({
       id: `m-${m.id}`,
       group: "Models",
       label: m.name,
@@ -85,7 +91,7 @@ export function CommandPalette({ signedIn, isOwner }: CommandPaletteProps) {
       ...PAGES,
       ...(isOwner ? [{ id: "p-admin", group: "Pages" as const, label: "Admin", href: "/admin", hint: "Go" }] : []),
     ];
-    const all = [...chatItems, ...models, ...pages];
+    const all = [...chatItems, ...modelItems, ...pages];
     const filtered = needle
       ? all.filter((i) => i.label.toLowerCase().includes(needle) || (i.sub ?? "").toLowerCase().includes(needle) || i.group.toLowerCase().includes(needle))
       : all;
@@ -102,7 +108,7 @@ export function CommandPalette({ signedIn, isOwner }: CommandPaletteProps) {
       }
     }
     return out;
-  }, [q, chats, isOwner]);
+  }, [q, chats, isOwner, models]);
 
   useEffect(() => { setActive(0); }, [q, items.length]);
 

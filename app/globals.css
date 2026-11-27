@@ -4076,6 +4076,10 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   color: var(--fg-2);
 }
 .plan-card.is-highlight .plan-holiday { color: var(--on-ink-2); }
+.plan-fine { margin-top: 10px; font-size: 12px; line-height: 1.45; color: var(--fg-3); }
+.plan-fine p { margin: 0 0 4px; }
+.plan-fine a { color: inherit; text-decoration: underline; }
+.plan-card.is-highlight .plan-fine { color: var(--on-ink-2); }
 .plan-mini-holiday {
   display: block;
   margin-top: 2px;

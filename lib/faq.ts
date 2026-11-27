@@ -1,5 +1,7 @@
 /** Public FAQ copy. Keep this as the single source for the /faq page, JSON-LD, and tests. */
 
+import { mediaGenerationEnabled } from "./media";
+
 export type FaqItem = { q: string; a: string };
 
 export const FAQ_ITEMS: readonly FaqItem[] = [
@@ -69,12 +71,45 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
 ];
 
+const MEDIA_FAQ_QUESTIONS = new Set([
+  "Can I generate images?",
+  "Can Citad3L make explicit or nude images?",
+  "Can I make videos?",
+]);
+
+/** Answers used on the public FAQ while image and video generation are turned off. */
+const FAQ_WITHOUT_MEDIA: Record<string, string> = {
+  "What is Citad3L?":
+    "Citad3L is a private, less-filtered AI chat app at citad3l.io. You can chat, use encrypted Private chat, and use Swarm mode. The logo is a rook.",
+  "How is it different?":
+    "Citad3L is built to be private and less filtered than typical chat apps. Adult text chat between adults is allowed, and chat does not lecture or pile on extra refusals. The only hard lines across the app are no sexual content involving minors, and nothing about bombs or explosives.",
+  "Which models can I use?":
+    "Citad3L V1 is the default and the best all-round chat model. Citad3L Fast is cheaper and quicker. Citad3L Private is encrypted, text-only chat in a secure enclave. Swarm mode splits big requests across V1 and Fast workers.",
+  "Is it private, and what do you store?":
+    "If you sign in, we store your email, your chats and projects, and account and usage data so you can come back to them. You can export or delete your data from your account. We store a hashed IP for rate limits. Filter refusals log only a category, not the prompt or reply. Guest chats are not saved to an account. V1 and Fast are not end-to-end encrypted. Citad3L Private is not end-to-end encrypted from your device: your browser sends the message to our server over HTTPS, like any chat, and our server can read it. Our server runs the safety check on that text, then encrypts it to a secure enclave at our model provider. It only sends after the provider confirms the enclave (attestation) and our nonce, model and key checks pass; we do not check the enclave hardware report ourselves. The AI part of the safety check for Private runs inside the same enclave. Our server decrypts the enclave's reply, checks it, and saves the chat to your history in readable form like other chats (delete it any time). The model host's servers and logs only see encrypted text. Private is text only.",
+  "What's not allowed?":
+    "Two hard lines across the app: no sexual content involving minors, and nothing about bombs or explosives. Adult text chat between adults is allowed. If a message is blocked, we tell you why and you can try different wording. We do not automatically pause or suspend an account just because a message was blocked.",
+  "How much does it cost?":
+    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week). Max is $50 a month, at 2.5× those windows, and adds per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
+  "How do usage caps work?":
+    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week. Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus per-model settings. Failed or stopped replies do not count. Caps do not roll over.",
+};
+
+/** FAQ shown on /faq. Drops image and video generation while that flag is off. The full list stays in FAQ_ITEMS. */
+export function publicFaqItems(): FaqItem[] {
+  if (mediaGenerationEnabled()) return FAQ_ITEMS.slice();
+  return FAQ_ITEMS.filter((item) => !MEDIA_FAQ_QUESTIONS.has(item.q)).map((item) => {
+    const a = FAQ_WITHOUT_MEDIA[item.q];
+    return a ? { q: item.q, a } : item;
+  });
+}
+
 export function faqJsonLd(origin = "https://citad3l.io") {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "@id": `${origin.replace(/\/$/, "")}/faq#faq`,
-    mainEntity: FAQ_ITEMS.map((item) => ({
+    mainEntity: publicFaqItems().map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },

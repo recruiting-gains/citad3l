@@ -7,15 +7,17 @@ const config = {
   async headers() {
     const security = [
       { key: "X-Content-Type-Options", value: "nosniff" },
-      // Preview: keep out of search engines until launch
-      { key: "X-Robots-Tag", value: "noindex, nofollow" },
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       { key: "X-Frame-Options", value: "DENY" },
       { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=()" },
     ];
+    const noindex = { key: "X-Robots-Tag", value: "noindex, nofollow" };
     return [
       { source: "/_next/static/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }, ...security] },
-      { source: "/media/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }, ...security] },
+      { source: "/media/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }, ...security, noindex] },
+      { source: "/api/:path*", headers: [noindex] },
+      { source: "/admin", headers: [noindex] },
+      { source: "/admin/:path*", headers: [noindex] },
       { source: "/(.*)", headers: security },
     ];
   },

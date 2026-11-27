@@ -17,6 +17,7 @@ export interface ModelViewProps {
   /** ADMIN_EMAILS account: every model is unlocked (the server enforces this per route). */
   isAdmin?: boolean;
   showReferral?: boolean;
+  models?: PublicModel[];
 }
 
 const sv = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -28,7 +29,7 @@ function modalityLabel(m: PublicModel): string {
   return "Chat";
 }
 
-export function ModelView({ provider, signedIn, model, isAdmin = false, showReferral = false }: ModelViewProps) {
+export function ModelView({ provider, signedIn, model, isAdmin = false, showReferral = false, models }: ModelViewProps) {
   const [collapsed, setCollapsed] = useState(false);
   const kind = modalityLabel(model);
   const tier = modelTier(model.id);
@@ -147,7 +148,7 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
           </div>
         </section>
       </main>
-      <Footer showReferral={showReferral} />
+      <Footer showReferral={showReferral} models={models} />
     </>
   );
 }

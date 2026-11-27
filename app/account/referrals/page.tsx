@@ -62,8 +62,11 @@ export default async function Page() {
   }
 
   return (
-    <AccountShell title="Referrals" intro={intro} isOwner={isAdminEmail(u.email)}>
-      <ReferralsView />
-    </AccountShell>
+    <>
+      <AccountShell title="Referrals" intro={intro} isOwner={isAdminEmail(u.email)}>
+        <ReferralsView />
+      </AccountShell>
+      <SiteFooter />
+    </>
   );
 }

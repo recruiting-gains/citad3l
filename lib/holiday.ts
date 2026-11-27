@@ -25,9 +25,25 @@ export function holidayActive(now = Date.now()): boolean {
   return Math.floor(now / 1000) <= HOLIDAY_ENDS_AT_UNIX;
 }
 
+/** Ongoing list price stays $20 / $50. Kept in sync with planCatalog(). */
+export const LIST_PRICE_USD = { pro: 20, max: 50 } as const;
+
 /** Ongoing list price stays $20 / $50. This line is the first-month overlay. */
 export function holidayPriceLine(plan: "pro" | "max"): string {
   const first = HOLIDAY_FIRST_MONTH[plan];
-  const then = plan === "pro" ? 20 : 50;
+  const then = LIST_PRICE_USD[plan];
   return `First month $${first}, then $${then} per month`;
+}
+
+/**
+ * Plain renewal line next to paid checkout buttons.
+ * First-month amounts apply only while the holiday promo is shown to that visitor.
+ */
+export function checkoutRenewalLine(showFirstMonth: boolean): string {
+  const pro = LIST_PRICE_USD.pro;
+  const max = LIST_PRICE_USD.max;
+  if (showFirstMonth) {
+    return `Pro: $${HOLIDAY_FIRST_MONTH.pro} first month, then $${pro}/month. Max: $${HOLIDAY_FIRST_MONTH.max} first month, then $${max}/month. Cancel anytime.`;
+  }
+  return `Pro: $${pro}/month. Max: $${max}/month. Cancel anytime.`;
 }

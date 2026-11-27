@@ -6,6 +6,10 @@ import { default as handler } from "./.open-next/worker.js";
 import { capRequestBody, csrfBlockReason, httpsRedirect, withSecurityHeaders } from "./security/edge.mjs";
 import { ComputerHub, computerSocket } from "./worker/computer-hub.js";
 
+function shouldNoIndex(pathname) {
+  return pathname.startsWith("/api/") || pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/media/");
+}
+
 function withNoIndex(res) {
   if (res.headers.get("X-Robots-Tag")) return res;
   const headers = new Headers(res.headers);
@@ -47,7 +51,9 @@ export default {
     // Byte cap on unsafe /api/* bodies before Next/Auth.js read them.
     const capped = capRequestBody(request);
     if (capped.response) return withSecurityHeaders(capped.response, env, url);
-    return withSecurityHeaders(withNoIndex(await handler.fetch(capped.request, env, ctx)), env, url);
+    const handled = await handler.fetch(capped.request, env, ctx);
+    const page = shouldNoIndex(url.pathname) ? withNoIndex(handled) : handled;
+    return withSecurityHeaders(page, env, url);
   },
 };
 

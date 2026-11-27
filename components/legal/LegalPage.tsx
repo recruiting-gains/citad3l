@@ -15,7 +15,7 @@ export function LegalPage({ doc }: { doc: LegalDoc }) {
           {s.p.map((t, i) => <p key={i} className="text-2" style={{ marginTop: 10, lineHeight: 1.6 }}>{t}</p>)}
         </section>
       ))}
-      <p className="tiny" style={{ marginTop: 40 }}><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/faq">FAQ</Link></p>
+      <p className="tiny" style={{ marginTop: 40 }}><Link href="/about">About</Link> · <Link href="/contact">Contact</Link> · <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/faq">FAQ</Link></p>
     </main>
     <SiteFooter />
     </>
