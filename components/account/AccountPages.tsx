@@ -368,7 +368,7 @@ export function CustomInstructionsView({ max = 1500 }: { max?: number }) {
   return (
     <section className="account-section account-card" data-testid="custom-instructions">
       <p className="account-card-sub">
-        Tell Citad3L who you want it to be and how to help you. ItThis is added to every chat on every model, so you don&apos;t have to paste it into each new chat. Site rules still come first.apos;s added to every chat, so you donThis is added to every chat on every model, so you don&apos;t have to paste it into each new chat. Site rules still come first.apos;t have to paste it into each new one. Site rules still come first.
+        Tell Citad3L who you want it to be and how to help you. This is added to every chat on every model, so you don&apos;t have to paste it into each new chat. Site rules still come first.
       </p>
       {error && <p className="notice notice-danger" role="alert" style={{ marginTop: 12 }}>{error}</p>}
       <form

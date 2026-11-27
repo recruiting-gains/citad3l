@@ -316,6 +316,23 @@ describe("edge guard (custom-worker.js)", () => {
     expect(fwd.response).toBeUndefined();
     await expect(fwd.request!.text()).rejects.toThrow();
   });
+  /* 2026-11-27 (Karli, iPhone): every photo in chat got "too large" because /api/chat fell under the 256 KB default. */
+  it("chat and video bodies get room for shrunk photos, matching the route caps", async () => {
+    const { CHAT_BODY_LIMIT, VIDEO_BODY_LIMIT } = await import("@/security/edge.mjs");
+    const { MAX_CHAT_JSON_BYTES, MAX_VIDEO_JSON_BYTES, MAX_IMAGE_DATA_URL_CHARS } = await import("@/lib/attachments");
+    expect(bodyLimitFor("/api/chat")).toBe(MAX_CHAT_JSON_BYTES);
+    expect(CHAT_BODY_LIMIT).toBe(MAX_CHAT_JSON_BYTES);
+    expect(bodyLimitFor("/api/video")).toBe(MAX_VIDEO_JSON_BYTES);
+    expect(VIDEO_BODY_LIMIT).toBe(MAX_VIDEO_JSON_BYTES);
+    expect(bodyLimitFor("/api/chat")).toBeGreaterThan(MAX_IMAGE_DATA_URL_CHARS);
+    const photo = new Request("https://citad3l.io/api/chat", { method: "POST", body: "x", headers: { "content-length": "1700000" } });
+    expect(capRequestBody(photo).response).toBeUndefined();
+    const huge = new Request("https://citad3l.io/api/chat", { method: "POST", body: "x", headers: { "content-length": String(MAX_CHAT_JSON_BYTES + 1) } });
+    expect(capRequestBody(huge).response?.status).toBe(413);
+    // Everything else keeps the small default.
+    expect(bodyLimitFor("/api/image")).toBe(262_144);
+    expect(bodyLimitFor("/api/account/instructions")).toBe(262_144);
+  });
   it("wraps responses without clobbering existing headers", async () => {
     const res = withSecurityHeaders(new Response("hi", { status: 201, headers: { "X-Frame-Options": "SAMEORIGIN" } }), {}, new URL("https://citad3l.io/"));
     expect(res.status).toBe(201);

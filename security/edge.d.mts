@@ -7,5 +7,7 @@ export const TURNSTILE_ORIGIN: string;
 export function contentSecurityPolicy(opts?: { enforce?: boolean }): string;
 export function securityHeaders(env?: Env, url?: URL): Record<string, string>;
 export function withSecurityHeaders(res: Response, env: Env, url: URL): Response;
+export const CHAT_BODY_LIMIT: number;
+export const VIDEO_BODY_LIMIT: number;
 export function bodyLimitFor(pathname: string): number;
 export function capRequestBody(request: Request): { request: Request; response?: undefined } | { response: Response; request?: undefined };

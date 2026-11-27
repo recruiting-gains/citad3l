@@ -2,7 +2,7 @@
  * Browser-only: turn picked files into chat attachments. PDF text via pdf.js, Word via mammoth, images downsized
  * on a canvas. Libraries load on first use, so the chat bundle doesn't grow for people who never attach anything.
  */
-import { IMAGE_MAX_SIDE, MAX_FILE_CHARS, MAX_IMAGE_BYTES, MAX_UPLOAD_BYTES, cleanName, fileKind, type Attachment } from "./attachments";
+import { IMAGE_FALLBACK_SIDES, IMAGE_MAX_SIDE, IMAGE_TARGET_BYTES, MAX_FILE_CHARS, MAX_UPLOAD_BYTES, cleanName, fileKind, type Attachment } from "./attachments";
 
 export const PDF_WORKER_SRC = "/vendor/pdf.worker.min.mjs";
 const MAX_PDF_PAGES = 200;
@@ -40,31 +40,87 @@ async function docxText(buf: ArrayBuffer): Promise<string> {
 }
 type Mammoth = { extractRawText(o: { arrayBuffer: ArrayBuffer }): Promise<{ value: string }> };
 
-async function shrinkImage(file: File): Promise<string> {
-  const bmp = await createImageBitmap(file);
-  const scale = Math.min(1, IMAGE_MAX_SIDE / Math.max(bmp.width, bmp.height));
-  const w = Math.max(1, Math.round(bmp.width * scale));
-  const h = Math.max(1, Math.round(bmp.height * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new AttachError("Your browser couldn't read that image.");
-  ctx.fillStyle = "#ffffff"; // JPEG has no transparency
-  ctx.fillRect(0, 0, w, h);
-  ctx.drawImage(bmp, 0, 0, w, h);
-  bmp.close?.();
-  for (const q of [0.86, 0.72, 0.58]) {
-    const url = canvas.toDataURL("image/jpeg", q);
-    if ((url.length - url.indexOf(",") - 1) * 0.75 <= MAX_IMAGE_BYTES) return url;
+type Decoded = { src: CanvasImageSource; width: number; height: number; close(): void };
+
+/** Decode a picked photo. createImageBitmap first; an <img> fallback covers browsers where it fails (and HEIC on Safari). */
+async function decodeImage(file: File): Promise<Decoded> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bmp = await createImageBitmap(file);
+      if (bmp.width > 0 && bmp.height > 0) return { src: bmp, width: bmp.width, height: bmp.height, close: () => bmp.close?.() };
+      bmp.close?.();
+    } catch {
+      /* fall through to <img> */
+    }
   }
-  throw new AttachError(`${cleanName(file.name)} is too large to send.`);
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    await img.decode();
+    if (!img.naturalWidth || !img.naturalHeight) throw new Error("empty image");
+    return { src: img, width: img.naturalWidth, height: img.naturalHeight, close: () => URL.revokeObjectURL(url) };
+  } catch {
+    URL.revokeObjectURL(url);
+    throw new AttachError(
+      isHeic(file)
+        ? `${cleanName(file.name)} is a HEIC photo this browser can't open. Pick it from your Photos library, or take a screenshot of it and attach that.`
+        : `${cleanName(file.name)} couldn't be opened as a picture. Try a JPEG or PNG.`,
+    );
+  }
+}
+
+function isHeic(file: File): boolean {
+  return /^image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+}
+
+function dataUrlBytes(url: string): number {
+  return Math.floor((url.length - url.indexOf(",") - 1) * 0.75);
+}
+
+/**
+ * Resize and re-encode a photo as JPEG so it fits IMAGE_TARGET_BYTES. Starts at IMAGE_MAX_SIDE on the long side, then
+ * steps down. A phone photo (3-8 MB, 12-48 MP) lands around 0.4-1.2 MB at 2048 px. Safari returns "data:," when a
+ * canvas is too big for its memory budget, so that also steps down instead of failing.
+ */
+async function shrinkImage(file: File): Promise<string> {
+  const img = await decodeImage(file);
+  const long = Math.max(img.width, img.height);
+  const sides = [IMAGE_MAX_SIDE, ...IMAGE_FALLBACK_SIDES].filter((s, i) => i === 0 || s < long);
+  const canvas = document.createElement("canvas");
+  try {
+    for (const side of sides) {
+      const scale = Math.min(1, side / long);
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.fillStyle = "#ffffff"; // JPEG has no transparency
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img.src, 0, 0, w, h);
+      for (const q of [0.85, 0.75, 0.65, 0.55]) {
+        const url = canvas.toDataURL("image/jpeg", q);
+        if (!url.startsWith("data:image/jpeg;base64,")) break; // canvas too large for this browser: try a smaller side
+        if (dataUrlBytes(url) <= IMAGE_TARGET_BYTES) return url;
+      }
+    }
+  } finally {
+    img.close();
+    canvas.width = 0; // release canvas memory right away (iPhone Safari keeps a tight total budget)
+    canvas.height = 0;
+  }
+  throw new AttachError(`${cleanName(file.name)} is still too large after shrinking. Try a screenshot of it or a smaller photo.`);
 }
 
 /** One picked file → one attachment, or a friendly error. `allowImages` is false for models that can't see. */
 export async function readAttachment(file: File, allowImages: boolean): Promise<Attachment> {
   const name = cleanName(file.name);
-  if (file.size > MAX_UPLOAD_BYTES) throw new AttachError(`${name} is over 15 MB.`);
+  if (file.size > MAX_UPLOAD_BYTES) throw new AttachError(`${name} is over ${Math.round(MAX_UPLOAD_BYTES / 1_000_000)} MB. Try a smaller photo or a screenshot.`);
   const kind = fileKind(file.name, file.type);
   if (kind === "image") {
     if (!allowImages) throw new AttachError("This model can't read images. Pick Citad3L V1 or Fast.");

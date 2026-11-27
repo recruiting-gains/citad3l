@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   attachCaps, checkAttachments, composeMessage, splitMessage, fileKind,
   MAX_FILE_CHARS, MAX_IMAGES, MAX_TOTAL_FILE_CHARS, MAX_CHAT_JSON_BYTES,
+  MAX_IMAGE_BYTES, IMAGE_TARGET_BYTES, IMAGE_MAX_SIDE, MAX_IMAGE_DATA_URL_CHARS, MAX_VIDEO_JSON_BYTES, MAX_UPLOAD_BYTES, IMAGE_ACCEPT,
 } from "@/lib/attachments";
 import { getPublicModel } from "@/lib/models";
 import { LEAK_RE, LEAK_WORDS } from "./leak-words";
@@ -76,7 +77,27 @@ describe("server validation", () => {
     expect(checkAttachments([{ kind: "file", name: "scan.pdf", text: "  " }], v1, { modelName: "V1" })).toMatchObject({ ok: false });
   });
   it("chat JSON cap fits 4 max-size images plus file text", () => {
-    expect(MAX_CHAT_JSON_BYTES).toBeGreaterThan(MAX_IMAGES * 1_000_000 * 1.34 + MAX_TOTAL_FILE_CHARS * 2);
+    expect(MAX_CHAT_JSON_BYTES).toBeGreaterThan(MAX_IMAGES * MAX_IMAGE_DATA_URL_CHARS + MAX_TOTAL_FILE_CHARS * 2);
+    expect(MAX_VIDEO_JSON_BYTES).toBeGreaterThan(MAX_IMAGE_DATA_URL_CHARS + 20_000);
+  });
+  /* 2026-11-27 (Karli, iPhone): phone photos must fit after the browser shrinks them. */
+  it("phone photos: browser target fits under the server cap, 2048 px long side, 40 MB raw input", () => {
+    expect(IMAGE_TARGET_BYTES).toBeLessThan(MAX_IMAGE_BYTES);
+    expect(MAX_IMAGE_BYTES).toBeGreaterThanOrEqual(1_400_000);
+    expect(IMAGE_MAX_SIDE).toBe(2048);
+    expect(MAX_UPLOAD_BYTES).toBeGreaterThanOrEqual(25_000_000);
+    const maxJpeg = "data:image/jpeg;base64," + Buffer.alloc(IMAGE_TARGET_BYTES, 7).toString("base64");
+    expect(maxJpeg.length).toBeLessThanOrEqual(MAX_IMAGE_DATA_URL_CHARS);
+    expect(checkAttachments([{ kind: "image", name: "IMG_0001.jpg", dataUrl: maxJpeg }], attachCaps(m("citad3l-v1")), { modelName: "V1" })).toMatchObject({ ok: true });
+    const over = "data:image/jpeg;base64," + Buffer.alloc(MAX_IMAGE_BYTES + 3, 7).toString("base64");
+    expect(checkAttachments([{ kind: "image", name: "big.jpg", dataUrl: over }], attachCaps(m("citad3l-v1")), { modelName: "V1" })).toMatchObject({ ok: false, code: "too_large" });
+  });
+  it("HEIC is read as an image, but the picker keeps it out so iPhone converts to JPEG", () => {
+    expect(fileKind("IMG_1234.HEIC", "")).toBe("image");
+    expect(fileKind("photo.heif", "image/heif")).toBe("image");
+    expect(fileKind("x", "image/heic")).toBe("image");
+    expect(IMAGE_ACCEPT).toContain("image/jpeg");
+    expect(IMAGE_ACCEPT).not.toMatch(/heic|heif/);
   });
 });
 
