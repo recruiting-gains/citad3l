@@ -26,7 +26,7 @@ vi.mock("@/lib/inference/video", () => ({
   videoMaxPerDay: () => 2,
   videoMaxUsdPerClip: () => 1,
 }));
-vi.mock("@/lib/video-store", () => ({ finalizeVideo: async () => ({ status: "pending" }) }));
+vi.mock("@/lib/video-store", () => ({ finalizeVideo: async () => ({ status: "pending" }), isVideoStorageConfigured: () => true, VIDEO_STORAGE_UNAVAILABLE_CODE: "storage_unavailable", VIDEO_STORAGE_UNAVAILABLE_MESSAGE: "Video storage isn't configured." }));
 vi.mock("@/lib/usage", () => ({
   userIsAdmin: async (id: string) => id === "u-admin",
   reserve: async () => { throw new Error("should not reserve"); },

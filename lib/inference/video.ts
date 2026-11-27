@@ -67,20 +67,35 @@ export async function queueVideo(prompt: string, signal?: AbortSignal, f: Fetch 
   return { queueId: j.queue_id, downloadUrl: typeof j.download_url === "string" ? j.download_url : null };
 }
 
-export type VideoPoll = { status: "processing"; etaMs?: number } | { status: "done"; bytes: Uint8Array; mime: string };
+export type VideoPoll =
+  | { status: "processing"; etaMs?: number }
+  | { status: "done"; bytes: Uint8Array; mime: string; downloadUrl: string | null };
 
-/** One poll. COMPLETED with a download_url → fetch the file; otherwise retrieve itself returns the mp4. */
+/** Keep a provider media URL from retrieve (preferred) or the queue-time fallback. Rejects unexpected hosts. */
+export function resolveVideoDownloadUrl(candidate: unknown, fallback: string | null = null): string | null {
+  const pick = (v: unknown): string | null => {
+    if (typeof v !== "string") return null;
+    const url = v.trim();
+    return url && isProviderMediaUrl(url) ? url : null;
+  };
+  return pick(candidate) ?? pick(fallback);
+}
+
+/** One poll. COMPLETED uses download_url from retrieve when present, else the queue-time link; otherwise retrieve itself returns the mp4. */
 export async function pollVideo(job: { queueId: string; downloadUrl: string | null }, signal?: AbortSignal, f: Fetch = fetch): Promise<VideoPoll> {
   // Retrieve may require the same family used to queue (text vs image). Try text first, then image, on 404 only.
   let r = await post(f, "/video/retrieve", { model: videoModelId("t2v"), queue_id: job.queueId }, signal);
   if (r.status === 404) r = await post(f, "/video/retrieve", { model: videoModelId("i2v"), queue_id: job.queueId }, signal);
   const ct = r.headers.get("content-type") ?? "";
-  if (r.ok && ct.startsWith("video/")) return { status: "done", bytes: new Uint8Array(await r.arrayBuffer()), mime: ct.split(";")[0] };
-  const j = (await r.json().catch(() => ({}))) as { status?: string; average_execution_time?: number; execution_duration?: number; error?: unknown };
+  if (r.ok && ct.startsWith("video/")) {
+    return { status: "done", bytes: new Uint8Array(await r.arrayBuffer()), mime: ct.split(";")[0], downloadUrl: resolveVideoDownloadUrl(job.downloadUrl) };
+  }
+  const j = (await r.json().catch(() => ({}))) as { status?: string; download_url?: unknown; average_execution_time?: number; execution_duration?: number; error?: unknown };
   if (!r.ok) throw new ProviderUnavailable(r.status === 404 ? "The video service no longer has this video." : `Video retrieve failed (${r.status}).`);
   if (j.status === "COMPLETED") {
-    if (!job.downloadUrl) throw new ProviderUnavailable("Video finished but no file was returned.");
-    return { status: "done", ...(await downloadVideo(job.downloadUrl, signal, f)) };
+    const downloadUrl = resolveVideoDownloadUrl(j.download_url, job.downloadUrl);
+    if (!downloadUrl) throw new ProviderUnavailable("Video finished but no file was returned.");
+    return { status: "done", ...(await downloadVideo(downloadUrl, signal, f)), downloadUrl };
   }
   const eta = typeof j.average_execution_time === "number" && typeof j.execution_duration === "number" ? Math.max(0, j.average_execution_time - j.execution_duration) : undefined;
   return { status: "processing", etaMs: eta };

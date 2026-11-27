@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { imagesBucket, VIDEO_KEY_PREFIX, type R2Bucket, type R2Range } from "@/lib/images-r2";
 import { parseVideoContent, videoContent, VIDEO_PATH } from "@/lib/video-content";
 import { isProviderMediaUrl } from "@/lib/inference/provider-models";
-import { downloadVideo, pollVideo } from "@/lib/inference/video";
+import { downloadVideo, pollVideo, resolveVideoDownloadUrl } from "@/lib/inference/video";
 
 /**
  * Durable copy in R2 (the IMAGES bucket, key videos/{userId}/{messageId}) when the binding exists. Without R2 the
@@ -13,6 +13,14 @@ export function videoObjectKey(userId: string, messageId: string): string {
   if (!userId || !messageId || userId.includes("/") || messageId.includes("/")) throw new Error("invalid video key parts");
   return `${VIDEO_KEY_PREFIX}${userId}/${messageId}`;
 }
+
+/** True when generated-media R2 is bound (IMAGES). Video generation must not queue without this. */
+export function isVideoStorageConfigured(bucket?: R2Bucket | null): boolean {
+  return !!imagesBucket(bucket);
+}
+
+export const VIDEO_STORAGE_UNAVAILABLE_CODE = "storage_unavailable";
+export const VIDEO_STORAGE_UNAVAILABLE_MESSAGE = "Video storage isn't configured.";
 
 export type VideoStatus = "processing" | "ready" | "error" | "not_found";
 
@@ -34,6 +42,10 @@ export async function finalizeVideo(opts: { userId: string; messageId: string; s
     return { status: "error" };
   }
   if (poll.status === "processing") return { status: "processing" };
+  const job = {
+    queueId: parsed.job.queueId,
+    downloadUrl: resolveVideoDownloadUrl(poll.downloadUrl, parsed.job.downloadUrl),
+  };
   const bucket = imagesBucket(opts.bucket);
   let stored = false;
   if (bucket) {
@@ -42,7 +54,12 @@ export async function finalizeVideo(opts: { userId: string; messageId: string; s
       .then(() => true)
       .catch(() => false);
   }
-  const content = videoContent(msg.id, parsed.job, { stored });
+  // Ready only when we can serve the clip later: an R2 copy, or the provider's 24 h link.
+  if (!stored && !job.downloadUrl) {
+    await prisma.message.update({ where: { id: msg.id }, data: { status: "error" } }).catch(() => {});
+    return { status: "error" };
+  }
+  const content = videoContent(msg.id, job, { stored });
   await prisma.message.update({ where: { id: msg.id }, data: { content, status: "complete" } });
   return { status: "ready", content };
 }

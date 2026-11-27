@@ -34,11 +34,18 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 const providerDl = vi.fn();
-vi.mock("@/lib/inference/video", () => ({
-  pollVideo: async () => ({ status: "done", bytes: CLIP, mime: "video/mp4" }),
-  downloadVideo: async (...a: unknown[]) => { providerDl(...a); return { bytes: CLIP, mime: "video/mp4" }; },
-}));
 const CLIP = new Uint8Array(Array.from({ length: 1000 }, (_, i) => i % 251));
+const pollState: { result: { status: "done"; bytes: Uint8Array; mime: string; downloadUrl: string | null } } = {
+  result: { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null },
+};
+vi.mock("@/lib/inference/video", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/inference/video")>();
+  return {
+    ...real,
+    pollVideo: async () => pollState.result,
+    downloadVideo: async (...a: unknown[]) => { providerDl(...a); return { bytes: CLIP, mime: "video/mp4" }; },
+  };
+});
 
 const { videoContent } = await import("@/lib/video-content");
 const { finalizeVideo, serveVideo, videoObjectKey } = await import("@/lib/video-store");
@@ -48,6 +55,7 @@ const job = { queueId: "q1", downloadUrl: "https://private-share.media.provider.
 beforeEach(() => {
   rows.length = 0;
   providerDl.mockClear();
+  pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null };
   rows.push({ id: "vcruz", userId: "u-cruz", role: "assistant", content: videoContent("vcruz", job, { pending: true }) });
   rows.push({ id: "vcousin", userId: "u-cousin", role: "assistant", content: videoContent("vcousin", job) });
 });
@@ -98,6 +106,29 @@ describe("videos in R2", () => {
     expect(r.status).toBe(206);
     expect(rows[1].content).not.toContain('"c3l-video:r2"');
   });
+  it("persists a retrieve-time download_url when queue had none, and stays ready without R2 via that 24h link", async () => {
+    const late = "https://private-share.media.provider.test/late.mp4";
+    rows[0].content = videoContent("vcruz", { queueId: "q1", downloadUrl: null }, { pending: true });
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: late };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: null });
+    expect(r.status).toBe("ready");
+    expect(rows[0].status).toBe("complete");
+    expect(rows[0].content).not.toContain('"c3l-video:r2"');
+    expect(rows[0].content).toContain("/api/videos/vcruz");
+    const served = (await serveVideo({ userId: "u-cruz", messageId: "vcruz", range: "bytes=0-1", bucket: null })) as Response;
+    expect(served.status).toBe(206);
+    expect(providerDl).toHaveBeenCalled();
+  });
+  it("marks the message error (not ready) when bytes were fetched but there is no R2 and no download URL to serve later", async () => {
+    rows[0].content = videoContent("vcruz", { queueId: "q1", downloadUrl: null }, { pending: true });
+    pollState.result = { status: "done", bytes: CLIP, mime: "video/mp4", downloadUrl: null };
+    const r = await finalizeVideo({ userId: "u-cruz", messageId: "vcruz", bucket: null });
+    expect(r.status).toBe("error");
+    expect(rows[0].status).toBe("error");
+    expect(rows[0].content).toContain("pending=1"); // still the pending markdown, not a dead ready player
+    const served = await serveVideo({ userId: "u-cruz", messageId: "vcruz", range: null, bucket: null });
+    expect(served).toEqual({ error: "pending" });
+  });
 });
 
 describe("images in R2 (backward compatible) and cleanup", () => {
@@ -130,6 +161,11 @@ describe("images in R2 (backward compatible) and cleanup", () => {
 });
 
 describe("routes", () => {
+  it("isVideoStorageConfigured is true only when a bucket is bound", async () => {
+    const { isVideoStorageConfigured } = await import("@/lib/video-store");
+    expect(isVideoStorageConfigured(new MemoryR2())).toBe(true);
+    expect(isVideoStorageConfigured(null)).toBe(false);
+  });
   it("/api/videos and /api/images: signed-in owner only (401 signed out); wrangler binding ready but off until R2 is enabled", async () => {
     const { readFileSync } = await import("node:fs");
     const v = readFileSync(new URL("../app/api/videos/[id]/route.ts", import.meta.url), "utf8");
