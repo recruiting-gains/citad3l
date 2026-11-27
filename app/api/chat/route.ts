@@ -2,7 +2,7 @@ import { z } from "zod";
 import { requireUserId } from "@/auth";
 import { prisma } from "@/lib/db";
 import { BodyTooLarge, jerr, readJsonLimited, tooMany } from "@/lib/http";
-import { attachCaps, checkAttachments, composeMessage, MAX_CHAT_JSON_BYTES, MAX_FILE_CHARS } from "@/lib/attachments";
+import { attachCaps, checkAttachments, composeMessage, MAX_CHAT_JSON_BYTES, MAX_FILE_CHARS, MAX_IMAGE_DATA_URL_CHARS } from "@/lib/attachments";
 import {
   FREE_MESSAGES,
   GUEST_GLOBAL_DAILY_CAP,
@@ -68,7 +68,7 @@ const Body = z.object({
     coding: z.boolean().optional(),
   }).optional(),
   attachments: z.array(z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("image"), name: z.string().max(200), dataUrl: z.string().max(1_400_000) }),
+    z.object({ kind: z.literal("image"), name: z.string().max(200), dataUrl: z.string().max(MAX_IMAGE_DATA_URL_CHARS) }),
     z.object({ kind: z.literal("file"), name: z.string().max(200), text: z.string().max(MAX_FILE_CHARS) }),
   ])).max(8).optional(),
   history: z.array(z.object({
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   try {
     body = Body.parse(await readJsonLimited(req, MAX_CHAT_JSON_BYTES));
   } catch (e) {
-    if (e instanceof BodyTooLarge) return jerr(413, "too_large", "Request too large.");
+    if (e instanceof BodyTooLarge) return jerr(413, "too_large", "That message is too large to send. Try fewer or smaller attachments.");
     return jerr(400, "bad_request", "Invalid request.");
   }
   const message = body.message.trim();

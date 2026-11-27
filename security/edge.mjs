@@ -121,10 +121,21 @@ export function withSecurityHeaders(res, env, url) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
+/**
+ * Body caps for the two routes that carry photos. They must match MAX_CHAT_JSON_BYTES / MAX_VIDEO_JSON_BYTES in
+ * lib/attachments.ts (tests/security.test.ts checks that). Before 2026-11-27 these routes fell through to the 256 KB
+ * default, so every attached photo (≈0.3-1.4 MB as base64 after the browser shrinks it) got a 413 "too large" here,
+ * before the chat route's own cap was ever reached.
+ */
+export const CHAT_BODY_LIMIT = 9_000_000;
+export const VIDEO_BODY_LIMIT = 2_600_000;
+
 /** Max request body per path for state-changing /api/* calls (checked at the Worker, before Next/Auth.js parse it). */
 export function bodyLimitFor(pathname) {
   if (pathname.startsWith("/api/auth/")) return 16_384; // Auth.js callbacks + request-code: tiny forms
   if (pathname === "/api/stripe/webhook") return 1_000_000;
+  if (pathname === "/api/chat") return CHAT_BODY_LIMIT; // photos ride along as data URLs
+  if (pathname === "/api/video") return VIDEO_BODY_LIMIT; // one starting-frame picture
   return 262_144;
 }
 

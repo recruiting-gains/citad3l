@@ -17,7 +17,7 @@ import { relevantLimitHit, usageLine } from "@/lib/usage-display";
 import type { SkillRequest } from "@/lib/types";
 import { planRetry, rerouteFromChatError, routeOutgoing } from "@/lib/computer/chat-guard";
 import { createGate, createSyncEngine, mergeRemote, nextSyncDelay, sameMessages } from "@/lib/sync";
-import { attachCaps, composeMessage, DOC_ACCEPT, MAX_FILES, MAX_IMAGES, MAX_VIDEO_IMAGES, splitMessage, type Attachment } from "@/lib/attachments";
+import { attachCaps, composeMessage, DOC_ACCEPT, IMAGE_ACCEPT, MAX_FILES, MAX_IMAGES, MAX_VIDEO_IMAGES, splitMessage, type Attachment } from "@/lib/attachments";
 import { createDictation, createDraftBinding, dictationSupported, giveMicConsent, hasMicConsent, MIC_DISCLOSURE, type Dictation } from "@/lib/dictation";
 import { buildAnswerZip, triggerBlobDownload } from "@/lib/downloads";
 import { buildChatPdf } from "@/lib/pdf-export";
@@ -672,7 +672,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
           toast("warn", "Citad3L V1 is busy right now. Try again in a few seconds.");
           break;
         case "too_large":
-          toast("error", "That message is too large to send.");
+          toast("error", message && !/^Request (failed|too large)/.test(message) ? message : "That message is too large to send.");
           break;
         default:
           // The error already shows inline on the reply, with its own Retry. No second banner.
@@ -1200,7 +1200,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       const next = [...attachments];
       const imageLimit = videoReady ? MAX_VIDEO_IMAGES : MAX_IMAGES;
       for (const f of list) {
-        const isImg = f.type.startsWith("image/");
+        const isImg = f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name);
         if (isImg && !caps.images) { setAttachNote(`${selectedModel?.name ?? "This model"} can't use images.`); continue; }
         if (!isImg && !caps.files) { setAttachNote(`${selectedModel?.name ?? "This model"} can start from a picture, but not from a document.`); continue; }
         if (isImg && next.filter((a) => a.kind === "image").length >= imageLimit) { setAttachNote(videoReady ? "Attach one picture as the starting frame." : `Up to ${MAX_IMAGES} images per message.`); continue; }
@@ -1315,7 +1315,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
                 type="file"
                 multiple={!!caps.files}
                 hidden
-                accept={caps.files && caps.images ? `image/png,image/jpeg,image/webp,image/gif,${DOC_ACCEPT}` : caps.images ? "image/png,image/jpeg,image/webp,image/gif" : DOC_ACCEPT}
+                accept={caps.files && caps.images ? `${IMAGE_ACCEPT},${DOC_ACCEPT}` : caps.images ? IMAGE_ACCEPT : DOC_ACCEPT}
                 data-testid="attach-input"
                 onChange={(e) => { if (e.target.files) void addFiles(e.target.files); }}
               />

@@ -20,17 +20,36 @@ export const VIDEO_FROM_PICTURE_ENABLED = false;
 export const VIDEO_PICTURE_OFF_MESSAGE =
   "Starting a video from a picture is turned off for now while we add a photo safety check. Describe the video in words and Citad3L Video will make it.";
 /** JSON cap for /api/video: one downsized image as a data URL plus the prompt. */
-export const MAX_VIDEO_JSON_BYTES = 2_000_000;
-export const MAX_IMAGE_BYTES = 1_000_000; // per image, after the browser downsizes it
-export const IMAGE_MAX_SIDE = 1568;
+export const MAX_VIDEO_JSON_BYTES = 2_600_000;
+/**
+ * Per-image cap the server enforces, after the browser shrinks the photo. Phone photos (3-8 MB HEIC/JPEG, 12-48 MP)
+ * are resized on a canvas to IMAGE_MAX_SIDE and re-encoded as JPEG until they fit IMAGE_TARGET_BYTES, which leaves
+ * headroom under this cap.
+ */
+export const MAX_IMAGE_BYTES = 1_500_000;
+/** What the browser aims for when it re-encodes a photo (kept under MAX_IMAGE_BYTES). */
+export const IMAGE_TARGET_BYTES = 1_400_000;
+/** Longest side the browser resizes to first; it steps down through IMAGE_FALLBACK_SIDES if the JPEG is still too big. */
+export const IMAGE_MAX_SIDE = 2048;
+export const IMAGE_FALLBACK_SIDES = [1600, 1280, 1024] as const;
+/** Base64 data URL length that fits MAX_IMAGE_BYTES (4 chars per 3 bytes, plus the "data:image/jpeg;base64," prefix). */
+export const MAX_IMAGE_DATA_URL_CHARS = Math.ceil(MAX_IMAGE_BYTES / 3) * 4 + 64;
 export const MAX_FILES = 3;
 export const MAX_FILE_CHARS = 30_000; // per file, after text extraction
 export const MAX_TOTAL_FILE_CHARS = 40_000;
-export const MAX_UPLOAD_BYTES = 15_000_000; // raw file size the browser will try to read
-/** JSON body cap for /api/chat: 4 images × ~1.34 MB base64 + 40K chars of file text + the message. */
-export const MAX_CHAT_JSON_BYTES = 6_000_000;
+export const MAX_UPLOAD_BYTES = 40_000_000; // raw file size the browser will try to read (48 MP phone photos fit)
+/** JSON body cap for /api/chat: 4 images × ~2 MB base64 + 40K chars of file text + the message. */
+export const MAX_CHAT_JSON_BYTES = 9_000_000;
 
 export const IMAGE_MIME = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
+/** iPhone photos. Accepted on input when the browser can decode them (Safari 17+); they are always sent on as JPEG. */
+export const HEIC_MIME = ["image/heic", "image/heif"] as const;
+/**
+ * File-picker filter for pictures. HEIC is left out on purpose: with it listed, iPhone Safari hands over the raw HEIC
+ * instead of converting the photo to JPEG for us, and older iPhones can't decode HEIC in the browser. HEIC that
+ * arrives by drag-and-drop or paste is still read.
+ */
+export const IMAGE_ACCEPT = IMAGE_MIME.join(",");
 export const TEXT_EXT = ["txt", "md", "markdown", "csv", "tsv", "json", "xml", "html", "htm", "yaml", "yml", "log", "ini", "toml", "js", "jsx", "ts", "tsx", "py", "rb", "go", "rs", "java", "kt", "swift", "c", "h", "cpp", "hpp", "cs", "php", "sh", "sql", "css", "scss"] as const;
 export const DOC_ACCEPT = [".pdf", ".docx", ...TEXT_EXT.map((e) => `.${e}`)].join(",");
 
@@ -56,7 +75,7 @@ export function extOf(name: string): string {
 export type FileKind = "image" | "pdf" | "docx" | "text" | null;
 export function fileKind(name: string, mime: string): FileKind {
   const ext = extOf(name);
-  if ((IMAGE_MIME as readonly string[]).includes(mime) || ["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) return "image";
+  if ((IMAGE_MIME as readonly string[]).includes(mime) || (HEIC_MIME as readonly string[]).includes(mime) || ["png", "jpg", "jpeg", "webp", "gif", "heic", "heif"].includes(ext)) return "image";
   if (ext === "pdf" || mime === "application/pdf") return "pdf";
   if (ext === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx";
   if ((TEXT_EXT as readonly string[]).includes(ext) || mime.startsWith("text/")) return "text";
@@ -128,7 +147,7 @@ export function checkAttachments(list: Attachment[] | undefined | null, caps: At
     const m = DATA_URL.exec(im.dataUrl ?? "");
     if (!m) return { ok: false, status: 400, code: "bad_request", message: "That image couldn't be read. Try a PNG, JPEG, WebP or GIF." };
     const bytes = Math.floor((m[2].length * 3) / 4);
-    if (bytes > MAX_IMAGE_BYTES) return { ok: false, status: 413, code: "too_large", message: "That image is too large. Try a smaller one." };
+    if (bytes > MAX_IMAGE_BYTES) return { ok: false, status: 413, code: "too_large", message: "That photo is too large to send, even after shrinking. Try a screenshot of it or a smaller photo." };
     urls.push(im.dataUrl);
   }
   let total = 0;

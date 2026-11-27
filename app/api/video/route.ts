@@ -2,7 +2,7 @@ import { z } from "zod";
 import { requireUserId } from "@/auth";
 import { prisma } from "@/lib/db";
 import { BodyTooLarge, jerr, readJsonLimited, tooMany } from "@/lib/http";
-import { attachCaps, checkAttachments, composeMessage, MAX_VIDEO_IMAGES, MAX_VIDEO_JSON_BYTES, VIDEO_FROM_PICTURE_ENABLED, VIDEO_PICTURE_OFF_MESSAGE } from "@/lib/attachments";
+import { attachCaps, checkAttachments, composeMessage, MAX_IMAGE_DATA_URL_CHARS, MAX_VIDEO_IMAGES, MAX_VIDEO_JSON_BYTES, VIDEO_FROM_PICTURE_ENABLED, VIDEO_PICTURE_OFF_MESSAGE } from "@/lib/attachments";
 import { getPublicModel } from "@/lib/models";
 import { MAX_MESSAGE_CHARS } from "@/lib/config";
 import { LIMITS, limitDurable, rateLimit, rule } from "@/lib/ratelimit";
@@ -27,7 +27,7 @@ const Body = z.object({
   projectId: z.string().max(40).optional().nullable(),
   message: z.string().max(MAX_MESSAGE_CHARS),
   attachments: z.array(z.discriminatedUnion("kind", [
-    z.object({ kind: z.literal("image"), name: z.string().max(120), dataUrl: z.string().max(1_800_000) }),
+    z.object({ kind: z.literal("image"), name: z.string().max(120), dataUrl: z.string().max(MAX_IMAGE_DATA_URL_CHARS) }),
     z.object({ kind: z.literal("file"), name: z.string().max(120), text: z.string() }),
   ])).max(4).optional(),
 });
