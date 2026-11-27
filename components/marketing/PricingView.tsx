@@ -8,6 +8,8 @@ import { marketingModels, modelTier } from "@/lib/models";
 import { Footer } from "@/components/Footer";
 import { HeroChips } from "@/components/Art";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
+import { HolidayBanner } from "@/components/marketing/HolidayBanner";
+import { holidayPriceLine } from "@/lib/holiday";
 
 export interface PricingViewProps {
   plans: PlanCard[];
@@ -19,6 +21,10 @@ export interface PricingViewProps {
   /** ADMIN_EMAILS account: every model is already unlocked; plans are for customers. */
   isAdmin?: boolean;
   showReferral?: boolean;
+  /** Holiday banner. Server-gated so it does not flash after the deadline. */
+  holiday?: boolean;
+  /** First-month price lines. False for someone already on Pro or Max. */
+  showHolidayPrices?: boolean;
 }
 
 const sv = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
@@ -60,7 +66,7 @@ const faqs = [
 
 const lineup = marketingModels();
 
-export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false }: PricingViewProps) {
+export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false, holiday = false, showHolidayPrices = false }: PricingViewProps) {
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [notes, setNotes] = useState<Partial<Record<PlanId, string>>>({});
   const [canceled, setCanceled] = useState(false);
@@ -136,9 +142,10 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
               <span>Paid plans coming soon. Free works today, and you can join early access below to hear first.</span>
             </div>
           )}
+          {holiday ? <HolidayBanner /> : null}
           <div className="pricing-head">
             <div>
-              <h2 className="pricing-head-title">All plans</h2>
+              <h2 id="all-plans" className="pricing-head-title">All plans</h2>
               <p className="tiny" style={{ marginTop: 4 }}>For individuals and small teams. Prices in US dollars.</p>
             </div>
             <span className="tiny">Free, Pro, Max</span>
@@ -160,6 +167,9 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                     <span className="plan-amount tnum">${p.priceUsd}</span>
                     <span className="plan-period">{p.id === "trial" ? "free" : "/ month"}</span>
                   </div>
+                  {showHolidayPrices && (p.id === "pro" || p.id === "max") ? (
+                    <p className="plan-holiday">{holidayPriceLine(p.id)}</p>
+                  ) : null}
                   <div className="plan-cta">
                     <button
                       type="button"

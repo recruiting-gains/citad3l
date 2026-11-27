@@ -9,6 +9,7 @@ import { billingOpenFor, getStripe, planForPrice, priceFor } from "@/lib/stripe"
 import { appUrl } from "@/lib/config";
 import { ensureEntitlement } from "@/lib/usage";
 import { readFirstTouchCookieHeader, readUtmCookieHeader, utmMetadata } from "@/lib/utm";
+import { holidayAutoPromo, isFirstTimeCustomer } from "@/lib/holiday-checkout";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
@@ -60,6 +61,18 @@ export async function POST(req: Request) {
   const refHost = readFirstTouchCookieHeader(req.headers.get("cookie"))?.referrerHost;
   const meta = { userId, plan: parsed.data.plan, ...utmMeta, ...(refHost ? { utm_ref: refHost } : {}) };
   console.info("[funnel]", JSON.stringify({ event: "checkout_started", plan: parsed.data.plan, ...utmMeta }));
+  // Auto-apply HOLIDAY50 for a first-time customer during the promo window.
+  // Everyone else gets the Checkout code field. Never both: Stripe rejects that pair.
+  // In-place plan swaps return above and do not reach this branch.
+  const promoCode = holidayAutoPromo();
+  let discounts: { promotion_code: string }[] | undefined;
+  if (promoCode) {
+    try {
+      if (await isFirstTimeCustomer(stripe, customer)) discounts = [{ promotion_code: promoCode }];
+    } catch {
+      console.error("[billing] holiday promo lookup failed");
+    }
+  }
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer,
@@ -69,6 +82,7 @@ export async function POST(req: Request) {
     subscription_data: { metadata: meta },
     success_url: `${appUrl()}/account/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl()}/pricing?checkout=canceled`,
+    ...(discounts ? { discounts } : { allow_promotion_codes: true }),
   });
   return NextResponse.json({ url: session.url });
 }
