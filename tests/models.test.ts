@@ -30,7 +30,7 @@ describe("public model catalog", () => {
     delete process.env.MEDIA_GENERATION_ENABLED;
     expect(VIDEO_MODEL_ENABLED).toBe(true);
     expect(isVideoModelEnabled()).toBe(true);
-    expect(visibleModels().map((m) => m.id)).toEqual(["citad3l-v1", "citad3l-fast", "citad3l-private"]);
+    expect(visibleModels().map((m) => m.id)).toEqual(["citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro"]);
     expect(DEFAULT_MODEL_ID).toBe("citad3l-v1");
     expect(visibleModels()[0]?.default).toBe(true);
     expect(isSelectableModelId("citad3l-video")).toBe(false);
@@ -66,7 +66,7 @@ describe("public model catalog", () => {
   it("hides Image and Video on marketing pages until media generation is on, and Private is available (not coming soon)", () => {
     delete process.env.MEDIA_GENERATION_ENABLED;
     expect(marketingModels().map((m) => m.id)).toEqual([
-      "citad3l-v1", "citad3l-fast", "citad3l-private",
+      "citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro",
     ]);
     const video = getPublicModel(VIDEO_MODEL_ID);
     expect(video?.exclusivePlan).toBe("max");

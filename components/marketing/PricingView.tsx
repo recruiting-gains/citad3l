@@ -64,12 +64,12 @@ function pricingFaqs(media: boolean) {
   ];
   if (!media) {
     return [
-      { q: "Do the plans include different models?", a: "A free account includes Citad3L V1, Fast and Private. Swarm uses 4 replies, so it is on Pro and Max. Max adds per-model settings on top of everything in Pro." },
+      { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
       ...shared,
     ];
   }
   return [
-    { q: "Do the plans include different models?", a: "A free account includes Citad3L V1, Fast and Private. Swarm uses 4 replies, so it is on Pro and Max. Pro adds Citad3L Image. Max adds Citad3L Video and per-model settings on top of everything in Pro." },
+    { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Citad3L Image. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro, plus Citad3L Video and per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
     { q: "What is Citad3L Video?", a: "Video generation for Max subscribers. Clips run 5 seconds at 720p, with sound. There is a daily clip limit to keep the service fast for everyone." },
     { q: "Are there daily limits on images and video?", a: "Yes. On top of your plan's allowance, images and video clips have a daily limit per account so one heavy user can't slow things down for everyone. Limits reset every day at 6 PM Central." },
     ...shared,
@@ -131,15 +131,15 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
         <section className="hero pricing-hero container">
           {isAdmin ? (
             <p className="notice" role="status" data-testid="admin-unlocked">{media
-              ? "Your admin account already has every model and mode unlocked (V1, Fast, Private, Image, Video, Swarm and @computer), whatever the plan below says. These plans are for customers."
-              : "Your admin account already has every chat mode unlocked (V1, Fast, Private, Swarm and @computer), whatever the plan below says. These plans are for customers."}</p>
+              ? "Your admin account already has every model and mode unlocked (the whole chat lineup, Image, Video, Swarm and @computer), whatever the plan below says. These plans are for customers."
+              : "Your admin account already has every chat mode unlocked (the whole chat lineup, Swarm and @computer), whatever the plan below says. These plans are for customers."}</p>
           ) : null}
           <h1 className="display hero-title">
             Free, Pro and Max. <HeroChips /> {media ? "Image with Pro, Video with Max." : "Private is included."}
           </h1>
           <p className="hero-sub">{media
-            ? "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private. Swarm is on Pro and Max. Pro adds Citad3L Image. Max adds 2.5× the Pro allowance, per-model settings, and Citad3L Video."
-            : "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day on Fast and Private. Swarm is on Pro and Max. Max adds 2.5× the Pro allowance and per-model settings."}</p>
+            ? "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day across 5 models. Swarm is on Pro and Max. Pro has 8 chat models and Citad3L Image. Max adds 2.5× the Pro allowance, 11 chat models, per-model settings, and Citad3L Video."
+            : "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day across 5 models. Swarm is on Pro and Max. Pro has 8 chat models. Max adds 2.5× the Pro allowance and per-model settings."}</p>
           <div className="hero-ctas">
             <Link href="/chat" className="btn btn-primary btn-lg">Start chatting</Link>
             <a href="#plans" className="btn btn-secondary btn-lg">Compare plans <IChevR /></a>

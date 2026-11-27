@@ -111,6 +111,128 @@ export const MODELS: readonly PublicModel[] = [
     usageDots: 3,
     skills: { webSearch: false, thinking: false, coding: false },
   },
+  // ── 2026-11-27 lineup v2 (preview). Public slugs only; provider ids live in the MODEL_IDS secret under these same
+  // keys. Free adds two named uncensored models; Pro and Max add the rest. Context is shown at the app's 128K label.
+  {
+    id: "gemma4-uncensored",
+    name: "Gemma 4 Uncensored",
+    description: "Uncensored everyday chat that reads images.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Uncensored chat",
+    summary: "Uncensored chat for everyday questions, drafts and ideas. It can read images you upload.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "everyday",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 1,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "uncensored-1.2",
+    name: "Uncensored 1.2",
+    description: "Our most open chat model, with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Uncensored chat",
+    summary: "The most open model in the lineup. Straight answers with fewer refusals. It can read images too.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "cyber",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 2,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "roleplay-uncensored",
+    name: "Role Play Uncensored",
+    description: "Uncensored role play and character chat.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Role play · characters",
+    summary: "Uncensored role play, characters and interactive stories. It can read images too.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "ai",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 2,
+    skills: { webSearch: false, thinking: false, coding: false },
+  },
+  {
+    id: "inkling2-mini",
+    name: "Inkling 2 Mini",
+    description: "Light, low-cost chat for long documents.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Long documents",
+    summary: "A light, low-cost model that handles long documents and quick questions. It can read images too.",
+    specs: ["Chat", "Image input"],
+    art: "everyday",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 1,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "qwen3.8-27b",
+    name: "Qwen 3.8 27B",
+    description: "Step-up reasoning with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Reasoning",
+    summary: "A step up for reasoning, math and code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "robotics",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 3,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "qwen4-max",
+    name: "Qwen 4 Max",
+    description: "Flagship-class reasoning and vision.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Flagship reasoning",
+    summary: "A flagship-class model for hard reasoning, code and image questions.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "rookHero",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 4,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "grok-4.7",
+    name: "Grok 4.7",
+    description: "Top-tier reasoning with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Top-tier reasoning",
+    summary: "A top-tier model for hard questions, analysis and code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "rook",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 5,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "kimi-k3.1-pro",
+    name: "Kimi K3.1 Pro",
+    description: "Deep reasoning for long, complex work.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Deep reasoning · long work",
+    summary: "Deep reasoning for long, complex work like big documents and multi-step code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "ai",
+    context: "128K",
+    speed: "Slow",
+    usageDots: 5,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
   {
     id: "citad3l-image",
     name: "Citad3L Image",
@@ -161,6 +283,17 @@ export const MODEL_TIER: Record<string, ModelTier> = {
   "citad3l-v1": "guest",
   "citad3l-fast": "guest",
   "citad3l-private": "signin",
+  // Lineup v2: Free (5) = V1, Fast, Private + these two. Guests can use them too (no sign-in wall, no age check).
+  "gemma4-uncensored": "guest",
+  "uncensored-1.2": "guest",
+  // Pro (8) adds three.
+  "roleplay-uncensored": "pro",
+  "inkling2-mini": "pro",
+  "qwen3.8-27b": "pro",
+  // Max (12) adds four. Slot 12 is MAX_SLOT_12_PLACEHOLDER below (hidden until Cruz picks the model).
+  "qwen4-max": "max",
+  "grok-4.7": "max",
+  "kimi-k3.1-pro": "max",
   "citad3l-image": "pro",
   [VIDEO_MODEL_ID]: "max",
 };
@@ -267,7 +400,27 @@ export function parseImageCommand(text: string, imageMode: boolean): { image: bo
   return { image: false, prompt: text };
 }
 
-export const GUEST_MODEL_IDS = ["citad3l-fast"] as const;
+export const GUEST_MODEL_IDS = ["citad3l-fast", "gemma4-uncensored", "uncensored-1.2"] as const;
+
+/**
+ * PLACEHOLDER — Max slot 12 (lineup v2). Deliberately NOT in MODELS, so it never shows in the picker, marketing pages
+ * or the API. When Cruz picks the model: add a MODELS entry with this id (or a better slug), set MODEL_TIER[id] = "max",
+ * and add the provider id under the same key in the MODEL_IDS secret.
+ */
+export const MAX_SLOT_12_PLACEHOLDER = { id: "max-slot-12", tier: "max", hidden: true } as const;
+
+/** Chat models in a plan, in lineup order (Free 5, Pro 8, Max 11 today + the hidden slot 12). Image/Video excluded. */
+export function chatModelsForPlan(plan: "trial" | "pro" | "max"): PublicModel[] {
+  return MODELS.filter((m) => m.modality === "chat" && planIncludesModel(plan, m.id));
+}
+
+/** Does this plan include the model? Free ("trial") gets guest + signin models; Pro adds pro; Max adds max. */
+export function planIncludesModel(plan: string | null | undefined, id: string): boolean {
+  const t = modelTier(id);
+  if (t === "guest" || t === "signin") return true;
+  if (t === "pro") return plan === "pro" || plan === "max";
+  return plan === "max";
+}
 
 export function isGuestModelId(id: string): boolean {
   return (GUEST_MODEL_IDS as readonly string[]).includes(id);

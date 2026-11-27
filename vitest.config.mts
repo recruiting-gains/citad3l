@@ -13,6 +13,14 @@ const testEnv = {
     "video-t2v": "test-video-t2v",
     "video-i2v": "test-video-i2v",
     computer: "test-vision-model",
+    "gemma4-uncensored": "test-free-extra-a",
+    "uncensored-1.2": "test-free-extra-b",
+    "roleplay-uncensored": "test-pro-extra-a",
+    "inkling2-mini": "test-pro-extra-b",
+    "qwen3.8-27b": "test-pro-extra-c",
+    "qwen4-max": "test-max-extra-a",
+    "grok-4.7": "test-max-extra-b",
+    "kimi-k3.1-pro": "test-max-extra-c",
   }),
 };
 export default defineConfig({

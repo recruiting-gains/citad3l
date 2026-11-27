@@ -107,14 +107,14 @@ describe("who is an admin", () => {
 });
 
 describe("model lineup and resolution", () => {
-  it("admins and signed-in accounts can pick every model; guests only V1 and Fast", async () => {
+  it("admins and signed-in accounts can pick every model; guests get V1, Fast and the two Free uncensored models", async () => {
     const { MODELS, pickerModels, isSelectableModelId } = await import("@/lib/models");
     const { resolveModel, SignInRequired } = await import("@/lib/inference/provider-models");
     const all = MODELS.map((m) => m.id);
     expect(all).toEqual(expect.arrayContaining(["citad3l-v1", "citad3l-fast", "citad3l-private", "citad3l-image", "citad3l-video"]));
     expect(pickerModels(true, true).map((m) => m.id).sort()).toEqual([...all].sort());
     expect(pickerModels(true).map((m) => m.id).sort()).toEqual([...all].sort());
-    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(["citad3l-fast", "citad3l-v1"]);
+    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(["citad3l-fast", "citad3l-v1", "gemma4-uncensored", "uncensored-1.2"]);
     for (const id of all) {
       expect(isSelectableModelId(id, true), id).toBe(true);
       expect(resolveModel(id, { admin: true }).providerModelId, id).toBeTruthy();

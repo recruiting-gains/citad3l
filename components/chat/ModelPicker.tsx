@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Rook } from "@/components/Rook";
-import type { PublicModel } from "@/lib/models";
+import { modelTier, planIncludesModel, type PublicModel } from "@/lib/models";
 import { availableSkills } from "@/lib/skills";
 import type { SkillRequest } from "@/lib/types";
 
@@ -16,6 +16,8 @@ export interface ModelPickerProps {
   skills?: SkillRequest;
   onSkillsChange?: (s: SkillRequest) => void;
   guest?: boolean;
+  /** Signed-in customer plan ("trial" | "pro" | "max"). Rows outside it get a "Pro"/"Max" tag (server still enforces). Null for admins and guests. */
+  plan?: string | null;
   swarm?: boolean;
   canOpenSettings?: boolean;
   onOpenSettings?: () => void;
@@ -41,7 +43,7 @@ function Dots({ n }: { n: number }) {
 
 export function ModelPicker({
   models, selectedId, onChange, disabled, placement = "up",
-  skills, onSkillsChange, guest, swarm, canOpenSettings, onOpenSettings,
+  skills, onSkillsChange, guest, plan, swarm, canOpenSettings, onOpenSettings,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -52,15 +54,20 @@ export function ModelPicker({
   const searchRef = useRef<HTMLInputElement | null>(null);
   const selected = models.find((m) => m.id === selectedId) ?? models[0];
 
+  const locked = (id: string) => !!plan && !planIncludesModel(plan, id);
+  const ordered = useMemo(
+    () => (plan ? [...models.filter((m) => planIncludesModel(plan, m.id)), ...models.filter((m) => !planIncludesModel(plan, m.id))] : models),
+    [models, plan],
+  );
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
-    if (!n) return models;
-    return models.filter((m) =>
+    if (!n) return ordered;
+    return ordered.filter((m) =>
       m.name.toLowerCase().includes(n) ||
       (m.description ?? "").toLowerCase().includes(n) ||
       (m.role ?? "").toLowerCase().includes(n),
     );
-  }, [models, q]);
+  }, [ordered, q]);
 
   // The preview card follows the pointer, but the Skills toggles act on the SELECTED model only. (Bug 2026-11-19:
   // they used the hovered row, and the pointer crossing Private/Image/Video on its way down disabled Web search.)
@@ -171,7 +178,7 @@ export function ModelPicker({
             <span>
               <span className="mp-row-name">
                 {m.name}
-                {m.comingSoon ? <span className="mp-tag">Soon</span> : null /* no plan tags: the picker only lists models this account can use */}
+                {m.comingSoon ? <span className="mp-tag">Soon</span> : locked(m.id) ? <span className="mp-tag" data-testid="mp-plan-tag">{modelTier(m.id) === "max" ? "Max" : "Pro"}</span> : null}
               </span>
               <span className="mp-row-meta">{m.speed ? (SPEED[m.speed] ?? m.speed) : m.role}</span>
             </span>

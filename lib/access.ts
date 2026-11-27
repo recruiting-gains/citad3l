@@ -1,5 +1,5 @@
 import "server-only";
-import { modelTier, type ModelTier } from "./models";
+import { getPublicModel, modelTier, type ModelTier } from "./models";
 import { ensureEntitlement, isPaidActive, userIsAdmin } from "./usage";
 
 /**
@@ -42,5 +42,5 @@ export async function checkAccess(userId: string, feature: string): Promise<Acce
   const admin = await userIsAdmin(userId);
   if (admin) return null;
   const e = await ensureEntitlement(userId);
-  return accessFor(tier, { admin, plan: e.plan, paidActive: isPaidActive(e) }, feature === "swarm" ? "Swarm mode" : NAMES[feature] ?? "This model");
+  return accessFor(tier, { admin, plan: e.plan, paidActive: isPaidActive(e) }, feature === "swarm" ? "Swarm mode" : NAMES[feature] ?? getPublicModel(feature)?.name ?? "This model");
 }

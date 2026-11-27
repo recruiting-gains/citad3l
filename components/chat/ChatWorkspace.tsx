@@ -1391,7 +1391,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               <IMic />
             </button>
           ) : null}
-          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
+          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} plan={signedIn && !isOwner && !usage.admin ? usage.plan : null} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
           {streaming ? (
             <button type="button" className="stop-btn" onClick={stop} aria-label="Stop generating (Esc)" title="Stop (Esc)">
               <i />

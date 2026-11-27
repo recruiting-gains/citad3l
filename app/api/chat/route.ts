@@ -501,12 +501,12 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
   try {
     resolved = resolveModel(wanted);
   } catch (e) {
-    if (e instanceof SignInRequired) return jerr(401, "signup_required", "Free messages use Citad3L Fast. Create an account to use the rest of the lineup.");
+    if (e instanceof SignInRequired) return jerr(401, "signup_required", "Free messages use Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2. Create an account to use the rest of the lineup.");
     if (e instanceof UnknownModel) return jerr(400, "bad_request", e.message);
     throw e;
   }
   if (!isGuestModelId(resolved.publicId) || resolved.modality !== "chat" || resolved.requiresClientE2EE) {
-    return jerr(401, "signup_required", "Free messages use Citad3L Fast. Create an account to use the rest of the lineup.");
+    return jerr(401, "signup_required", "Free messages use Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2. Create an account to use the rest of the lineup.");
   }
 
   const pub = getPublicModel(resolved.publicId);

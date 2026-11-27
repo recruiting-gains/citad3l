@@ -8,13 +8,16 @@ export function planCatalog(): PlanCard[] {
   const lineup = media ? "Citad3L V1, Fast and Image" : "Citad3L V1, Fast and Private";
   const privateChat = "Citad3L Private (encrypted, secure enclave)";
   const swarm = "Swarm mode (V1 leads, Fast workers)";
+  const freeModels = "Free lineup: Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2";
+  const proModels = "Pro models: Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B (8 chat models in all)";
+  const maxModels = "Max models: Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro on top of Pro";
   const shared = ["Streaming chat with saved history", "Projects with custom instructions", "Export or delete your data any time"];
   const proFeatures = media
-    ? [lineup, privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
-    : [lineup, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
+    ? [lineup, proModels, privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
+    : [lineup, proModels, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
   const maxFeatures = media
-    ? [lineup, "Citad3L Video, Max only", "Per-model settings: prompt, temperature, length", privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
-    : [lineup, "Per-model settings: prompt, temperature, length", swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
+    ? [lineup, proModels, maxModels, "Citad3L Video, Max only", "Per-model settings: prompt, temperature, length", privateChat, swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"]
+    : [lineup, proModels, maxModels, "Per-model settings: prompt, temperature, length", swarm, ...shared, "Allowance refreshes every 5 hours, with a weekly cap"];
   return [
     {
       id: "trial",
@@ -23,8 +26,9 @@ export function planCatalog(): PlanCard[] {
       blurb: "5 messages to try, then 3 every day with a free account.",
       allowance: `Guests: ${TRIAL_REPLIES} messages, one time. Free account: ${FREE_DAILY_REPLIES} messages every day, reset at midnight Central.`,
       features: [
-        `${TRIAL_REPLIES} guest messages on Citad3L Fast, no sign-in needed`,
-        `A free account gives you ${FREE_DAILY_REPLIES} messages every day on Fast and Private`,
+        `${TRIAL_REPLIES} guest messages on Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2, no sign-in needed`,
+        `A free account gives you ${FREE_DAILY_REPLIES} messages every day across the Free lineup`,
+        freeModels,
         "Resets at midnight Central. Failed replies never count",
         "Create an account any time to save chats",
         "Swarm uses 4 replies, so it is on Pro and Max",

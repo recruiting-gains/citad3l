@@ -8,7 +8,10 @@ import { DEFAULT_MODEL_ID, getPublicModel, isMemberModel, isSelectableModelId } 
  *   PROVIDER_API_KEY     API key, or PROVIDER_API_KEY_VAR = the name of the secret that holds it.
  *   PROVIDER_WIRE        JSON: provider-specific request field names, enclave settings and the host that serves
  *                        finished videos (see ProviderWire for the keys; unset keys fall back to neutral defaults).
- *   MODEL_IDS            JSON {"citad3l-v1","citad3l-fast","citad3l-private","citad3l-image","video-t2v","video-i2v","computer"}.
+ *   MODEL_IDS            JSON {"citad3l-v1","citad3l-fast","citad3l-private","citad3l-image","video-t2v","video-i2v","computer",
+ *                        plus one key per lineup-v2 chat model, named by its public slug: "gemma4-uncensored",
+ *                        "uncensored-1.2","roleplay-uncensored","inkling2-mini","qwen3.8-27b","qwen4-max","grok-4.7",
+ *                        "kimi-k3.1-pro"}.
  * Unset values fail safe: no key -> mock/unavailable; no model id -> UnknownModel.
  */
 export function providerBaseUrl(): string {
@@ -66,6 +69,13 @@ const MODEL_IDS: Record<string, ModelMap> = {
     get videoI2v() { return providerModelIdFor("video-i2v"); },
   },
 };
+/** Lineup v2 chat models: the MODEL_IDS key is the public slug. A missing key fails safe (UnknownModel). */
+function modelMap(id: string): ModelMap | undefined {
+  if (Object.prototype.hasOwnProperty.call(MODEL_IDS, id)) return MODEL_IDS[id];
+  const pub = getPublicModel(id);
+  if (!pub || pub.modality !== "chat") return undefined;
+  return { text: providerModelIdFor(id) };
+}
 
 
 /** Server-only provider id for Citad3L Video. `i2v` is the image-to-video endpoint; never send this id to the client. */
@@ -111,7 +121,7 @@ export function resolveModel(publicId?: string | null, access: { signedIn?: bool
   if (!signedIn && isMemberModel(id)) throw new SignInRequired(getPublicModel(id)?.name ?? "that model");
   if (!isSelectableModelId(id, signedIn, admin)) throw new UnknownModel("Unknown model.");
   const pub = getPublicModel(id);
-  const map = MODEL_IDS[id];
+  const map = modelMap(id);
   if (!pub || !map || pub.modality === "agent") throw new UnknownModel("Unknown model.");
   const providerModelId = map.text ?? map.image ?? map.videoT2v;
   if (!providerModelId) throw new UnknownModel("Unknown model.");

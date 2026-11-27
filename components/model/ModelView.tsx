@@ -45,9 +45,9 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
   const plansNote = model.comingSoon
     ? "Not available yet."
     : tier === "max"
-      ? "Not included on Free or Pro. Clips are limited per day to keep the service fair."
+      ? model.modality === "video" ? "Not included on Free or Pro. Clips are limited per day to keep the service fair." : "Not included on Free or Pro."
       : tier === "pro"
-        ? "Not included on Free. Images are limited per day to keep the service fair."
+        ? model.modality === "image" ? "Not included on Free. Images are limited per day to keep the service fair." : "Not included on Free."
         : tier === "signin"
           ? "Sign in with a free account to use it. Plans differ in allowance."
           : "Plans differ in allowance. Failed replies are never charged.";

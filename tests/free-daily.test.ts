@@ -126,7 +126,7 @@ describe("public copy", () => {
     expect(free.allowance).toMatch(/midnight Central/);
     expect(free.features.join(" ")).toMatch(/Swarm uses 4 replies, so it is on Pro and Max/);
     const blob = FAQ_ITEMS.map((i) => i.a).join("\n");
-    expect(blob).toMatch(/Create a free account for 3 messages every day|3 messages every day on Fast and Private/);
+    expect(blob).toMatch(/Create a free account for 3 messages every day|3 messages every day on Fast and Private|3 messages every day across the 5 Free models/);
     expect(blob).toMatch(/Guests get 5 free messages, one time/);
     expect(blob).not.toMatch(/keeps that same 5-message try and unlocks Private and Swarm/);
     expect(blob).not.toMatch(/is end-to-end encrypted/i);

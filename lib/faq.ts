@@ -20,7 +20,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "Which models can I use?",
-    a: "Citad3L V1 is the default and the best all-round chat model. Citad3L Fast is cheaper and quicker. Citad3L Image generates images from a written prompt. Citad3L Private is encrypted, text-only chat in a secure enclave. Citad3L Video makes 5-second 720p clips with sound. Swarm mode splits big requests across V1 and Fast workers.",
+    a: "Citad3L V1 is the default and the best all-round chat model. Citad3L Fast is cheaper and quicker. Free also includes Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro. Citad3L Image generates images from a written prompt. Citad3L Private is encrypted, text-only chat in a secure enclave. Citad3L Video makes 5-second 720p clips with sound. Swarm mode splits big requests across V1 and Fast workers.",
   },
   {
     q: "What skills can I turn on?",
@@ -36,7 +36,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How much does it cost?",
-    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week) and adds Citad3L Image. Max is $50 a month, at 2.5× those windows, and adds Citad3L Video and per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
+    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day across the 5 Free models, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week) and adds Citad3L Image. Max is $50 a month, at 2.5× those windows, and adds Citad3L Video and per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
   },
   {
     q: "Is there a public API?",
@@ -44,7 +44,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How do usage caps work?",
-    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week, plus Image (up to 10 images a day). Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus Video (up to 2 clips a day) and per-model settings. Each image or video clip also uses 1 reply of your allowance. Failed or stopped replies do not count. Caps do not roll over.",
+    a: "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day across the 5 Free models, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week, plus Image (up to 10 images a day). Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus Video (up to 2 clips a day) and per-model settings. Each image or video clip also uses 1 reply of your allowance. Failed or stopped replies do not count. Caps do not roll over.",
   },
   {
     q: "How do I sign in?",
@@ -85,15 +85,15 @@ const FAQ_WITHOUT_MEDIA: Record<string, string> = {
   "How is it different?":
     "Citad3L is built to be private and less filtered than typical chat apps. Adult text chat between adults is allowed, and chat does not lecture or pile on extra refusals. The only hard lines across the app are no sexual content involving minors, and nothing about bombs or explosives.",
   "Which models can I use?":
-    "Citad3L V1 is the default and the best all-round chat model. Citad3L Fast is cheaper and quicker. Citad3L Private is encrypted, text-only chat in a secure enclave. Swarm mode splits big requests across V1 and Fast workers.",
+    "Citad3L V1 is the default and the best all-round chat model. Citad3L Fast is cheaper and quicker. Free also includes Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7 and Kimi K3.1 Pro. Citad3L Private is encrypted, text-only chat in a secure enclave. Swarm mode splits big requests across V1 and Fast workers.",
   "Is it private, and what do you store?":
     "If you sign in, we store your email, your chats and projects, and account and usage data so you can come back to them. You can export or delete your data from your account. We store a hashed IP for rate limits. Filter refusals log only a category, not the prompt or reply. Guest chats are not saved to an account. V1 and Fast are not end-to-end encrypted. Citad3L Private is not end-to-end encrypted from your device: your browser sends the message to our server over HTTPS, like any chat, and our server can read it. Our server runs the safety check on that text, then encrypts it to a secure enclave at our model provider. It only sends after the provider confirms the enclave (attestation) and our nonce, model and key checks pass; we do not check the enclave hardware report ourselves. The AI part of the safety check for Private runs inside the same enclave. Our server decrypts the enclave's reply, checks it, and saves the chat to your history in readable form like other chats (delete it any time). The model host's servers and logs only see encrypted text. Private is text only.",
   "What's not allowed?":
     "Two hard lines across the app: no sexual content involving minors, and nothing about bombs or explosives. Adult text chat between adults is allowed. If a message is blocked, we tell you why and you can try different wording. We do not automatically pause or suspend an account just because a message was blocked.",
   "How much does it cost?":
-    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week). Max is $50 a month, at 2.5× those windows, and adds per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
+    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day across the 5 Free models, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month (25 replies every 5 hours, up to 150 a week). Max is $50 a month, at 2.5× those windows, and adds per-model settings. Subscribe on the pricing page; plans renew monthly and you can cancel any time from your account.",
   "How do usage caps work?":
-    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day on Fast and Private, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week. Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus per-model settings. Failed or stopped replies do not count. Caps do not roll over.",
+    "Guests get 5 free messages, one time, with no account. A free account gives you 3 messages every day across the 5 Free models, resetting at midnight Central. Swarm uses 4 replies, so it is on Pro and Max. Pro is $20 a month: 25 replies every 5 hours, up to 150 a week. Max is $50 a month: 62 replies every 5 hours, up to 375 a week, plus per-model settings. Failed or stopped replies do not count. Caps do not roll over.",
 };
 
 /** FAQ shown on /faq. Drops image and video generation while that flag is off. The full list stays in FAQ_ITEMS. */
