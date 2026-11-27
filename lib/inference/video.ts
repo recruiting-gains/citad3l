@@ -69,7 +69,7 @@ export async function queueVideo(prompt: string, signal?: AbortSignal, f: Fetch 
 
 export type VideoPoll =
   | { status: "processing"; etaMs?: number }
-  | { status: "done"; bytes: Uint8Array; mime: string; downloadUrl: string | null };
+  | { status: "done"; bytes: Uint8Array; mime: string; downloadUrl: string | null; downloadUrlVerified: boolean };
 
 /** Keep a provider media URL from retrieve (preferred) or the queue-time fallback. Rejects unexpected hosts. */
 export function resolveVideoDownloadUrl(candidate: unknown, fallback: string | null = null): string | null {
@@ -88,14 +88,14 @@ export async function pollVideo(job: { queueId: string; downloadUrl: string | nu
   if (r.status === 404) r = await post(f, "/video/retrieve", { model: videoModelId("i2v"), queue_id: job.queueId }, signal);
   const ct = r.headers.get("content-type") ?? "";
   if (r.ok && ct.startsWith("video/")) {
-    return { status: "done", bytes: new Uint8Array(await r.arrayBuffer()), mime: ct.split(";")[0], downloadUrl: resolveVideoDownloadUrl(job.downloadUrl) };
+    return { status: "done", bytes: new Uint8Array(await r.arrayBuffer()), mime: ct.split(";")[0], downloadUrl: resolveVideoDownloadUrl(job.downloadUrl), downloadUrlVerified: false };
   }
   const j = (await r.json().catch(() => ({}))) as { status?: string; download_url?: unknown; average_execution_time?: number; execution_duration?: number; error?: unknown };
   if (!r.ok) throw new ProviderUnavailable(r.status === 404 ? "The video service no longer has this video." : `Video retrieve failed (${r.status}).`);
   if (j.status === "COMPLETED") {
     const downloadUrl = resolveVideoDownloadUrl(j.download_url, job.downloadUrl);
     if (!downloadUrl) throw new ProviderUnavailable("Video finished but no file was returned.");
-    return { status: "done", ...(await downloadVideo(downloadUrl, signal, f)), downloadUrl };
+    return { status: "done", ...(await downloadVideo(downloadUrl, signal, f)), downloadUrl, downloadUrlVerified: true };
   }
   const eta = typeof j.average_execution_time === "number" && typeof j.execution_duration === "number" ? Math.max(0, j.average_execution_time - j.execution_duration) : undefined;
   return { status: "processing", etaMs: eta };
@@ -103,7 +103,10 @@ export async function pollVideo(job: { queueId: string; downloadUrl: string | nu
 
 export async function downloadVideo(url: string, signal?: AbortSignal, f: Fetch = fetch): Promise<{ bytes: Uint8Array; mime: string }> {
   if (!isProviderMediaUrl(url)) throw new ProviderUnavailable("Unexpected video host.");
-  const r = await f(url, { signal });
+  const r = await f(url, { signal, redirect: "follow" });
+  // fetch follows redirects; the final URL must still be on the provider media host.
+  const finalUrl = r.url || url;
+  if (!isProviderMediaUrl(finalUrl)) throw new ProviderUnavailable("Unexpected video host.");
   if (!r.ok) throw new ProviderUnavailable(r.status === 404 || r.status === 403 ? "This video link expired (clips are kept for 24 hours)." : `Video download failed (${r.status}).`);
   return { bytes: new Uint8Array(await r.arrayBuffer()), mime: (r.headers.get("content-type") ?? "video/mp4").split(";")[0] };
 }
