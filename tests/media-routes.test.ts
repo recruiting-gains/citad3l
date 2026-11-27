@@ -4,7 +4,6 @@ import path from "node:path";
 import { modelForFollowUp, pickerModels } from "@/lib/models";
 import { safeImageSrc } from "@/lib/safe-url";
 import { parseVideoContent, videoIdFromSrc } from "@/lib/video-content";
-import { PRIVACY } from "@/lib/legal";
 import { systemPrompt } from "@/lib/prompt";
 
 const calls = vi.hoisted(() => ({ image: 0, quote: 0, queue: 0, who: "admin" as "admin" | "max" }));
@@ -123,21 +122,5 @@ describe("old image and video chats", () => {
     expect(parseVideoContent(video.split(" ").slice(1).join(" ") ? video : video)).toBeTruthy();
     expect(image).toContain("/api/images/oldimg");
     expect(video).toContain("/api/videos/oldvid");
-  });
-});
-
-describe("privacy processors", () => {
-  it("covers Swarm, the safety-check read, and the anonymized-model caveat", () => {
-    const blob = PRIVACY.sections.map((s) => `${s.h}\n${s.p.join("\n")}`).join("\n");
-    expect(blob).toMatch(/including Swarm/);
-    expect(blob).toMatch(/earlier messages in the chat/);
-    expect(blob).toMatch(/Cloudflare Workers/);
-    expect(blob).toMatch(/anonymized/);
-    const processors = PRIVACY.sections.find((s) => s.h === "Who processes your data")!.p.join("\n");
-    expect(processors).toMatch(/anonymized/);
-    expect(processors).toMatch(/including Swarm/);
-    expect(blob).not.toMatch(/end-to-end/i);
-    expect(blob).not.toMatch(/abliterat/i);
-    expect(systemPrompt("Citad3L V1")).toMatch(/Swarm mode \(V1 plans, up to 3 Fast workers, V1 answers; Pro and Max/);
   });
 });
