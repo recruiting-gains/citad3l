@@ -6,6 +6,8 @@ import { resolveModel, providerApiKey, providerBaseUrl, providerWire } from "./p
 /** Access (admin-only models) is enforced by the API route before a provider is built; this is only the id lookup. */
 const ROUTE_CHECKED = { admin: true } as const;
 import { E2EEError, e2eeRequest } from "./enclave";
+import { asksForImageOrVideo } from "../image-prompt";
+import { mediaGenerationEnabled } from "../media";
 
 export interface ChatTurn {
   role: "system" | "user" | "assistant";
@@ -340,6 +342,21 @@ function mockProvider(modelName: string): InferenceProvider {
   };
 }
 
+/** Canned image-prompt card so local mock chat shows the same block the live model is asked to write. */
+function mockImagePromptReply(ask: string): string {
+  const subject = ask.replace(/\s+/g, " ").replace(/[_*`#[\]]/g, "").trim().slice(0, 160);
+  return [
+    "Citad3L doesn't generate images or videos.",
+    "",
+    "```image-prompt",
+    `${subject}. Cinematic still, natural light, clear subject, balanced composition, 3:2.`,
+    "Negative: text, watermark, blur",
+    "```",
+    "",
+    "_Mock provider – not live inference._",
+  ].join("\n");
+}
+
 function isSwarmPlanRequest(messages: ChatTurn[]): boolean {
   const blob = messages.map((m) => m.content).join("\n");
   return /"subtasks"/i.test(blob) && /break the user'?s request/i.test(blob);
@@ -359,6 +376,7 @@ function mockReply(modelName: string, messages: ChatTurn[]): string {
       ],
     });
   }
+  if (!mediaGenerationEnabled() && asksForImageOrVideo(last)) return mockImagePromptReply(last);
   return [
     `**Mock provider – not live inference.** This canned reply exercises streaming, storage and usage accounting until a live ${modelName} endpoint is connected.`,
     ``,

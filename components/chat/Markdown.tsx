@@ -8,6 +8,8 @@ import { safeImageSrc, safeLinkHref } from "@/lib/safe-url";
 import { videoIdFromSrc } from "@/lib/video-content";
 import { codeBlockFilename, triggerBlobDownload } from "@/lib/downloads";
 import { imageKindFor, pngFilename, renderGraphic } from "@/lib/html-image";
+import { IMAGE_PROMPT_LANG } from "@/lib/image-prompt";
+import { ImagePromptCard } from "@/components/chat/ImagePromptCard";
 import { GraphicStrip, SaveImageSheet, savePngs, useGraphicPreview, type PreviewImage } from "@/components/chat/GraphicPreview";
 
 type HNode = {
@@ -179,8 +181,13 @@ const components: Components = {
   pre({ node, children }) {
     const n = node as unknown as HNode | undefined;
     const code = n?.children?.find((c) => c.type === "element" && c.tagName === "code");
+    const lang = langOf(code);
+    const text = textOf(code);
+    if (lang.toLowerCase() === IMAGE_PROMPT_LANG) {
+      return <ImagePromptCard body={text} />;
+    }
     return (
-      <CodeBlock lang={langOf(code)} text={textOf(code)}>
+      <CodeBlock lang={lang} text={text}>
         {children}
       </CodeBlock>
     );

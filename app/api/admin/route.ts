@@ -4,6 +4,7 @@ import { jerr } from "@/lib/http";
 import { requireOwnerApi, listAdminUsers, estimateProviderSpendUsd } from "@/lib/admin";
 import { listWaitlist } from "@/lib/waitlist";
 import { listFilterRefusals } from "@/lib/filter-log";
+import { imagePromptTotals } from "@/lib/image-prompt-count";
 import { prisma } from "@/lib/db";
 import { isOwnerEmail } from "@/lib/config";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const owner = await requireOwnerApi();
   if (!owner) return jerr(404, "not_found", "Not found.");
-  const [users, spend, refusals, audits, waitlist] = await Promise.all([
+  const [users, spend, refusals, audits, waitlist, imagePrompts] = await Promise.all([
     listAdminUsers(),
     estimateProviderSpendUsd(),
     listFilterRefusals(80),
@@ -21,6 +22,7 @@ export async function GET() {
       include: { actor: { select: { email: true } }, target: { select: { email: true } } },
     }),
     listWaitlist(200),
+    imagePromptTotals(),
   ]);
   return NextResponse.json({
     owner: { email: owner.email },
@@ -28,6 +30,7 @@ export async function GET() {
     viewer: { owner: isOwnerEmail(owner.email), computer: computerAllowedEmail(owner.email) },
     users,
     spend,
+    imagePrompts,
     refusals,
     waitlist,
     audits: audits.map((a) => ({

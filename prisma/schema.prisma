@@ -378,6 +378,17 @@ model VisitSource {
   @@index([createdAt])
 }
 
+// Daily counts of chat replies that included an image-prompt block.
+// One row per America/Chicago day and plan (guest, free, pro, max).
+// No prompt text and no user id — only the counter.
+model ImagePromptCount {
+  day   String
+  plan  String
+  count Int    @default(0)
+
+  @@id([day, plan])
+}
+
 // First-touch source attached to a conversion. kind: "guest_start" | "signup" | "payment".
 // One row per guest (guest_start) or per account and kind (first signup / first payment only).
 // No foreign keys on purpose: deleting an account leaves only an anonymous count behind.

@@ -26,6 +26,8 @@ import { spendGuard } from "@/lib/spend-guard";
 import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
 import { streamWithAutoContinue } from "@/lib/inference/continue";
 import { buildTurns, titleFrom } from "@/lib/prompt";
+import { imagePromptPlanFor } from "@/lib/image-prompt";
+import { noteImagePromptReply } from "@/lib/image-prompt-count";
 import { checkText, checkTexts } from "@/lib/filter";
 import { reviewOrKeyword } from "@/lib/filter-llm";
 import { logFilterRefusal } from "@/lib/filter-log";
@@ -377,6 +379,8 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
         // No prompt/response content is logged.
         await settle(reservationId, outcome === "complete", assistantId);
         await prisma.message.update({ where: { id: assistantId }, data: { content: text, status: outcome === "refused" ? "complete" : outcome } }).catch(() => {});
+        // Count a finished reply that included an image-prompt card. Prompt text is not stored.
+        await noteImagePromptReply(text, imagePromptPlanFor(usageNow.plan));
         const usage = await getUsage(userId);
         if (outcome === "complete") send(c, "done", { usage, ...(continuations > 0 ? { continuations } : {}), ...(truncated ? { truncated: true } : {}) });
         else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });
@@ -520,6 +524,8 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
         else { outcome = "error"; errMsg = e instanceof ProviderUnavailable ? "The inference engine is unavailable right now." : "Something went wrong generating this reply."; }
       }
       const settled = await settleGuest(reserved.state, ip, outcome === "complete", store);
+      // Count a finished reply that included an image-prompt card. Prompt text is not stored.
+      await noteImagePromptReply(text, imagePromptPlanFor(null, true));
       const usage = guestUsageSummary(settled.used);
       if (outcome === "complete") send(c, "done", { usage });
       else if (outcome === "refused") send(c, "refused", { message: errMsg || text, usage });

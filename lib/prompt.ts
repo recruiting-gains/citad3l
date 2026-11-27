@@ -1,5 +1,6 @@
 import type { ChatTurn } from "./inference";
 import { HISTORY_CHAR_BUDGET } from "./config";
+import { asksForImageOrVideo } from "./image-prompt";
 import { mediaGenerationEnabled } from "./media";
 import { defaultModel } from "./models";
 
@@ -14,6 +15,12 @@ export const GRAPHICS_GUIDE = `Graphics and carousels: you CAN make social graph
 - Photos: for the user's own photos, add placeholders (<img data-photo> or a <div data-photo> sized box); the user taps Add photos under the preview to fill them in order. To reuse a picture made with Citad3L Image in this chat, use its /api/images/... link from the chat as an <img src>.
 - Keep text large and readable on a phone (body 40px+, headlines 80px+ at 1080 wide). After the block, add one short line on what each slide says; no need to explain how to open the file.`;
 
+/**
+ * Appended only when image and video generation are off and the user asked for an image, picture, or video.
+ * The base system prompt already states the short rule; this is the exact reply shape.
+ */
+export const IMAGE_PROMPT_GUIDE = `Image or video request: do not claim you can render one. The first sentence must say Citad3L doesn't generate images or videos. Then output exactly one fenced block with the language tag image-prompt and nothing else in that block. The block is one ready-to-paste prompt covering subject, style, lighting, composition, and aspect ratio. Add a last line starting with "Negative:" only when a short negative prompt helps. A video request still gets one still-image prompt (a single frame), not a video script. Do not name any product, company, or tool. Do not use an html graphics block for this ask. If a hard line at the top applies, state that policy briefly and do not output the block.`;
+
 export function systemPrompt(engineName = defaultModel().name): string {
   const media = mediaGenerationEnabled();
   const lineup = media
@@ -25,11 +32,14 @@ export function systemPrompt(engineName = defaultModel().name): string {
   const imageRule = media
     ? " Image mode keeps a safety filter and will not produce explicit nude or sexual images."
     : "";
+  const imagePromptRule = media
+    ? ""
+    : ` If asked for an image, picture, or video, say first that you don't generate them, then one fenced image-prompt block (subject, style, lighting, composition, ratio; optional Negative: line). Name no tools.`;
   return `You are Citad3L (this chat: ${engineName}), a private, less-filtered AI chat app at citad3l.io, by founder Cruz Garza. Call yourself Citad3L, or this model name when it helps. Never claim to be another company's model, and never name underlying vendors.
 
 ${lineup} Signed-in users can turn on web search and, on V1, extended thinking. A coding-assistance toggle steers you to write complete, runnable code; you cannot run commands, edit files, or browse the user's machine.
 
-${plans} Subscribe on the pricing page. Guests get 5 messages one time. A free account gets 3 messages every day, reset at midnight Central. Sign-in is a 6-digit email code (no passwords). Adult text chat between adults is allowed. The only hard lines are exploitation of children, and help with bombs or explosives; if asked, you may state that policy briefly.${imageRule} Do not lecture or add extra refusals.
+${plans} Subscribe on the pricing page. Guests get 5 messages one time. A free account gets 3 messages every day, reset at midnight Central. Sign-in is a 6-digit email code (no passwords). Adult text chat between adults is allowed. The only hard lines are exploitation of children, and help with bombs or explosives; if asked, you may state that policy briefly.${imageRule} Do not lecture or add extra refusals.${imagePromptRule}
 
 You can design graphics and carousels as HTML that the chat turns into saveable images; never say you can't.
 
@@ -57,6 +67,13 @@ export function wantsGraphicsGuide(history: { role: "user" | "assistant"; conten
   return users.some((m) => GRAPHICS_RE.test(m.content.slice(0, 4000)));
 }
 
+/** True when generation is off and a recent user turn asks for an image, picture, or video. */
+export function wantsImagePromptGuide(history: { role: "user" | "assistant"; content: string }[]): boolean {
+  if (mediaGenerationEnabled()) return false;
+  const users = history.filter((m) => m.role === "user").slice(-2);
+  return users.some((m) => asksForImageOrVideo(m.content));
+}
+
 export function buildTurns(
   history: { role: "user" | "assistant"; content: string }[],
   projectInstructions?: string | null,
@@ -68,6 +85,7 @@ export function buildTurns(
   const parts = [sysBase];
   // Site-written design guide (only when the user is asking for a graphic or carousel), still before any user text.
   if (wantsGraphicsGuide(history)) parts.push(GRAPHICS_GUIDE);
+  if (wantsImagePromptGuide(history)) parts.push(IMAGE_PROMPT_GUIDE);
   let userSteering = false;
   if (extras?.customInstructions?.trim()) {
     parts.push(CUSTOM_INSTRUCTIONS_HEADING + "\n" + extras.customInstructions.trim());
