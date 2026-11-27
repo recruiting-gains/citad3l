@@ -36,14 +36,24 @@ export function holidayPriceLine(plan: "pro" | "max"): string {
 }
 
 /**
- * Plain renewal line next to paid checkout buttons.
- * First-month amounts apply only while the holiday promo is shown to that visitor.
+ * First-month prices are for people who have never paid us.
+ * Current Pro/Max (including a referral month) and anyone whose subscription was canceled or went past due
+ * have subscribed before, so they do not see the intro line. Guests and free accounts do.
+ * Checkout applies HOLIDAY50 itself for a first-time Stripe customer; they do not type the code.
  */
-export function checkoutRenewalLine(showFirstMonth: boolean): string {
-  const pro = LIST_PRICE_USD.pro;
-  const max = LIST_PRICE_USD.max;
+export function holidayIntroEligible(input?: { plan?: string | null; status?: string | null } | null): boolean {
+  if (!input) return true;
+  if (input.plan === "pro" || input.plan === "max") return false;
+  if (input.status === "canceled" || input.status === "past_due") return false;
+  return true;
+}
+
+/** One line for one plan card. Checkout auto-applies HOLIDAY50 for a first-time buyer. */
+export function checkoutRenewalLine(plan: "pro" | "max", showFirstMonth: boolean): string {
+  const then = LIST_PRICE_USD[plan];
+  const label = plan === "pro" ? "Pro" : "Max";
   if (showFirstMonth) {
-    return `Pro: $${HOLIDAY_FIRST_MONTH.pro} first month, then $${pro}/month. Max: $${HOLIDAY_FIRST_MONTH.max} first month, then $${max}/month. Cancel anytime.`;
+    return `First-time buyers: ${label} $${HOLIDAY_FIRST_MONTH[plan]} first month, then $${then}/month.`;
   }
-  return `Pro: $${pro}/month. Max: $${max}/month. Cancel anytime.`;
+  return `${label}: $${then}/month. Cancel anytime.`;
 }

@@ -229,6 +229,16 @@ export function defaultModel(): PublicModel {
   return MODELS.find((m) => m.default) ?? MODELS[0];
 }
 
+/**
+ * Model id for the next message. A saved Image or Video chat falls back to the default text model
+ * when those modes are not in the catalog, so a text follow-up still sends.
+ */
+export function modelForFollowUp(savedId: string | null | undefined, catalog: readonly { id: string }[], fallback = DEFAULT_MODEL_ID): string {
+  if (savedId && catalog.some((m) => m.id === savedId)) return savedId;
+  if (catalog.some((m) => m.id === fallback)) return fallback;
+  return catalog[0]?.id ?? fallback;
+}
+
 export function modelAllowsImageUpload(model: PublicModel | undefined | null): boolean {
   return !!model && model.modality === "chat" && model.supportsVision === true;
 }

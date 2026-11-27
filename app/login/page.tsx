@@ -5,7 +5,7 @@ import { providerList } from "@/auth";
 import { demoLoginEnabled } from "@/lib/config";
 import { SiteFooter } from "@/components/SiteFooter";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Log in · Citad3L" };
+export const metadata = { title: "Log in · Citad3L", robots: { index: false, follow: false } };
 function safeNext(n?: string) { return n && n.startsWith("/") && !n.startsWith("//") ? n : "/chat"; }
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string; mode?: string }> }) {
   const { next, mode } = await searchParams;

@@ -7,7 +7,7 @@ import { currentUser } from "@/lib/session";
 import { providerInfo } from "@/lib/inference";
 import { siteJsonLd } from "@/lib/site-jsonld";
 import { referralProgramVisible } from "@/lib/referrals";
-import { holidayActive } from "@/lib/holiday";
+import { holidayActive, holidayIntroEligible } from "@/lib/holiday";
 import { marketingModels } from "@/lib/models";
 import { getUsage } from "@/lib/usage";
 export const dynamic = "force-dynamic";
@@ -19,11 +19,11 @@ export default async function Page() {
   const guestUsed = Math.min(FREE_MESSAGES, Math.max(gc?.used ?? 0, row?.used ?? 0));
   const usage = u ? await getUsage(u.id) : null;
   const holiday = holidayActive();
-  const paid = usage?.plan === "pro" || usage?.plan === "max";
+  const showHolidayPrices = holiday && holidayIntroEligible(usage);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd("https://citad3l.io")).replace(/</g, "\\u003c") }} />
-      <HomeView signedIn={!!u} provider={providerInfo()} isAdmin={!!u && isAdminEmail(u.email)} guestUsed={guestUsed} freeLimit={FREE_MESSAGES} guestChat={guestChatEnabled()} showReferral={referralProgramVisible()} holiday={holiday} showHolidayPrices={holiday && !paid} models={marketingModels()} />
+      <HomeView signedIn={!!u} provider={providerInfo()} isAdmin={!!u && isAdminEmail(u.email)} guestUsed={guestUsed} freeLimit={FREE_MESSAGES} guestChat={guestChatEnabled()} showReferral={referralProgramVisible()} holiday={holiday} showHolidayPrices={showHolidayPrices} models={marketingModels()} />
     </>
   );
 }

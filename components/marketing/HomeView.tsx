@@ -4,7 +4,8 @@ import Link from "next/link";
 import type { ProviderInfo } from "@/lib/types";
 import { type PublicModel } from "@/lib/models";
 import { Footer } from "@/components/Footer";
-import { checkoutRenewalLine, holidayPriceLine } from "@/lib/holiday";
+import { checkoutRenewalLine } from "@/lib/holiday";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { MockBadge } from "@/components/MockBadge";
 import { LineupCard } from "@/components/model/LineupCard";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
@@ -119,19 +120,18 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
                 <span className="h4">{p.name}</span>
                 <span className="plan-mini-price tnum">{p.price}</span>
                 {showHolidayPrices && (p.id === "pro" || p.id === "max") ? (
-                  <span className="plan-mini-holiday">{holidayPriceLine(p.id)}</span>
+                  <span className="plan-mini-holiday">{checkoutRenewalLine(p.id, true)}</span>
                 ) : null}
                 <span className="tiny text-3">{p.note}</span>
               </Link>
             ))}
           </div>
           <p className="pricing-fine" style={{ marginTop: 16 }}>
-            {checkoutRenewalLine(showHolidayPrices)}{" "}
             <Link href="/terms">Terms</Link>
             {" · "}
             <Link href="/privacy">Privacy</Link>
             {" · "}
-            <a href="mailto:support@citad3l.io">support@citad3l.io</a>
+            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
           </p>
         </section>
 

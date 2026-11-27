@@ -1,3 +1,5 @@
+import { SUPPORT_EMAIL } from "./support";
+
 /**
  * Terms of Service and Privacy Policy copy for /terms and /privacy.
  * DRAFT for the owner (and ideally an attorney) to review before launch. Built from legal/drafts/terms.md and the code's
@@ -9,7 +11,7 @@ export type LegalSection = { h: string; p: readonly string[] };
 export type LegalDoc = { title: string; effective: string; intro: string; sections: readonly LegalSection[] };
 
 export const LEGAL_OPERATOR = "Cruz Garza, doing business as Citad3L";
-export const LEGAL_CONTACT = "support@citad3l.io";
+export const LEGAL_CONTACT = SUPPORT_EMAIL;
 export const LEGAL_EFFECTIVE = "November 27, 2026";
 
 /** Open questions for the owner before these pages go public. Not rendered. */
@@ -98,12 +100,12 @@ export const PRIVACY: LegalDoc = {
       "Guests: guest chats aren't saved to an account. A signed cookie counts your free messages.",
     ] },
     { h: "How your messages are processed", p: [
-      "To answer you, your message is sent to Venice.ai, the company that generates replies for Citad3L V1, Fast, and Private, and to our safety check. We don't use your chats to train models. Venice.ai's terms say it does not use your content to train models, and that it requires its language-model providers not to (https://venice.ai/legal/tos, section 10.2, last updated November 15, 2026). Venice.ai's API documentation says it does not store or log prompt and response content for normal inference (https://docs.venice.ai/overview/privacy). Its privacy policy says it does not store the content of prompts or outputs (https://venice.ai/legal/privacy-policy, effective November 26, 2026). For a model Venice marks as anonymized, the model host may keep prompts under that host's own rules. We don't promise more than Venice.ai publishes.",
-      "Citad3L V1 and Fast are not end-to-end encrypted. Citad3L Private is encrypted from our server to a verified secure enclave at the model provider, so the provider's servers and logs only see encrypted text. Your browser still sends the message to our server over HTTPS, our server runs the safety check, and the chat is saved to your history in readable form like other chats.",
+      "Venice.ai handles every chat mode, including Swarm worker requests: Citad3L V1, Citad3L Fast, Citad3L Private, and the Fast workers Swarm uses. A request can include the message you just sent, earlier messages in the chat, and files or other content you upload. We don't use your chats to train models. Venice.ai's terms say it does not use your content to train models, and that it requires its language-model providers not to (https://venice.ai/legal/tos, section 10.2, last updated November 15, 2026). Venice.ai's API documentation says it does not store or log prompt and response content for normal inference (https://docs.venice.ai/overview/privacy). Its privacy policy says it does not store the content of prompts or outputs (https://venice.ai/legal/privacy-policy, effective November 26, 2026). For a model Venice marks as anonymized, the model host may keep prompts under that host's own rules. We don't promise more than Venice.ai publishes.",
+      "Private-mode text is read by Citad3L on Cloudflare Workers for the safety check before it is encrypted to the provider's enclave. Your browser sends the message to our server over HTTPS. The server reads it, runs the safety check, then encrypts it. The provider's servers and logs only see encrypted text. The chat is saved to your history in readable form like other chats. Citad3L V1, Fast, and Swarm are sent to Venice.ai after that same safety check, without the extra encryption step.",
     ] },
     { h: "Who processes your data", p: [
       "These companies process data to run Citad3L. Each gets only what its job needs.",
-      "Venice.ai generates chat replies for Citad3L V1, Fast, and Private. It receives the message needed to answer. For Private, that is ciphertext after our server encrypts it. It also receives basic request details such as the time and size of the request. Venice.ai says it does not train on that content and does not store prompt or reply text for normal inference.",
+      "Venice.ai generates replies for every chat mode, including Swarm. It receives the message, earlier chat context, and uploaded files or other content. For Private, Citad3L reads the text on Cloudflare Workers for the safety check, then encrypts it; Venice.ai receives that ciphertext. Venice.ai says it does not train on that content. It says it does not store prompt or reply text for normal inference. A model host for a model Venice marks as anonymized may still keep prompts under that host's own rules.",
       "Stripe takes card payments if you buy a plan. Stripe receives your card details and billing email. We receive your plan, subscription status, and a Stripe customer id. We never receive your full card number.",
       "Neon hosts our Postgres database. It stores your account, chats, projects, usage, and billing records.",
       "Cloudflare hosts the app on Workers, stores export files in R2, checks sign-in with Turnstile, and can send login-code email through Cloudflare Email Sending. It also sees connection data such as IP address for hosting and security.",

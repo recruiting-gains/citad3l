@@ -10,7 +10,7 @@ import { LimitReached } from "@/components/LimitReached";
 import { Markdown } from "@/components/chat/Markdown";
 import { ModelPicker } from "@/components/chat/ModelPicker";
 import { ModelSettingsModal } from "@/components/chat/ModelSettingsModal";
-import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
+import { DEFAULT_MODEL_ID, isChatReady, isImageReady, isSwarmAvailable, isVideoReady, modelAllowsImageUpload, modelForFollowUp, parseImageCommand, visibleModels, type PublicModel } from "@/lib/models";
 import { timeOfDayGreeting, formatGreeting, type Greeting } from "@/lib/greeting";
 import { UsageMeters } from "@/components/UsageMeter";
 import { relevantLimitHit, usageLine } from "@/lib/usage-display";
@@ -475,7 +475,8 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedModel = catalog.find((m) => m.id === modelId) ?? catalog[0];
+  const activeModelId = modelForFollowUp(modelId, catalog, defaultModelId);
+  const selectedModel = catalog.find((m) => m.id === activeModelId) ?? catalog[0];
   const chatReady = isChatReady(selectedModel);
   // Image, Video and Swarm need an account; the server enforces the plan (Image = Pro/Max, Video = Max) and shows an
   // upgrade message (402 upgrade_required) whatever this says.
@@ -767,7 +768,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
         fail("bad_request", "Add a prompt after /image, or describe the image you want.");
         return;
       }
-      const body: Record<string, unknown> = { message: parsed.image ? parsed.prompt : text, model: parsed.image ? "citad3l-image" : modelId };
+      const body: Record<string, unknown> = { message: parsed.image ? parsed.prompt : text, model: parsed.image ? "citad3l-image" : (selectedModel?.id ?? defaultModelId) };
       if (convRef.current && !String(convRef.current).startsWith("guest-")) body.conversationId = convRef.current;
       else if (projRef.current && signedIn) body.projectId = projRef.current;
       if (retryId && signedIn) body.retryAssistantMessageId = retryId;

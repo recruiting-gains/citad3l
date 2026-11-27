@@ -1,6 +1,19 @@
 // Edge guards applied in custom-worker.js (Cloudflare Worker entry), before/after the OpenNext handler.
 // Plain ESM so the Worker bundle and the vitest suite both import it.
 
+/** Auth-only and non-page paths. Public marketing pages stay indexable. Bare /chat is included. */
+export function shouldNoIndex(pathname) {
+  const path = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  if (path === "/chat" || path.startsWith("/chat/")) return true;
+  if (path === "/account" || path.startsWith("/account/")) return true;
+  if (path === "/projects" || path.startsWith("/projects/")) return true;
+  if (path === "/login" || path.startsWith("/login/")) return true;
+  if (path === "/admin" || path.startsWith("/admin/")) return true;
+  if (path === "/api" || path.startsWith("/api/")) return true;
+  if (path.startsWith("/media/")) return true;
+  return false;
+}
+
 const UNSAFE = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 // Exact paths that must accept cross-site POSTs (server-to-server, signed).
 const CSRF_EXEMPT = new Set(["/api/stripe/webhook", "/api/csp-report"]);

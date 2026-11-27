@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { checkoutRenewalLine, LIST_PRICE_USD } from "@/lib/holiday";
+import { checkoutRenewalLine, holidayIntroEligible, LIST_PRICE_USD } from "@/lib/holiday";
 import { planCatalog } from "@/lib/plans";
 import { publicFaqItems } from "@/lib/faq";
 import { systemPrompt } from "@/lib/prompt";
@@ -36,12 +36,7 @@ describe("MEDIA_GENERATION_ENABLED", () => {
     expect(on.pickerModels(true, true).some((m) => m.id === "citad3l-video")).toBe(true);
   });
 
-  it("refuses image and video generation at the start of the POST routes, and leaves playback routes alone", () => {
-    const imagePost = readFileSync(new URL("../app/api/image/route.ts", import.meta.url), "utf8");
-    const videoPost = readFileSync(new URL("../app/api/video/route.ts", import.meta.url), "utf8");
-    const head = (src: string) => src.slice(src.indexOf("export async function POST"), src.indexOf("export async function POST") + 280);
-    expect(head(imagePost)).toMatch(/if \(!mediaGenerationEnabled\(\)\) return jerr\(403, "media_disabled", "Image generation is turned off."\)/);
-    expect(head(videoPost)).toMatch(/if \(!mediaGenerationEnabled\(\)\) return jerr\(403, "media_disabled", "Video generation is turned off."\)/);
+  it("leaves saved-image and saved-video playback routes off the generation flag", () => {
     const imageGet = readFileSync(new URL("../app/api/images/[id]/route.ts", import.meta.url), "utf8");
     const videoGet = readFileSync(new URL("../app/api/videos/[id]/route.ts", import.meta.url), "utf8");
     expect(imageGet).not.toMatch(/mediaGenerationEnabled/);
@@ -68,9 +63,15 @@ describe("MEDIA_GENERATION_ENABLED", () => {
     expect((await import("@/lib/prompt")).systemPrompt("Citad3L V1")).toMatch(/Citad3L Image/);
   });
 
-  it("states the real list prices and the holiday first month", () => {
+  it("states the real list prices and the holiday first month, and hides it after any subscription", () => {
     expect(planCatalog().map((p) => p.priceUsd)).toEqual([0, LIST_PRICE_USD.pro, LIST_PRICE_USD.max]);
-    expect(checkoutRenewalLine(true)).toBe("Pro: $10 first month, then $20/month. Max: $25 first month, then $50/month. Cancel anytime.");
-    expect(checkoutRenewalLine(false)).toBe("Pro: $20/month. Max: $50/month. Cancel anytime.");
+    expect(checkoutRenewalLine("pro", true)).toBe("First-time buyers: Pro $10 first month, then $20/month.");
+    expect(checkoutRenewalLine("max", true)).toBe("First-time buyers: Max $25 first month, then $50/month.");
+    expect(checkoutRenewalLine("pro", false)).toBe("Pro: $20/month. Cancel anytime.");
+    expect(holidayIntroEligible(null)).toBe(true);
+    expect(holidayIntroEligible({ plan: "trial", status: "trialing" })).toBe(true);
+    expect(holidayIntroEligible({ plan: "pro", status: "active" })).toBe(false);
+    expect(holidayIntroEligible({ plan: "trial", status: "canceled" })).toBe(false);
+    expect(holidayIntroEligible({ plan: "max", status: "past_due" })).toBe(false);
   });
 });

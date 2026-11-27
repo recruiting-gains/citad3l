@@ -1,6 +1,7 @@
 /** Public FAQ copy. Keep this as the single source for the /faq page, JSON-LD, and tests. */
 
 import { mediaGenerationEnabled } from "./media";
+import { SUPPORT_EMAIL } from "./support";
 
 export type FaqItem = { q: string; a: string };
 
@@ -67,7 +68,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     q: "How do refunds and contact work?",
-    a: "Cancel any time from your account; you keep your plan until the end of the period you paid for. If you ask within 7 days of your first charge, we refund it in full. For refunds, questions or safety reports, email support@citad3l.io. The full rules are in the Terms of Service.",
+    a: `Cancel any time from your account; you keep your plan until the end of the period you paid for. If you ask within 7 days of your first charge, we refund it in full. For refunds, questions or safety reports, email ${SUPPORT_EMAIL}. The full rules are in the Terms of Service.`,
   },
 ];
 

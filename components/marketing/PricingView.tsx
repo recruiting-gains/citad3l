@@ -8,7 +8,8 @@ import { Footer } from "@/components/Footer";
 import { HeroChips } from "@/components/Art";
 import { WaitlistForm } from "@/components/marketing/WaitlistForm";
 import { HolidayBanner } from "@/components/marketing/HolidayBanner";
-import { checkoutRenewalLine, holidayPriceLine } from "@/lib/holiday";
+import { checkoutRenewalLine } from "@/lib/holiday";
+import { SUPPORT_EMAIL } from "@/lib/support";
 
 export interface PricingViewProps {
   plans: PlanCard[];
@@ -78,7 +79,6 @@ function pricingFaqs(media: boolean) {
 export function PricingView({ plans, signedIn, currentPlan, billingConfigured, billingOpen = false, isAdmin = false, showReferral = false, holiday = false, showHolidayPrices = false, models }: PricingViewProps) {
   const media = models.some((m) => m.modality === "image" || m.modality === "video");
   const faqs = pricingFaqs(media);
-  const renewal = checkoutRenewalLine(showHolidayPrices);
   const [busy, setBusy] = useState<PlanId | null>(null);
   const [notes, setNotes] = useState<Partial<Record<PlanId, string>>>({});
   const [canceled, setCanceled] = useState(false);
@@ -183,9 +183,6 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                     <span className="plan-amount tnum">${p.priceUsd}</span>
                     <span className="plan-period">{p.id === "trial" ? "free" : "/ month"}</span>
                   </div>
-                  {showHolidayPrices && (p.id === "pro" || p.id === "max") ? (
-                    <p className="plan-holiday">{holidayPriceLine(p.id)}</p>
-                  ) : null}
                   <div className="plan-cta">
                     <button
                       type="button"
@@ -198,15 +195,15 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                       {isCurrent ? "Current plan" : p.id !== "trial" && !billingOpen ? "Coming soon" : p.cta}
                     </button>
                     {notes[p.id] && <p className="plan-note" role="status">{notes[p.id]}</p>}
-                    {p.id === "pro" || p.id === "max" ? (
+                    {billingOpen && (p.id === "pro" || p.id === "max") ? (
                       <div className="plan-fine">
-                        <p>{renewal}</p>
+                        <p>{checkoutRenewalLine(p.id, showHolidayPrices)}</p>
                         <p>
                           <Link href="/terms">Terms</Link>
                           {" · "}
                           <Link href="/privacy">Privacy</Link>
                           {" · "}
-                          <a href="mailto:support@citad3l.io">support@citad3l.io</a>
+                          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
                         </p>
                       </div>
                     ) : null}
@@ -266,7 +263,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <div className="pricing-legend">
             <span className="pricing-legend-line"><Dots n={2} /> Dots show relative allowance. Max is 2.5× Pro.</span>
             <p className="pricing-fine">
-              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 3 messages every day, reset at midnight Central. {media ? "Citad3L Video and per-model settings are included with Max only." : "Per-model settings are included with Max only."} {renewal}
+              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 3 messages every day, reset at midnight Central. {media ? "Citad3L Video and per-model settings are included with Max only." : "Per-model settings are included with Max only."}
             </p>
           </div>
         </section>
