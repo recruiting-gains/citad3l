@@ -25,7 +25,9 @@ import { checkAccess } from "@/lib/access";
 import { spendGuard } from "@/lib/spend-guard";
 import { FilterRefusal, runSwarm } from "@/lib/inference/swarm";
 import { streamWithAutoContinue } from "@/lib/inference/continue";
-import { buildTurns, titleFrom } from "@/lib/prompt";
+import { buildTurns, designFormatFor, titleFrom, wantsGraphicsGuide } from "@/lib/prompt";
+import { critiqueAndFix } from "@/lib/design-check";
+import { shouldCritique } from "@/lib/design-lint";
 import { imagePromptPlanFor } from "@/lib/image-prompt";
 import { noteImagePromptReply } from "@/lib/image-prompt-count";
 import { checkText, checkTexts } from "@/lib/filter";
@@ -284,6 +286,7 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
       customSystem: settings?.systemPrompt,
       customInstructions,
     });
+    const graphicsTurn = !resolved.requiresClientE2EE && wantsGraphicsGuide(history);
     const lastTurn = turns[turns.length - 1];
     if (attImages.length && lastTurn?.role === "user") lastTurn.images = attImages;
 
@@ -352,6 +355,16 @@ async function signedInChat(req: Request, userId: string, body: z.infer<typeof B
             outcome = "error";
             errMsg = "The engine returned an empty reply.";
           } else {
+            // Design self-check: grade the finished graphic and, if it breaks the layout rules, fix it once.
+            if (graphicsTurn && !ac.signal.aborted && shouldCritique(text)) {
+              send(c, "status", { phase: "design-check", detail: "Checking the design…" });
+              const fixer = getProvider({ modelId: resolved.publicId, maxTokens: settings?.maxTokens });
+              const checked = await critiqueAndFix({ text, format: designFormatFor(history), complete: (m) => fixer.complete(m, ac.signal) });
+              if (checked.changed && checkText(checked.text).allowed) {
+                text = checked.text;
+                send(c, "replace", { text });
+              }
+            }
             const exported = await maybeCreateAutoExports({
               userId,
               swarm,
