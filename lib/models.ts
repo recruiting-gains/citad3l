@@ -41,6 +41,8 @@ export interface PublicModel {
   cover?: string;
   /** Alt text for `cover`. */
   coverAlt?: string;
+  /** Optional looping card video: base path without extension; `<base>.mp4` and `<base>.webm` must exist. `cover` stays the poster and the fallback. */
+  coverVideo?: string;
   /** Keep in the catalog for routing, but hide from marketing and the picker (merged Fast). */
   hidden?: boolean;
   /** Approximate context window shown in the picker. */
@@ -134,8 +136,9 @@ export const MODELS: readonly PublicModel[] = [
     summary: "Uncensored chat for everyday questions, drafts and ideas. It can read images you upload.",
     specs: ["Chat", "Image input", "Uncensored"],
     art: "everyday",
-    cover: "/models/covers/gemma4-uncensored.webp",
-    coverAlt: "A lived-in industrial loft at first light, a blank notebook and a coffee mug on a worn wood table by factory windows",
+    cover: "/models/covers/loops/gemma4-uncensored-poster.webp",
+    coverVideo: "/models/covers/loops/gemma4-uncensored",
+    coverAlt: "A dark hypersonic aircraft seen from behind at dusk, twin blue-white engine flames glowing against a navy horizon",
     context: "128K",
     speed: "Fast",
     usageDots: 1,
@@ -236,8 +239,9 @@ export const MODELS: readonly PublicModel[] = [
     summary: "A flagship-class model for hard reasoning, code and image questions.",
     specs: ["Chat", "Image input", "Reasoning"],
     art: "rookHero",
-    cover: "/models/covers/qwen4-max.webp",
-    coverAlt: "A luxury hillside terrace at golden hour, infinity pool and empty balcony overlooking a coastal town and the sun on the ocean",
+    cover: "/models/covers/loops/qwen4-max-poster.webp",
+    coverVideo: "/models/covers/loops/qwen4-max",
+    coverAlt: "A silhouetted figure in a long coat on a balcony above a vast night city, blue streaks of light falling down the towers",
     context: "128K",
     speed: "Standard",
     usageDots: 4,

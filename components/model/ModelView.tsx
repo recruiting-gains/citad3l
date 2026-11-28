@@ -8,6 +8,7 @@ import { Rook } from "@/components/Rook";
 import { Footer } from "@/components/Footer";
 import { MockBadge } from "@/components/MockBadge";
 import { SlotVideo } from "@/components/Art";
+import { CoverVideo } from "@/components/CoverVideo";
 import { ModelFlags } from "@/components/model/LineupCard";
 
 export interface ModelViewProps {
@@ -78,7 +79,7 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
       <main className="model-layout" data-collapsed={collapsed}>
         <aside className="model-side" aria-label="Model information" aria-hidden={collapsed} inert={collapsed}>
           <div className="model-side-inner">
-            <div className="model-art">{model.cover ? <img className="art-cover" src={model.cover} alt={model.coverAlt || model.name} width={1280} height={800} decoding="sync" /> : <SlotVideo slot={model.art ?? "rook"} eager />}</div>
+            <div className="model-art">{model.cover && model.coverVideo ? <CoverVideo poster={model.cover} video={model.coverVideo} alt={model.coverAlt || model.name} eager /> : model.cover ? <img className="art-cover" src={model.cover} alt={model.coverAlt || model.name} width={1280} height={800} decoding="sync" /> : <SlotVideo slot={model.art ?? "rook"} eager />}</div>
 
             <div>
               <div className="model-head">

@@ -4165,3 +4165,9 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   .hb-surface { border: 1px solid CanvasText; }
   .hb-seal { border-color: CanvasText; }
 }
+
+/* ---- card videos (CoverVideo): poster always under, video fades in once playing ---- */
+.cover-video { position: absolute; inset: 0; }
+.cover-video .cover-video-el { opacity: 0; transition: opacity 0.45s ease; }
+.cover-video .cover-video-el.is-playing { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .cover-video .cover-video-el { display: none !important; } }
