@@ -12,7 +12,7 @@ import RefCapture from "@/components/RefCapture";
 
 export const metadata: Metadata = {
   title: "Citad3L — Private AI. Fast answers.",
-  description: "Private AI with fast answers. No ads, no training on your chats. Try Citad3L Fast free with no signup, or sign in for Private mode.",
+  description: "Private AI with fast answers. No ads, no training on your chats. Try Citad3L V1 Fast free with no signup, or sign in for Private mode.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

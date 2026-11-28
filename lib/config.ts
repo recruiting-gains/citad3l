@@ -118,7 +118,7 @@ export const GUEST_HISTORY_CHAR_BUDGET = 6000;
 /** Guests get short replies on Fast only (no web search, thinking, Image, Video, Private or Swarm). */
 export const GUEST_MAX_TOKENS = 512;
 /** The only model guests can use (home page try box and signed-out /chat). */
-export const GUEST_MODEL_ID = "citad3l-fast";
+export const GUEST_MODEL_ID = "citad3l-v1";
 /**
  * Global guest budget: successful-or-attempted guest replies across ALL visitors per UTC day. Stops bots from
  * burning inference credit. At ~512 output tokens on Fast this is well under $1/day. Override with GUEST_GLOBAL_DAILY_CAP.

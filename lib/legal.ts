@@ -99,7 +99,7 @@ export const PRIVACY: LegalDoc = {
     ] },
     { h: "How your messages are processed", p: [
       "To answer you, your message is sent to the third-party AI provider that runs the model you picked, and to our safety check. Providers process prompts to return a reply; their own retention and training rules apply and can change. We don't promise more privacy than a provider itself states.",
-      "Citad3L V1, Fast, Image and Video are not end-to-end encrypted. Citad3L Private is encrypted from our server to a verified secure enclave at the model provider, so the provider's servers and logs only see encrypted text. Your browser still sends the message to our server over HTTPS, our server runs the safety check, and the chat is saved to your history in readable form like other chats.",
+      "Citad3L V1 Fast, Image and Video are not end-to-end encrypted. Citad3L Private is encrypted from our server to a verified secure enclave at the model provider, so the provider's servers and logs only see encrypted text. Your browser still sends the message to our server over HTTPS, our server runs the safety check, and the chat is saved to your history in readable form like other chats.",
       "We don't use your chats to train models.",
     ] },
     { h: "Cookies", p: [

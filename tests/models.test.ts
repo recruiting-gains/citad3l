@@ -26,11 +26,11 @@ const MODEL_IDS = [
 ];
 
 describe("public model catalog", () => {
-  it("public launch: shows V1, Fast and Private; Image and Video stay hidden until media generation is on", () => {
+  it("public launch: shows V1 Fast and Private; Image and Video stay hidden until media generation is on", () => {
     delete process.env.MEDIA_GENERATION_ENABLED;
     expect(VIDEO_MODEL_ENABLED).toBe(true);
     expect(isVideoModelEnabled()).toBe(true);
-    expect(visibleModels().map((m) => m.id)).toEqual(["citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"]);
+    expect(visibleModels().map((m) => m.id)).toEqual(["citad3l-v1", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"]);
     expect(DEFAULT_MODEL_ID).toBe("citad3l-v1");
     expect(visibleModels()[0]?.default).toBe(true);
     expect(isSelectableModelId("citad3l-video")).toBe(false);
@@ -66,7 +66,7 @@ describe("public model catalog", () => {
   it("hides Image and Video on marketing pages until media generation is on, and Private is available (not coming soon)", () => {
     delete process.env.MEDIA_GENERATION_ENABLED;
     expect(marketingModels().map((m) => m.id)).toEqual([
-      "citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code",
+      "citad3l-v1", "qwen4-max", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code",
     ]);
     const video = getPublicModel(VIDEO_MODEL_ID);
     expect(video?.exclusivePlan).toBe("max");
@@ -90,7 +90,7 @@ describe("server-only provider mapping", () => {
     vi.stubEnv("MEDIA_GENERATION_ENABLED", "true");
     vi.resetModules();
     const { resolveModel } = await import("@/lib/inference/provider-models");
-    expect(resolveModel("citad3l-v1")).toMatchObject({ publicId: "citad3l-v1", name: "Citad3L V1", modality: "chat", providerModelId: "test-v1-model" });
+    expect(resolveModel("citad3l-v1")).toMatchObject({ publicId: "citad3l-v1", name: "Citad3L V1 Fast", modality: "chat", providerModelId: "test-v1-model" });
     expect(resolveModel("citad3l-fast")).toMatchObject({ publicId: "citad3l-fast", name: "Citad3L Fast", providerModelId: "test-fast-model" });
     expect(resolveModel("citad3l-private", { admin: true })).toMatchObject({
       publicId: "citad3l-private",
@@ -167,8 +167,8 @@ describe("provider selection", () => {
       const { getProvider } = await import("@/lib/inference");
       const prov = getProvider({ modelId: "citad3l-v1" });
       expect(prov.info.mock).toBe(false);
-      expect(prov.info.model).toBe("Citad3L V1");
-      expect(prov.info.label).toBe("Citad3L V1");
+      expect(prov.info.model).toBe("Citad3L V1 Fast");
+      expect(prov.info.label).toBe("Citad3L V1 Fast");
       expect(JSON.stringify(prov.info)).not.toContain("test-v1-model");
       let out = "";
       for await (const t of prov.stream([{ role: "system", content: "s" }, { role: "user", content: "hi" }], new AbortController().signal)) out += t;

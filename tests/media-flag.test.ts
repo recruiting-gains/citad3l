@@ -17,9 +17,11 @@ describe("MEDIA_GENERATION_ENABLED", () => {
     const off = await import("@/lib/media");
     const models = await import("@/lib/models");
     expect(off.mediaGenerationEnabled()).toBe(false);
-    for (const list of [models.visibleModels(), models.marketingModels(), models.pickerModels(true, true)]) {
-      expect(list.map((m) => m.id)).toEqual(["citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"]);
-    }
+    const catalog = ["citad3l-v1", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"];
+    const marketing = ["citad3l-v1", "qwen4-max", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"];
+    expect(models.visibleModels().map((m) => m.id)).toEqual(catalog);
+    expect(models.pickerModels(true, true).map((m) => m.id)).toEqual(catalog);
+    expect(models.marketingModels().map((m) => m.id)).toEqual(marketing);
     expect(models.isSelectableModelId("citad3l-image", true, true)).toBe(false);
     expect(models.isSelectableModelId("citad3l-video", true, true)).toBe(false);
 
@@ -31,7 +33,7 @@ describe("MEDIA_GENERATION_ENABLED", () => {
     const on = await import("@/lib/models");
     expect((await import("@/lib/media")).mediaGenerationEnabled()).toBe(true);
     expect(on.marketingModels().map((m) => m.id)).toEqual([
-      "citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code", "citad3l-image", "citad3l-video",
+      "citad3l-v1", "qwen4-max", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code", "citad3l-image", "citad3l-video",
     ]);
     expect(on.pickerModels(true, true).some((m) => m.id === "citad3l-video")).toBe(true);
   });

@@ -15,6 +15,7 @@ const testEnv = {
     computer: "test-vision-model",
     "gemma4-uncensored": "test-free-extra-a",
     "uncensored-1.2": "test-free-extra-b",
+    "glm5.3-flash-uncensored": "test-glm5.3-flash-uncensored",
     "roleplay-uncensored": "test-pro-extra-a",
     "inkling2-mini": "test-pro-extra-b",
     "qwen3.8-27b": "test-pro-extra-c",

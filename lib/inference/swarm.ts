@@ -101,7 +101,7 @@ export async function runSwarm(opts: {
   const subtasks = parseSubtasks(planRaw);
   if (!subtasks.length) return fallbackV1(v1, opts);
 
-  opts.onStatus?.({ phase: "workers", detail: `Citad3L Fast is running ${subtasks.length} tasks.` });
+  opts.onStatus?.({ phase: "workers", detail: `Workers are running ${subtasks.length} tasks.` });
   const ctx = contextBlock(opts.history);
   const workerResults = await Promise.all(
     subtasks.map(async (task, i) => {

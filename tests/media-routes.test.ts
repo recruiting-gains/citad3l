@@ -114,7 +114,7 @@ describe("old image and video chats", () => {
     expect(catalog.map((m) => m.id)).not.toContain("citad3l-image");
     expect(modelForFollowUp("citad3l-image", catalog)).toBe("citad3l-v1");
     expect(modelForFollowUp("citad3l-video", catalog)).toBe("citad3l-v1");
-    expect(modelForFollowUp("citad3l-fast", catalog)).toBe("citad3l-fast");
+    expect(modelForFollowUp("citad3l-fast", catalog)).toBe("citad3l-v1"); // Fast merged; old chats fall back to V1 Fast
     const image = "See ![Generated image](/api/images/oldimg)";
     const video = 'Clip ![Generated video](/api/videos/oldvid "c3l-video:r2")';
     expect(safeImageSrc("/api/images/oldimg")).toBe("/api/images/oldimg");

@@ -5,10 +5,10 @@ import type { PlanCard } from "./types";
 
 export function planCatalog(): PlanCard[] {
   const media = mediaGenerationEnabled();
-  const lineup = media ? "Citad3L V1, Fast and Image" : "Citad3L V1, Fast and Private";
+  const lineup = media ? "Citad3L V1 Fast and Image" : "Citad3L V1 Fast and Private";
   const privateChat = "Citad3L Private (encrypted, secure enclave)";
-  const swarm = "Swarm mode (V1 leads, Fast workers)";
-  const freeModels = "Free lineup: Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2";
+  const swarm = "Swarm mode (V1 Fast leads, workers in parallel)";
+  const freeModels = "Free lineup: Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored";
   const proModels = "Pro models: Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B (8 chat models in all)";
   const maxModels = "Max models: Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code on top of Pro";
   const shared = ["Streaming chat with saved history", "Projects with custom instructions", "Export or delete your data any time"];
@@ -26,7 +26,7 @@ export function planCatalog(): PlanCard[] {
       blurb: "5 messages to try, then 3 every day with a free account.",
       allowance: `Guests: ${TRIAL_REPLIES} messages, one time. Free account: ${FREE_DAILY_REPLIES} messages every day, reset at midnight Central.`,
       features: [
-        `${TRIAL_REPLIES} guest messages on Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2, no sign-in needed`,
+        `${TRIAL_REPLIES} guest messages on Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored, no sign-in needed`,
         `A free account gives you ${FREE_DAILY_REPLIES} messages every day across the Free lineup`,
         freeModels,
         "Resets at midnight Central. Failed replies never count",

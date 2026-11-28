@@ -494,19 +494,19 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
   ]);
   if (!glim.ok) return tooMany("Slow down — too many messages right now.", glim.retryAfterSec);
 
-  // Guests always run on Fast. A missing model or V1 (the signed-in default) is quietly mapped to Fast; anything
-  // else (Private, Image, Video, Hermes) needs an account.
-  const wanted = !body.model || body.model === "citad3l-v1" ? GUEST_MODEL_ID : body.model;
+  // Guests run on V1 Fast (or another Free guest model they picked). A missing model, or the old Fast slug after
+  // the merge, maps to GUEST_MODEL_ID. Private, Image, Video and paid models still need an account.
+  const wanted = !body.model || body.model === "citad3l-fast" ? GUEST_MODEL_ID : body.model;
   let resolved;
   try {
     resolved = resolveModel(wanted);
   } catch (e) {
-    if (e instanceof SignInRequired) return jerr(401, "signup_required", "Free messages use Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2. Create an account to use the rest of the lineup.");
+    if (e instanceof SignInRequired) return jerr(401, "signup_required", "Free messages use Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored. Create an account to use the rest of the lineup.");
     if (e instanceof UnknownModel) return jerr(400, "bad_request", e.message);
     throw e;
   }
   if (!isGuestModelId(resolved.publicId) || resolved.modality !== "chat" || resolved.requiresClientE2EE) {
-    return jerr(401, "signup_required", "Free messages use Citad3L Fast, Gemma 4 Uncensored or Uncensored 1.2. Create an account to use the rest of the lineup.");
+    return jerr(401, "signup_required", "Free messages use Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored. Create an account to use the rest of the lineup.");
   }
 
   const pub = getPublicModel(resolved.publicId);

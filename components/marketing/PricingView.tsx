@@ -57,19 +57,19 @@ function LineupCell({ model, plan }: { model: PublicModel; plan: PlanId }) {
 
 function pricingFaqs(media: boolean) {
   const shared = [
-    { q: "What is Swarm mode?", a: "A chat setting. Citad3L V1 splits a large request into parts, Fast workers handle the parts in parallel, and V1 assembles the answer. It uses 4 replies of allowance." },
+    { q: "What is Swarm mode?", a: "A chat setting. Citad3L V1 Fast splits a large request into parts, workers handle the parts in parallel, and V1 Fast assembles the answer. It uses 4 replies of allowance." },
     { q: "Do failed or stopped replies count?", a: "Never. Only successful replies use your allowance. If a reply errors out or you stop it, nothing is charged." },
     { q: "How do limits reset?", a: "Guests get 5 messages, one time, with no account. A free account gets 3 messages every day, reset at midnight Central. Paid plans have a rolling 5-hour window and a weekly cap." },
     { q: "Can I change or cancel?", a: "Yes, any time from your account. Cancelling keeps your plan active until the end of the current period." },
   ];
   if (!media) {
     return [
-      { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
+      { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
       ...shared,
     ];
   }
   return [
-    { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1, Fast, Private, Gemma 4 Uncensored and Uncensored 1.2. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Citad3L Image. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus Citad3L Video and per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
+    { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Citad3L Image. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus Citad3L Video and per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
     { q: "What is Citad3L Video?", a: "Video generation for Max subscribers. Clips run 5 seconds at 720p, with sound. There is a daily clip limit to keep the service fast for everyone." },
     { q: "Are there daily limits on images and video?", a: "Yes. On top of your plan's allowance, images and video clips have a daily limit per account so one heavy user can't slow things down for everyone. Limits reset every day at 6 PM Central." },
     ...shared,

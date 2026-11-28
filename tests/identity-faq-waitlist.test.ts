@@ -30,16 +30,13 @@ function memStore(rows: { email: string; source: string; ipHash: string }[] = []
 
 describe("system prompt identity", () => {
   it("describes Citad3L accurately and uses the picked model name", () => {
-    const v1 = systemPrompt("Citad3L V1");
-    const fast = systemPrompt("Citad3L Fast");
-    expect(v1).toContain("You are Citad3L (this chat: Citad3L V1)");
-    expect(fast).toContain("You are Citad3L (this chat: Citad3L Fast)");
-    for (const text of [v1, fast]) {
+    const v1 = systemPrompt("Citad3L V1 Fast");
+    expect(v1).toContain("You are Citad3L (this chat: Citad3L V1 Fast)");
+    for (const text of [v1]) {
       expect(text).toMatch(/private, less-filtered/i);
       expect(text).toContain("citad3l.io");
       expect(text).toContain("Cruz Garza");
-      expect(text).toMatch(/Citad3L V1/);
-      expect(text).toMatch(/Citad3L Fast/);
+      expect(text).toMatch(/Citad3L V1 Fast/);
       expect(text).not.toMatch(/Citad3L Image/);
       expect(text).toMatch(/Citad3L Private/);
       expect(text).toMatch(/Swarm/);

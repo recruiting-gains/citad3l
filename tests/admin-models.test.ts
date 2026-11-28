@@ -107,14 +107,18 @@ describe("who is an admin", () => {
 });
 
 describe("model lineup and resolution", () => {
-  it("admins and signed-in accounts can pick every model; guests get V1, Fast and the two Free uncensored models", async () => {
+  it("admins and signed-in accounts can pick every model; guests get V1 Fast and the three Free uncensored models", async () => {
     const { MODELS, pickerModels, isSelectableModelId } = await import("@/lib/models");
     const { resolveModel, SignInRequired } = await import("@/lib/inference/provider-models");
-    const all = MODELS.map((m) => m.id);
-    expect(all).toEqual(expect.arrayContaining(["citad3l-v1", "citad3l-fast", "citad3l-private", "citad3l-image", "citad3l-video"]));
+    const catalog = MODELS.map((m) => m.id);
+    const all = MODELS.filter((m) => !m.hidden).map((m) => m.id);
+    expect(catalog).toEqual(expect.arrayContaining(["citad3l-v1", "citad3l-private", "citad3l-image", "citad3l-video"]));
+    // Fast stays in the catalog for Swarm workers, but not in the public picker.
+    expect(all).not.toContain("citad3l-fast");
+    expect(MODELS.find((m) => m.id === "citad3l-fast")?.hidden).toBe(true);
     expect(pickerModels(true, true).map((m) => m.id).sort()).toEqual([...all].sort());
     expect(pickerModels(true).map((m) => m.id).sort()).toEqual([...all].sort());
-    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(["citad3l-fast", "citad3l-v1", "gemma4-uncensored", "uncensored-1.2"]);
+    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(["citad3l-v1", "gemma4-uncensored", "glm5.3-flash-uncensored", "uncensored-1.2"]);
     for (const id of all) {
       expect(isSelectableModelId(id, true), id).toBe(true);
       expect(resolveModel(id, { admin: true }).providerModelId, id).toBeTruthy();

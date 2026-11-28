@@ -46,7 +46,11 @@ export function LineupCard({ model, lead, eager, isAdmin = false }: LineupCardPr
   return (
     <Link href={`/models/${model.id}`} className={cls}>
       <div className="media">
-        <SlotVideo slot={slot} eager={eager} />
+        {model.cover ? (
+          <img className="art-cover" src={model.cover} alt={model.coverAlt || model.name} width={1280} height={800} decoding={eager ? "sync" : "async"} />
+        ) : (
+          <SlotVideo slot={slot} eager={eager} />
+        )}
         <span className="media-tag">{modalityLabel(model)}</span>
         <ModelFlags model={model} onArt isAdmin={isAdmin} />
       </div>

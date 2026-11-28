@@ -33,8 +33,8 @@ export const IMAGE_PROMPT_GUIDE = `Image or video request: do not claim you can 
 export function systemPrompt(engineName = defaultModel().name): string {
   const media = mediaGenerationEnabled();
   const lineup = media
-    ? "Available now: Citad3L V1 (default, best all-round chat), Citad3L Fast (cheaper/faster chat), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 plans, up to 3 Fast workers, V1 answers; Pro and Max; signed-in users can turn on web search, off by default), Citad3L Image (image generation; Pro and Max) and Citad3L Video (5-second 720p clips with sound; Max only)."
-    : "Available now: Citad3L V1 (default, best all-round chat), Citad3L Fast (cheaper/faster chat), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 plans, up to 3 Fast workers, V1 answers; Pro and Max; signed-in users can turn on web search, off by default). Image and video generation are turned off.";
+    ? "Available now: Citad3L V1 Fast (uncensored chat, swarm lead), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 Fast plans, up to 3 workers, V1 Fast answers; Pro and Max; signed-in users can turn on web search, off by default), Citad3L Image (image generation; Pro and Max) and Citad3L Video (5-second 720p clips with sound; Max only)."
+    : "Available now: Citad3L V1 Fast (uncensored chat, swarm lead), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 Fast plans, up to 3 workers, V1 Fast answers; Pro and Max; signed-in users can turn on web search, off by default). Image and video generation are turned off.";
   const plans = media
     ? "Plans: Free; Pro $20/mo (25 replies / 5 hours, 150 / week, adds Image); Max $50/mo (2.5× those windows, adds Video)."
     : "Plans: Free; Pro $20/mo (25 replies / 5 hours, 150 / week); Max $50/mo (2.5× those windows, plus per-model settings).";

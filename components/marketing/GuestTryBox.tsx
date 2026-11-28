@@ -9,7 +9,7 @@ import { isSlashImageCommand, looksLikeImageRequest } from "@/lib/image-intent";
 import { trackFunnelEvent } from "@/lib/events-client";
 
 /**
- * Home page "try it free" chat. Signed-out visitors get a few free messages on Citad3L Fast (the server enforces the
+ * Home page "try it free" chat. Signed-out visitors get a few free messages on Citad3L V1 Fast (the server enforces the
  * cap with a signed cookie + per-IP and site-wide daily limits). After message 2 a non-blocking "save your chat" bar
  * lets them keep the transcript with a 6-digit email code; when they run out, the box prompts them to continue.
  */
@@ -93,7 +93,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message, model: "citad3l-fast", history }),
+        body: JSON.stringify({ message, model: "citad3l-v1", history }),
         signal: ac.signal,
       });
       if (!res.ok || !res.body) {
@@ -152,7 +152,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
   return (
     <section id="try" className="try-box" aria-label="Try Citad3L free">
       <div className="try-head">
-        <span className="try-title"><span className="try-dot" aria-hidden="true" /> Citad3L Fast · free, no signup</span>
+        <span className="try-title"><span className="try-dot" aria-hidden="true" /> Citad3L V1 Fast · free, no signup</span>
         <span className="try-count tnum" aria-live="polite">{capped ? "Free messages used" : `${remaining} of ${freeLimit} free messages left`}</span>
       </div>
 
@@ -184,7 +184,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
           <div className="upgrade-card-top">
             <div>
               <p className="upgrade-card-title">Image generation comes with Pro</p>
-              <p className="upgrade-card-sub">Citad3L Fast here is text-only. Upgrade to Pro ($20/month) for Citad3L Image with crisp text, plus Private mode and Swarm.</p>
+              <p className="upgrade-card-sub">Citad3L V1 Fast here is text-only. Upgrade to Pro ($20/month) for Citad3L Image with crisp text, plus Private mode and Swarm.</p>
             </div>
             <button type="button" className="upgrade-card-close" aria-label="Dismiss image upgrade card" onClick={() => setImageUpgradeOpen(false)}>×</button>
           </div>

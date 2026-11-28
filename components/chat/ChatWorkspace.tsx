@@ -1331,7 +1331,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               aria-pressed={swarm}
               data-testid="swarm-toggle"
               disabled={streaming}
-              title="V1 plans, Fast workers run up to 3 tasks, V1 writes the answer. Uses 4 replies of allowance."
+              title="V1 Fast plans, workers run up to 3 tasks, V1 Fast writes the answer. Uses 4 replies of allowance."
               onClick={() => setSwarm((s) => !s)}
             >
               Swarm
@@ -1423,7 +1423,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       ) : imageReady ? (
         <p className="composer-hint">Citad3L Image turns your prompt into a picture. You can also type /image from a chat model.</p>
       ) : swarm && swarmAvailable ? (
-        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
+        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 Fast plans, workers run in parallel, V1 Fast writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
       ) : null}
     </div>
   );

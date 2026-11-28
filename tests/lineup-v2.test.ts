@@ -6,12 +6,12 @@ import { accessFor } from "@/lib/access";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
-const FREE = ["citad3l-v1", "citad3l-fast", "citad3l-private", "gemma4-uncensored", "uncensored-1.2"];
+const FREE = ["citad3l-v1", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"];
 const PRO_ADDS = ["roleplay-uncensored", "inkling2-mini", "qwen3.8-27b"];
 const MAX_ADDS = ["qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"];
 
 describe("lineup v2 (2026-11-27)", () => {
-  it("Free has 5 chat models, Pro 8, Max 12", () => {
+  it("Free has 5 named chat models, Pro 8, Max 12 (Fast merged into V1 Fast)", () => {
     expect(chatModelsForPlan("trial").map((m) => m.id)).toEqual(FREE);
     expect(chatModelsForPlan("pro").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS]);
     expect(chatModelsForPlan("max").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS, ...MAX_ADDS]);
@@ -19,11 +19,14 @@ describe("lineup v2 (2026-11-27)", () => {
     expect(chatModelsForPlan("pro")).toHaveLength(8);
     expect(chatModelsForPlan("max")).toHaveLength(12);
     expect(getPublicModel("max-slot-12")).toBeUndefined();
+    expect(getPublicModel("citad3l-v1")?.name).toBe("Citad3L V1 Fast");
+    expect(getPublicModel("citad3l-v1")?.role).toBe("Uncensored chat");
+    expect(getPublicModel("citad3l-fast")?.hidden).toBe(true);
     expect(pickerModels(true, true).filter((m) => m.modality === "chat")).toHaveLength(12);
   });
 
   it("tiers: Free extras open to guests (no sign-in wall), Pro adds need Pro/Max, Max adds need Max", () => {
-    for (const id of ["gemma4-uncensored", "uncensored-1.2"]) { expect(modelTier(id)).toBe("guest"); expect(isGuestModelId(id)).toBe(true); }
+    for (const id of ["gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"]) { expect(modelTier(id)).toBe("guest"); expect(isGuestModelId(id)).toBe(true); }
     for (const id of PRO_ADDS) expect(modelTier(id)).toBe("pro");
     for (const id of MAX_ADDS) expect(modelTier(id)).toBe("max");
     expect(modelTier("citad3l-private")).toBe("signin");
@@ -45,14 +48,14 @@ describe("lineup v2 (2026-11-27)", () => {
   it("every new model maps to its own MODEL_IDS key, reads images, and only Private is E2EE", async () => {
     const { resolveModel } = await import("@/lib/inference/provider-models");
     const ids = new Set<string>();
-    for (const id of [...FREE.slice(3), ...PRO_ADDS, ...MAX_ADDS]) {
+    for (const id of [...FREE.filter((id) => id !== "citad3l-v1" && id !== "citad3l-private"), ...PRO_ADDS, ...MAX_ADDS]) {
       const r = resolveModel(id, { signedIn: true });
       expect(r.providerModelId, id).toMatch(/^test-/);
       expect(r.supportsVision, id).toBe(true);
       expect(r.requiresClientE2EE, id).toBe(false);
       ids.add(r.providerModelId);
     }
-    expect(ids.size).toBe(9);
+    expect(ids.size).toBe(10);
     expect(resolveModel("gemma4-uncensored").publicId).toBe("gemma4-uncensored"); // guests, no sign-in
     expect(MODELS.filter((m) => m.requiresClientE2EE).map((m) => m.id)).toEqual(["citad3l-private"]);
   });

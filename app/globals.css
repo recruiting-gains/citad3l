@@ -1942,6 +1942,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   align-items: stretch;
 }
 .lineup-card { min-width: 0; }
+.art-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.model-art .art-cover { border-radius: inherit; }
 .lineup-card .media { position: relative; }
 .lineup-card.is-lead { grid-row: span 2; }
 .lineup-card.is-lead .media { aspect-ratio: auto; flex: 1 1 auto; min-height: 300px; }

@@ -126,9 +126,9 @@ describe("skills", () => {
     expect(resolveSkills(v1, want, { swarm: true })).toEqual({ webSearch: true, thinking: false, coding: true });
     expect(resolveSkills(v1, want, { swarm: true, swarmWebSearch: true })).toEqual({ webSearch: true, thinking: false, coding: true });
     expect(resolveSkills(v1, want)).toEqual(want);
-    // Guests (home page try box, signed-out chat) run on Fast only.
-    expect(isGuestModelId("citad3l-v1")).toBe(false);
-    expect(isGuestModelId("citad3l-fast")).toBe(true);
+    // Guests (home page try box, signed-out chat) run on V1 Fast and the Free uncensored models.
+    expect(isGuestModelId("citad3l-v1")).toBe(true);
+    expect(isGuestModelId("citad3l-fast")).toBe(false);
     expect(isGuestModelId("citad3l-private")).toBe(false);
     expect(isGuestModelId("citad3l-image")).toBe(false);
   });

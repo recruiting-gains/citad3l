@@ -7,7 +7,7 @@ describe("guest try box guardrails", () => {
 
   it("defaults: Fast only, short replies, 300/day site-wide, kill switch", async () => {
     const c = await import("@/lib/config");
-    expect(c.GUEST_MODEL_ID).toBe("citad3l-fast");
+    expect(c.GUEST_MODEL_ID).toBe("citad3l-v1");
     expect(c.GUEST_MAX_TOKENS).toBeLessThanOrEqual(512);
     expect(c.FREE_MESSAGES).toBe(5);
     expect(c.GUEST_GLOBAL_DAILY_CAP).toBe(300);
