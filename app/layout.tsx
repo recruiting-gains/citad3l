@@ -10,10 +10,36 @@ import { currentUser, labelFor } from "@/lib/session";
 import SessionKeepAlive from "@/components/auth/SessionKeepAlive";
 import RefCapture from "@/components/RefCapture";
 
+const SITE_URL = "https://citad3l.io";
+const SITE_TITLE = "Citad3L — Private AI. Fast answers.";
+const SITE_DESCRIPTION = "Private AI with fast answers. No ads, no training on your chats. Try Citad3L V1 Fast free with no signup, or sign in for Private mode.";
+const OG_IMAGE = {
+  url: "/og.jpg",
+  width: 1200,
+  height: 630,
+  alt: "Black sports car on a coastal highway at sunset. Citad3L.",
+};
+
 export const metadata: Metadata = {
-  title: "Citad3L — Private AI. Fast answers.",
-  description: "Private AI with fast answers. No ads, no training on your chats. Try Citad3L V1 Fast free with no signup, or sign in for Private mode.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: SITE_URL,
+    siteName: "Citad3L",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
