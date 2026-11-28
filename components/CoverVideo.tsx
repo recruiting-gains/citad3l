@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
  * - MP4 (H.264) is listed first so Safari/iOS never picks WebM; WebM is the fallback.
  * Files: `<video>.mp4`, `<video>.webm` (muted, no audio track). `poster` is the matching still (public path).
  */
-const MEDIA_V = "1";
+const MEDIA_V = "2";
 
 export function CoverVideo({ poster, video, alt, eager = false }: { poster: string; video: string; alt: string; eager?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
