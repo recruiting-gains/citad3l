@@ -138,7 +138,7 @@ export const MODELS: readonly PublicModel[] = [
     art: "everyday",
     cover: "/models/covers/loops/gemma4-uncensored-poster.webp",
     coverVideo: "/models/covers/loops/gemma4-uncensored",
-    coverAlt: "A sleek dark stealth jet seen from behind over a navy horizon, twin blue-white engine flames glowing under a starry dusk sky",
+    coverAlt: "A dark delta-wing aircraft at extreme speed over a night sea, its leading edges glowing red-hot and red light trails streaming behind",
     context: "128K",
     speed: "Fast",
     usageDots: 1,
