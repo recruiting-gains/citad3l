@@ -11,8 +11,10 @@ describe("access rules", () => {
     const max = { admin: false, plan: "max", paidActive: true };
     const lapsedMax = { admin: false, plan: "max", paidActive: false };
     const admin = { admin: true, plan: "trial", paidActive: false };
-    expect(accessFor("signin", free)).toBeNull();
-    expect(accessFor("swarm", free)).toBeNull();
+    expect(accessFor("signin", free)?.code).toBe("upgrade_required");
+    expect(accessFor("swarm", free)?.code).toBe("upgrade_required");
+    expect(accessFor("signin", { admin: false, plan: "pro", paidActive: true })).toBeNull();
+    expect(accessFor("swarm", { admin: false, plan: "pro", paidActive: true })).toBeNull();
     expect(accessFor("pro", free)?.code).toBe("upgrade_required");
     expect(accessFor("pro", pro)).toBeNull();
     expect(accessFor("pro", max)).toBeNull();

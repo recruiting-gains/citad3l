@@ -9,7 +9,7 @@ import { isSlashImageCommand, looksLikeImageRequest } from "@/lib/image-intent";
 import { trackFunnelEvent } from "@/lib/events-client";
 
 /**
- * Home page "try it free" chat. Signed-out visitors get a few free messages on Citad3L Fast (the server enforces the
+ * Home page "try it free" chat. Signed-out visitors get a few free messages on Citad3L V1 Fast (the server enforces the
  * cap with a signed cookie + per-IP and site-wide daily limits). After message 2 a non-blocking "save your chat" bar
  * lets them keep the transcript with a 6-digit email code; when they run out, the box prompts them to continue.
  */
@@ -93,7 +93,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message, model: "citad3l-fast", history }),
+        body: JSON.stringify({ message, model: "citad3l-v1", history }),
         signal: ac.signal,
       });
       if (!res.ok || !res.body) {
@@ -152,7 +152,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
   return (
     <section id="try" className="try-box" aria-label="Try Citad3L free">
       <div className="try-head">
-        <span className="try-title"><span className="try-dot" aria-hidden="true" /> Citad3L Fast · free, no signup</span>
+        <span className="try-title"><span className="try-dot" aria-hidden="true" /> Citad3L V1 Fast · free, no signup</span>
         <span className="try-count tnum" aria-live="polite">{capped ? "Free messages used" : `${remaining} of ${freeLimit} free messages left`}</span>
       </div>
 
@@ -184,7 +184,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
           <div className="upgrade-card-top">
             <div>
               <p className="upgrade-card-title">Image generation comes with Pro</p>
-              <p className="upgrade-card-sub">Citad3L Fast here is text-only. Upgrade to Pro ($20/month) for Citad3L Image with crisp text, plus Private mode and Swarm.</p>
+              <p className="upgrade-card-sub">Citad3L V1 Fast here is text-only. Upgrade to Pro ($20/month) for Citad3L Image with crisp text, plus Private mode and Swarm.</p>
             </div>
             <button type="button" className="upgrade-card-close" aria-label="Dismiss image upgrade card" onClick={() => setImageUpgradeOpen(false)}>×</button>
           </div>
@@ -199,7 +199,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
         <div className="try-soft-save" role="region" aria-label="Save your chat">
           <div className="try-soft-save-row">
             <p className="try-soft-save-text">
-              <strong>Save your chat</strong> and get 3 messages every day with a free account. No card needed.
+              <strong>Save your chat</strong> and get 5 messages every day on Citad3L V1 Fast with a free account. No card needed.
             </p>
             <div className="try-soft-save-actions">
               {!softSaveOpen && (
@@ -246,7 +246,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
             <span className="guest-meter-arrow" />
             <i className="is-daily" /><i className="is-daily" /><i className="is-daily" />
           </span>
-          <p className="try-save-title">Create a free account for 3 messages every day</p>
+          <p className="try-save-title">Create a free account for 5 messages every day on Citad3L V1 Fast</p>
           <p className="try-save-sub">{notice && !/used your/i.test(notice) ? notice : "Keep this chat and come back tomorrow on Fast or Private. We'll email a 6-digit code. No card needed."}</p>
           <div className="try-save-actions">
             <EmailCodeForm callbackUrl="/chat/saved" sendLabel="Save my chat" idPrefix="try" compact beforeRedirect={() => saveGuestChat(turns.filter((t) => t.status !== "error"))} />

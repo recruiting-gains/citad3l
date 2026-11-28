@@ -14,7 +14,7 @@ export const FREE_MESSAGES = TRIAL_REPLIES;
  * Signed-in Free accounts: successful replies per America/Chicago calendar day, shared across Fast and Private.
  * Override with FREE_DAILY_REPLIES. Set to 0 to pause the daily allowance (kill switch, with FREE_DAILY_GLOBAL_CAP).
  */
-export const FREE_DAILY_REPLIES = Math.max(0, Number(process.env.FREE_DAILY_REPLIES ?? 3) || 0);
+export const FREE_DAILY_REPLIES = Math.max(0, Number(process.env.FREE_DAILY_REPLIES ?? 5) || 0);
 
 /**
  * Site-wide ceiling on attempted Free-account daily messages (every free user combined) per Chicago day.
@@ -118,7 +118,7 @@ export const GUEST_HISTORY_CHAR_BUDGET = 6000;
 /** Guests get short replies on Fast only (no web search, thinking, Image, Video, Private or Swarm). */
 export const GUEST_MAX_TOKENS = 512;
 /** The only model guests can use (home page try box and signed-out /chat). */
-export const GUEST_MODEL_ID = "citad3l-fast";
+export const GUEST_MODEL_ID = "citad3l-v1";
 /**
  * Global guest budget: successful-or-attempted guest replies across ALL visitors per UTC day. Stops bots from
  * burning inference credit. At ~512 output tokens on Fast this is well under $1/day. Override with GUEST_GLOBAL_DAILY_CAP.

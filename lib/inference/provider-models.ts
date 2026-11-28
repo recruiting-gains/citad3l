@@ -8,7 +8,11 @@ import { DEFAULT_MODEL_ID, getPublicModel, isMemberModel, isSelectableModelId } 
  *   PROVIDER_API_KEY     API key, or PROVIDER_API_KEY_VAR = the name of the secret that holds it.
  *   PROVIDER_WIRE        JSON: provider-specific request field names, enclave settings and the host that serves
  *                        finished videos (see ProviderWire for the keys; unset keys fall back to neutral defaults).
- *   MODEL_IDS            JSON {"citad3l-v1","citad3l-fast","citad3l-private","citad3l-image","video-t2v","video-i2v","computer"}.
+ *   MODEL_IDS            JSON of existing keys: {"citad3l-v1","citad3l-fast","citad3l-private","citad3l-image","video-t2v","video-i2v","computer"}.
+ *                        This secret is never overwritten by lineup v2 deploys.
+ *   MODEL_IDS_V2         JSON of new public slugs: "gemma4-uncensored","uncensored-1.2","glm5.3-flash-uncensored",
+ *                        "roleplay-uncensored","inkling2-mini","qwen3.8-27b","qwen4-max","grok-4.7","kimi-k3.1-pro",
+ *                        "kimi-k2.7-code". Merged under MODEL_IDS at runtime; MODEL_IDS wins on a key collision.
  * Unset values fail safe: no key -> mock/unavailable; no model id -> UnknownModel.
  */
 export function providerBaseUrl(): string {
@@ -50,9 +54,14 @@ export function isProviderMediaUrl(url: string): boolean {
   }
 }
 
-/** Server-only model id for a MODEL_IDS key. Never send these ids to the client or include them in ProviderInfo. */
+/** MODEL_IDS_V2 fills in new slugs; MODEL_IDS wins if the same key is in both, so the existing prod secret is left alone. */
+export function mergedModelIds(): Record<string, unknown> {
+  return { ...readJson("MODEL_IDS_V2"), ...readJson("MODEL_IDS") };
+}
+
+/** Server-only model id for a MODEL_IDS / MODEL_IDS_V2 key. Never send these ids to the client or include them in ProviderInfo. */
 export function providerModelIdFor(key: string): string | undefined {
-  return str(readJson("MODEL_IDS")[key]) || undefined;
+  return str(mergedModelIds()[key]) || undefined;
 }
 
 type ModelMap = { text?: string; image?: string; videoT2v?: string; videoI2v?: string };
@@ -66,6 +75,13 @@ const MODEL_IDS: Record<string, ModelMap> = {
     get videoI2v() { return providerModelIdFor("video-i2v"); },
   },
 };
+/** Lineup v2 chat models: the MODEL_IDS key is the public slug. A missing key fails safe (UnknownModel). */
+function modelMap(id: string): ModelMap | undefined {
+  if (Object.prototype.hasOwnProperty.call(MODEL_IDS, id)) return MODEL_IDS[id];
+  const pub = getPublicModel(id);
+  if (!pub || pub.modality !== "chat") return undefined;
+  return { text: providerModelIdFor(id) };
+}
 
 
 /** Server-only provider id for Citad3L Video. `i2v` is the image-to-video endpoint; never send this id to the client. */
@@ -101,8 +117,7 @@ export class SignInRequired extends Error {
 
 /**
  * Public slug → provider model id. `signedIn` / `admin` must come from the server (session + isAdminEmail), never the client.
- * Guests get SignInRequired for Private, Image and Video. Plan checks (Image = Pro/Max, Video = Max) are done by the
- * routes with lib/access.ts, not here.
+ * Guests get SignInRequired for any paid model (not V1 Fast). Plan checks are done by the routes with lib/access.ts.
  */
 export function resolveModel(publicId?: string | null, access: { signedIn?: boolean; admin?: boolean } = {}): ResolvedModel {
   const id = publicId?.trim() || DEFAULT_MODEL_ID;
@@ -111,7 +126,7 @@ export function resolveModel(publicId?: string | null, access: { signedIn?: bool
   if (!signedIn && isMemberModel(id)) throw new SignInRequired(getPublicModel(id)?.name ?? "that model");
   if (!isSelectableModelId(id, signedIn, admin)) throw new UnknownModel("Unknown model.");
   const pub = getPublicModel(id);
-  const map = MODEL_IDS[id];
+  const map = modelMap(id);
   if (!pub || !map || pub.modality === "agent") throw new UnknownModel("Unknown model.");
   const providerModelId = map.text ?? map.image ?? map.videoT2v;
   if (!providerModelId) throw new UnknownModel("Unknown model.");

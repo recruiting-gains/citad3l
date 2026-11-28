@@ -1942,6 +1942,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   align-items: stretch;
 }
 .lineup-card { min-width: 0; }
+.art-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.model-art .art-cover { border-radius: inherit; }
 .lineup-card .media { position: relative; }
 .lineup-card.is-lead { grid-row: span 2; }
 .lineup-card.is-lead .media { aspect-ratio: auto; flex: 1 1 auto; min-height: 300px; }
@@ -2184,6 +2186,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
 /* =========================================================
    1. Model picker panel
    ========================================================= */
+/* The older .model-picker-menu rule caps menus at 320px, which squeezed the list column to zero and hid model names. */
+.model-picker-panel.model-picker-menu { max-width: none; }
 .model-picker-panel {
   width: min(500px, calc(100vw - 2 * var(--gutter)));
   max-height: min(640px, 82vh);
@@ -2273,15 +2277,23 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   border-radius: var(--r-sm);
   background: var(--bg);
 }
+.mp-row-copy {
+  min-width: 0;
+  overflow: hidden;
+}
 .mp-row-name {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: var(--t-sm);
   line-height: 1.25;
-  white-space: nowrap;
+}
+.mp-row-name-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mp-row-meta {
   font-size: var(--t-xs);
@@ -2297,7 +2309,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   color: var(--fg-2);
   background: var(--bg);
 }
-.mp-tag.is-plan { background: var(--surface-2); border-color: transparent; }
+.mp-tag.is-plan { background: var(--surface-2); border-color: transparent; display: inline-flex; align-items: center; gap: 4px; }
+.mp-lock { flex: none; }
 
 /* preview card (right column) */
 .mp-preview {
@@ -4152,3 +4165,9 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   .hb-surface { border: 1px solid CanvasText; }
   .hb-seal { border-color: CanvasText; }
 }
+
+/* ---- card videos (CoverVideo): poster always under, video fades in once playing ---- */
+.cover-video { position: absolute; inset: 0; }
+.cover-video .cover-video-el { opacity: 0; transition: opacity 0.45s ease; }
+.cover-video .cover-video-el.is-playing { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .cover-video .cover-video-el { display: none !important; } }

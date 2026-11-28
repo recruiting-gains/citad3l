@@ -1233,7 +1233,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
 
   /* ---------- render pieces ---------- */
   const limitPlaceholder =
-    usage.guest ? "You've used your 5 free messages. Create a free account for 3 messages every day." : usage.plan === "trial" ? "You've used today's 3 free messages. More at midnight Central." : "Allowance used. It refreshes on the 5-hour window or weekly cap.";
+    usage.guest ? "You've used your 5 free messages. Create a free account for 5 messages every day on Citad3L V1 Fast." : usage.plan === "trial" ? "You've used today's 5 free messages on Citad3L V1 Fast. More at midnight Central." : "Allowance used. It refreshes on the 5-hour window or weekly cap.";
 
   async function addFiles(files: FileList | File[]) {
     const list = Array.from(files);
@@ -1331,7 +1331,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               aria-pressed={swarm}
               data-testid="swarm-toggle"
               disabled={streaming}
-              title="V1 plans, Fast workers run up to 3 tasks, V1 writes the answer. Uses 4 replies of allowance."
+              title="V1 Fast plans, workers run up to 3 tasks, V1 Fast writes the answer. Uses 4 replies of allowance."
               onClick={() => setSwarm((s) => !s)}
             >
               Swarm
@@ -1391,7 +1391,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
               <IMic />
             </button>
           ) : null}
-          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
+          <ModelPicker models={catalog} selectedId={selectedModel?.id ?? defaultModelId} onChange={chooseModel} disabled={streaming} placement={showEmpty ? "down" : "up"} skills={skills} onSkillsChange={setSkills} guest={!signedIn} plan={isOwner || usage.admin ? null : (signedIn ? usage.plan : "trial")} swarm={swarm && swarmAvailable} canOpenSettings={canOpenSettings} onOpenSettings={() => setSettingsOpen(true)} />
           {streaming ? (
             <button type="button" className="stop-btn" onClick={stop} aria-label="Stop generating (Esc)" title="Stop (Esc)">
               <i />
@@ -1423,7 +1423,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
       ) : imageReady ? (
         <p className="composer-hint">Citad3L Image turns your prompt into a picture. You can also type /image from a chat model.</p>
       ) : swarm && swarmAvailable ? (
-        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 plans, Fast workers, V1 writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
+        <p className="composer-hint">Swarm on — uses 4 replies of allowance. V1 Fast plans, workers run in parallel, V1 Fast writes the answer. Web search is off by default; turn it on to look up current facts (up to 4 search calls). Extended thinking stays off.</p>
       ) : null}
     </div>
   );
@@ -1531,7 +1531,7 @@ export function ChatWorkspace({ initialConversationId = null, initialProjectId =
   const softSaveEl = showSoftSave ? (
     <div className="try-soft-save chat-soft-save" role="region" aria-label="Save your chat">
       <div className="try-soft-save-row">
-        <p className="try-soft-save-text"><strong>Save your chat</strong> and get 3 messages every day with a free account. No card needed.</p>
+        <p className="try-soft-save-text"><strong>Save your chat</strong> and get 5 messages every day on Citad3L V1 Fast with a free account. No card needed.</p>
         <div className="try-soft-save-actions">
           <a className="btn btn-secondary btn-sm" href="/login?next=/chat" onClick={() => trackFunnelEvent("soft_save_clicked", "/chat")}>Save my chat</a>
           <button type="button" className="try-soft-save-dismiss" onClick={() => setSoftSaveDismissed(true)}>Not now</button>

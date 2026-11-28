@@ -37,6 +37,14 @@ export interface PublicModel {
   exclusivePlan?: "max";
   /** Marketing art slot. */
   art?: ModelArtSlot;
+  /** Optional unique still for marketing cards (public path). Falls back to `art` when unset. */
+  cover?: string;
+  /** Alt text for `cover`. */
+  coverAlt?: string;
+  /** Optional looping card video: base path without extension; `<base>.mp4` and `<base>.webm` must exist. `cover` stays the poster and the fallback. */
+  coverVideo?: string;
+  /** Keep in the catalog for routing, but hide from marketing and the picker (merged Fast). */
+  hidden?: boolean;
   /** Approximate context window shown in the picker. */
   context?: string;
   /** Relative reply speed shown in the picker. */
@@ -66,15 +74,17 @@ export function isVideoModelEnabled(): boolean {
 export const MODELS: readonly PublicModel[] = [
   {
     id: "citad3l-v1",
-    name: "Citad3L V1",
-    description: "Main chat for reasoning, code, and swarm lead.",
+    name: "Citad3L V1 Fast",
+    description: "Uncensored chat for reasoning, code, and swarm lead.",
     modality: "chat",
     default: true,
     supportsVision: true,
-    role: "Default chat · swarm lead",
-    summary: "The default for new chats. Use it for reasoning, code, and questions about images you upload.",
-    specs: ["Chat", "Image input"],
+    role: "Uncensored chat",
+    summary: "Uncensored chat for everyday questions, reasoning, code, and swarm lead. It can read images you upload.",
+    specs: ["Chat", "Image input", "Uncensored"],
     art: "rook",
+    cover: "/models/covers/citad3l-v1.webp",
+    coverAlt: "A black wedge supercar on a dusk coastal freeway, blue-white exhaust flames stretching down the wet road toward a city skyline",
     context: "128K",
     speed: "Standard",
     usageDots: 3,
@@ -83,11 +93,12 @@ export const MODELS: readonly PublicModel[] = [
   {
     id: "citad3l-fast",
     name: "Citad3L Fast",
-    description: "Quick, lower-cost chat and swarm workers.",
+    description: "Internal quicker worker used by Swarm. Merged into Citad3L V1 Fast on the public lineup.",
     modality: "chat",
     supportsVision: true,
-    role: "Quick chat · swarm workers",
-    summary: "Quicker, lower-cost replies for short tasks and drafts. It can read images too.",
+    hidden: true,
+    role: "Swarm workers",
+    summary: "Internal quicker worker used by Swarm. Not shown as its own card.",
     specs: ["Chat", "Image input"],
     art: "ai",
     context: "128K",
@@ -106,10 +117,187 @@ export const MODELS: readonly PublicModel[] = [
     summary: "Encrypted chat that runs in a verified secure enclave. Messages are encrypted from Citad3L's server to the enclave, so the model host can't read them. Text only, no web search.",
     specs: ["Chat", "Text only", "Secure enclave"],
     art: "cyber",
+    cover: "/models/covers/citad3l-private.webp",
+    coverAlt: "A sealed liquid-chrome droplet with a locked teal filament inside on black",
     context: "128K",
     speed: "Standard",
     usageDots: 3,
     skills: { webSearch: false, thinking: false, coding: false },
+  },
+  // ── 2026-11-27 lineup v2 (preview). Public slugs only; provider ids live in the MODEL_IDS secret under these same
+  // keys. Free adds two named uncensored models; Pro and Max add the rest. Context is shown at the app's 128K label.
+  {
+    id: "gemma4-uncensored",
+    name: "Gemma 4 Uncensored",
+    description: "Uncensored everyday chat that reads images.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Uncensored chat",
+    summary: "Uncensored chat for everyday questions, drafts and ideas. It can read images you upload.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "everyday",
+    cover: "/models/covers/loops/gemma4-uncensored-poster.webp",
+    coverVideo: "/models/covers/loops/gemma4-uncensored",
+    coverAlt: "A dark delta-wing aircraft at extreme speed over a night sea, its leading edges glowing red-hot and red light trails streaming behind",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 1,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "uncensored-1.2",
+    name: "Uncensored 1.2",
+    description: "Our most open chat model, with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Uncensored chat",
+    summary: "The most open model in the lineup. Straight answers with fewer refusals. It can read images too.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "cyber",
+    cover: "/models/covers/uncensored-1.2.webp",
+    coverAlt: "A sheet of liquid teal light torn open by a thin bright seam on black",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 2,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "glm5.3-flash-uncensored",
+    name: "GLM 5.3 Flash Uncensored",
+    description: "Fast uncensored reasoning with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Uncensored reasoning",
+    summary: "A fast uncensored reasoning model for chat, code and long work. It can read images too.",
+    specs: ["Chat", "Image input", "Uncensored", "Reasoning"],
+    art: "ai",
+    cover: "/models/covers/glm5.3-flash-uncensored.webp",
+    coverAlt: "A dark stone corridor aimed at a tall rectangle of white-teal light",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 1,
+    skills: { webSearch: true, thinking: true, coding: true },
+  },
+  {
+    id: "roleplay-uncensored",
+    name: "Role Play Uncensored",
+    description: "Uncensored role play and character chat.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Role play · characters",
+    summary: "Uncensored role play, characters and interactive stories. It can read images too.",
+    specs: ["Chat", "Image input", "Uncensored"],
+    art: "ai",
+    cover: "/models/covers/roleplay-uncensored.webp",
+    coverAlt: "A teal long-exposure light trail looping on black",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 2,
+    skills: { webSearch: false, thinking: false, coding: false },
+  },
+  {
+    id: "inkling2-mini",
+    name: "Inkling 2 Mini",
+    description: "Light, low-cost chat for long documents.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Long documents",
+    summary: "A light, low-cost model that handles long documents and quick questions. It can read images too.",
+    specs: ["Chat", "Image input"],
+    art: "everyday",
+    cover: "/models/covers/inkling2-mini.webp",
+    coverAlt: "A dark hall of stacked blank paper receding toward an arched window, a shaft of sunlight falling down the aisle",
+    context: "128K",
+    speed: "Fast",
+    usageDots: 1,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "qwen3.8-27b",
+    name: "Qwen 3.8 27B",
+    description: "Step-up reasoning with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Reasoning",
+    summary: "A step up for reasoning, math and code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "robotics",
+    cover: "/models/covers/loops/qwen3.8-27b-r2-poster.webp",
+    coverVideo: "/models/covers/loops/qwen3.8-27b-r2",
+    coverAlt: "A brass armillary orrery on a dark plinth in a teal-lit gallery, its core igniting into a white-hot amber glow with sparks and a ring of light before cooling again",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 3,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "qwen4-max",
+    name: "Qwen 4 Max",
+    description: "Flagship-class reasoning and vision.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Flagship reasoning",
+    summary: "A flagship-class model for hard reasoning, code and image questions.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "rookHero",
+    cover: "/models/covers/loops/qwen4-max-poster.webp",
+    coverVideo: "/models/covers/loops/qwen4-max",
+    coverAlt: "A silhouetted figure in a long coat on a balcony above a vast night city, columns of blue code symbols falling over the towers",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 4,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "grok-4.7",
+    name: "Grok 4.7",
+    description: "Top-tier reasoning with image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Top-tier reasoning",
+    summary: "A top-tier model for hard questions, analysis and code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "rook",
+    cover: "/models/covers/grok-4.7.webp",
+    coverAlt: "A glass-and-steel cantilever overlook on a sharp mountain ridge above a sea of clouds at sunrise",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 5,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "kimi-k3.1-pro",
+    name: "Kimi K3.1 Pro",
+    description: "Deep reasoning for long, complex work.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Deep reasoning · long work",
+    summary: "Deep reasoning for long, complex work like big documents and multi-step code. It can read images too.",
+    specs: ["Chat", "Image input", "Reasoning"],
+    art: "ai",
+    cover: "/models/covers/kimi-k3.1-pro.webp",
+    coverAlt: "Looking down a monumental stone-and-brass spiral staircase into a teal glow far below",
+    context: "128K",
+    speed: "Slow",
+    usageDots: 5,
+    skills: { webSearch: true, thinking: false, coding: true },
+  },
+  {
+    id: "kimi-k2.7-code",
+    name: "Kimi K2.7 Code",
+    description: "Coding specialist with reasoning and image input.",
+    modality: "chat",
+    supportsVision: true,
+    role: "Coding specialist",
+    summary: "A coding specialist for writing, fixing and explaining code, with step-by-step reasoning. It can read screenshots and images too.",
+    specs: ["Chat", "Image input", "Code"],
+    art: "robotics",
+    cover: "/models/covers/kimi-k2.7-code.webp",
+    coverAlt: "A teal wireframe volume of interlocking nodes with a bead of liquid light at a joint",
+    context: "128K",
+    speed: "Standard",
+    usageDots: 3,
+    skills: { webSearch: true, thinking: false, coding: true },
   },
   {
     id: "citad3l-image",
@@ -121,6 +309,8 @@ export const MODELS: readonly PublicModel[] = [
     summary: "Detailed images from a written prompt, including clean, legible text in the picture.",
     specs: ["Image output", "Legible text"],
     art: "everyday",
+    cover: "/models/covers/citad3l-image.webp",
+    coverAlt: "A coastal photograph appearing in a developer tray under amber safelight, unmarked bottles of teal chemistry on the bench",
     context: "—",
     speed: "Standard",
     usageDots: 3,
@@ -137,6 +327,8 @@ export const MODELS: readonly PublicModel[] = [
     specs: ["5 sec", "720p", "Sound"],
     exclusivePlan: "max",
     art: "robotics",
+    cover: "/models/covers/citad3l-video.webp",
+    coverAlt: "An empty cinema, a projector beam, a coastal sea blooming on a wide curved screen",
     context: "—",
     speed: "Slow",
     usageDots: 5,
@@ -152,15 +344,29 @@ export function getPublicModel(id: string | null | undefined): PublicModel | und
 }
 
 /**
- * Which plan a model needs. Guests (no account) only get V1 and Fast. Private needs an account (any plan), Image needs
- * an active Pro or Max plan, Video needs an active Max plan. Admins (ADMIN_EMAILS) have everything. The server enforces
- * this in every route (lib/access.ts); the client only uses it for labels.
+ * Which plan a model needs. Guests and free accounts can chat with Citad3L V1 Fast only (citad3l-fast stays guest-tier
+ * for Swarm workers). Every other model is on a paid plan and still listed in the picker and on /models with a lock.
+ * Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored, Role Play, Inkling 2 Mini, Qwen 3.8 27B and
+ * Image need Pro or Max. Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro, Kimi K2.7 Code and Video need Max. Admins (ADMIN_EMAILS)
+ * have everything. The server enforces this in every route (lib/access.ts); the client only uses it for labels.
  */
 export type ModelTier = "guest" | "signin" | "pro" | "max";
 export const MODEL_TIER: Record<string, ModelTier> = {
   "citad3l-v1": "guest",
   "citad3l-fast": "guest",
-  "citad3l-private": "signin",
+  "citad3l-private": "pro",
+  "gemma4-uncensored": "pro",
+  "uncensored-1.2": "pro",
+  "glm5.3-flash-uncensored": "pro",
+  // Pro (8) chat models: V1 Fast plus the seven above and the three below. Image is also Pro.
+  "roleplay-uncensored": "pro",
+  "inkling2-mini": "pro",
+  "qwen3.8-27b": "pro",
+  // Max (12) adds four (slot 12 = Kimi K2.7 Code, Cruz's pick 2026-11-27).
+  "qwen4-max": "max",
+  "grok-4.7": "max",
+  "kimi-k3.1-pro": "max",
+  "kimi-k2.7-code": "max",
   "citad3l-image": "pro",
   [VIDEO_MODEL_ID]: "max",
 };
@@ -179,30 +385,36 @@ function withoutGeneratedMedia(models: readonly PublicModel[]): PublicModel[] {
   return models.filter((m) => !isGeneratedMediaModality(m.modality));
 }
 
-/** Public lineup list (models index, command palette). Video stays hidden if its flag is off. Image and Video both stay hidden while media generation is off. */
+function isPublicCard(m: PublicModel): boolean {
+  return m.hidden !== true;
+}
+
+/** Public lineup list (models index, command palette). Video stays hidden if its flag is off. Image and Video both stay hidden while media generation is off. Hidden catalog entries (merged Fast) stay out. */
 export function visibleModels(): PublicModel[] {
-  return withoutGeneratedMedia(MODELS.filter((m) => m.id !== VIDEO_MODEL_ID || isVideoModelEnabled()));
+  return withoutGeneratedMedia(MODELS.filter((m) => isPublicCard(m) && (m.id !== VIDEO_MODEL_ID || isVideoModelEnabled())));
 }
 
 /**
- * What the chat picker offers. Guests get V1 and Fast; signed-in accounts see the whole lineup (plan locks are
- * enforced by the server with an upgrade message). Admins always get every model, Video included, unless media
+ * What the chat picker offers. Everyone sees the full lineup so they can see what each model is; plan locks are
+ * shown in the UI and enforced by the server. Admins always get every model, Video included, unless media
  * generation is turned off — then nobody can pick Image or Video.
  */
 export function pickerModels(signedIn: boolean, admin = false): PublicModel[] {
   if (!mediaGenerationEnabled()) {
-    const chat = MODELS.filter((m) => !isGeneratedMediaModality(m.modality));
-    if (admin || signedIn) return chat.slice();
-    return chat.filter((m) => !isMemberModel(m.id));
+    return MODELS.filter((m) => isPublicCard(m) && !isGeneratedMediaModality(m.modality));
   }
-  if (admin) return MODELS.slice();
-  if (signedIn) return visibleModels();
-  return visibleModels().filter((m) => !isMemberModel(m.id));
+  // Media is on. Admins still see Video even if CITAD3L_VIDEO_ENABLED is off. Hidden entries stay out.
+  if (admin) return MODELS.filter(isPublicCard);
+  return visibleModels();
 }
 
-/** Public lineup for marketing pages. Includes Image and Video only while media generation is on. */
+/** Public lineup for marketing pages. V1 Fast and Qwen 4 Max lead the grid (top row). Hidden entries stay out. */
+const MARKETING_LEAD_IDS = ["citad3l-v1", "qwen4-max"] as const;
 export function marketingModels(): PublicModel[] {
-  return withoutGeneratedMedia(MODELS);
+  const all = withoutGeneratedMedia(MODELS.filter(isPublicCard));
+  const lead = MARKETING_LEAD_IDS.map((id) => all.find((m) => m.id === id)).filter(Boolean) as PublicModel[];
+  const rest = all.filter((m) => !MARKETING_LEAD_IDS.includes(m.id as (typeof MARKETING_LEAD_IDS)[number]));
+  return [...lead, ...rest];
 }
 
 export function modalityLabel(m: PublicModel): string {
@@ -211,17 +423,21 @@ export function modalityLabel(m: PublicModel): string {
   return "Chat";
 }
 
-/** Can this account pick the model? Guests: V1 and Fast only. Plan checks happen in lib/access.ts. */
+/** Is this a real catalog model the picker can list? Plan checks happen in lib/access.ts.
+ * Hidden catalog entries (merged Fast) stay routable for Swarm workers and old chats, but are not listed in the picker. */
 export function isSelectableModelId(id: string, signedIn = false, admin = false): boolean {
-  return pickerModels(signedIn, admin).some((m) => m.id === id);
+  if (pickerModels(signedIn, admin).some((m) => m.id === id)) return true;
+  const pub = getPublicModel(id);
+  if (!pub || pub.hidden !== true) return false;
+  if (admin || signedIn) return true;
+  return modelTier(id) === "guest";
 }
 
-/** Short plan label for a model ("Pro", "Max only"), or null when every account can use it. */
+/** Short plan label for a model ("Pro", "Max only"), or null when free accounts can use it (V1 Fast). */
 export function planLabel(id: string): string | null {
   const t = modelTier(id);
   if (t === "max") return "Max only";
-  if (t === "pro") return "Pro & Max";
-  if (t === "signin") return "Free account";
+  if (t === "pro" || t === "signin") return "Pro & Max";
   return null;
 }
 
@@ -267,7 +483,21 @@ export function parseImageCommand(text: string, imageMode: boolean): { image: bo
   return { image: false, prompt: text };
 }
 
-export const GUEST_MODEL_IDS = ["citad3l-fast"] as const;
+export const GUEST_MODEL_IDS = ["citad3l-v1"] as const;
+
+
+/** Chat models in a plan, in lineup order (Free: V1 Fast only, Pro 8, Max 12). Image/Video excluded. */
+export function chatModelsForPlan(plan: "trial" | "pro" | "max"): PublicModel[] {
+  return MODELS.filter((m) => isPublicCard(m) && m.modality === "chat" && planIncludesModel(plan, m.id));
+}
+
+/** Does this plan include the model? Free ("trial") gets V1 Fast only; Pro adds pro (and leftover signin); Max adds max. */
+export function planIncludesModel(plan: string | null | undefined, id: string): boolean {
+  const t = modelTier(id);
+  if (t === "guest") return true;
+  if (t === "signin" || t === "pro") return plan === "pro" || plan === "max";
+  return plan === "max";
+}
 
 export function isGuestModelId(id: string): boolean {
   return (GUEST_MODEL_IDS as readonly string[]).includes(id);
@@ -288,15 +518,14 @@ export type ModelBadge = { key: string; label: string; tone: "default" | "soon" 
  */
 export function modelBadges(model: PublicModel, isAdmin = false): ModelBadge[] {
   const flags: ModelBadge[] = [];
-  if (model.default) flags.push({ key: "default", label: "Default", tone: "default" });
   if (model.comingSoon) {
     flags.push({ key: "soon", label: "Coming soon", tone: "soon" });
   } else if (isAdmin) {
     if (isMemberModel(model.id)) flags.push({ key: "unlocked", label: "Unlocked for you", tone: "default" });
   } else {
     const t = modelTier(model.id);
-    if (t === "max") flags.push({ key: "max", label: "Max only", tone: "max" });
-    else if (t === "pro") flags.push({ key: "pro", label: "Pro & Max", tone: "max" });
+    if (t === "max") flags.push({ key: "max", label: "Locked · Max", tone: "max" });
+    else if (t === "pro" || t === "signin") flags.push({ key: "pro", label: "Locked · Pro", tone: "max" });
   }
   return flags;
 }

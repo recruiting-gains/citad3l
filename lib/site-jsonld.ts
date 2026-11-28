@@ -22,8 +22,8 @@ export function siteJsonLd(origin = "https://citad3l.io") {
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         description: mediaGenerationEnabled()
-          ? "A private, less-filtered AI chat app. Chat with Citad3L V1 or Citad3L Fast, and generate images with Citad3L Image. Sign in with a 6-digit email code; no passwords."
-          : "A private, less-filtered AI chat app. Chat with Citad3L V1, Citad3L Fast, or Citad3L Private. Sign in with a 6-digit email code; no passwords.",
+          ? "A private, less-filtered AI chat app. Chat with Citad3L V1 Fast, and generate images with Citad3L Image. Sign in with a 6-digit email code; no passwords."
+          : "A private, less-filtered AI chat app. Chat with Citad3L V1 Fast or Citad3L Private. Sign in with a 6-digit email code; no passwords.",
         publisher: { "@id": `${base}/#org` },
         offers: [
           { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", url: `${base}/pricing` },

@@ -3,6 +3,7 @@ import type { PublicModel } from "@/lib/models";
 import { modalityLabel, modelBadges } from "@/lib/models";
 import { Rook } from "@/components/Rook";
 import { SlotVideo } from "@/components/Art";
+import { CoverVideo } from "@/components/CoverVideo";
 
 const IArrow = () => (
   <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -46,7 +47,13 @@ export function LineupCard({ model, lead, eager, isAdmin = false }: LineupCardPr
   return (
     <Link href={`/models/${model.id}`} className={cls}>
       <div className="media">
-        <SlotVideo slot={slot} eager={eager} />
+        {model.cover && model.coverVideo ? (
+          <CoverVideo poster={model.cover} video={model.coverVideo} alt={model.coverAlt || model.name} eager={eager} />
+        ) : model.cover ? (
+          <img className="art-cover" src={model.cover} alt={model.coverAlt || model.name} width={1280} height={800} decoding={eager ? "sync" : "async"} />
+        ) : (
+          <SlotVideo slot={slot} eager={eager} />
+        )}
         <span className="media-tag">{modalityLabel(model)}</span>
         <ModelFlags model={model} onArt isAdmin={isAdmin} />
       </div>

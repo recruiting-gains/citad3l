@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Rook } from "@/components/Rook";
-import type { PublicModel } from "@/lib/models";
+import { modelTier, planIncludesModel, type PublicModel } from "@/lib/models";
 import { availableSkills } from "@/lib/skills";
 import type { SkillRequest } from "@/lib/types";
 
@@ -16,6 +17,8 @@ export interface ModelPickerProps {
   skills?: SkillRequest;
   onSkillsChange?: (s: SkillRequest) => void;
   guest?: boolean;
+  /** Customer plan ("trial" | "pro" | "max"). Rows outside it are locked and go to /pricing. Null only for admins (everything unlocked). Guests should pass "trial". */
+  plan?: string | null;
   swarm?: boolean;
   canOpenSettings?: boolean;
   onOpenSettings?: () => void;
@@ -30,6 +33,15 @@ const BLURB: Record<string, string> = {
   "citad3l-video": "Turns a description into a short clip.",
 };
 
+function LockMark() {
+  return (
+    <svg className="mp-lock" width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
 function Dots({ n }: { n: number }) {
   const v = Math.max(0, Math.min(5, n || 0));
   return (
@@ -41,7 +53,7 @@ function Dots({ n }: { n: number }) {
 
 export function ModelPicker({
   models, selectedId, onChange, disabled, placement = "up",
-  skills, onSkillsChange, guest, swarm, canOpenSettings, onOpenSettings,
+  skills, onSkillsChange, guest, plan, swarm, canOpenSettings, onOpenSettings,
 }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -51,16 +63,22 @@ export function ModelPicker({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const selected = models.find((m) => m.id === selectedId) ?? models[0];
-
+  const router = useRouter();
+  const effectivePlan = plan ?? (guest ? "trial" : null);
+  const locked = (id: string) => !!effectivePlan && !planIncludesModel(effectivePlan, id);
+  const ordered = useMemo(
+    () => (effectivePlan ? [...models.filter((m) => planIncludesModel(effectivePlan, m.id)), ...models.filter((m) => !planIncludesModel(effectivePlan, m.id))] : models),
+    [models, effectivePlan],
+  );
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
-    if (!n) return models;
-    return models.filter((m) =>
+    if (!n) return ordered;
+    return ordered.filter((m) =>
       m.name.toLowerCase().includes(n) ||
       (m.description ?? "").toLowerCase().includes(n) ||
       (m.role ?? "").toLowerCase().includes(n),
     );
-  }, [models, q]);
+  }, [ordered, q]);
 
   // The preview card follows the pointer, but the Skills toggles act on the SELECTED model only. (Bug 2026-11-19:
   // they used the hovered row, and the pointer crossing Private/Image/Video on its way down disabled Web search.)
@@ -163,17 +181,21 @@ export function ModelPicker({
             aria-checked={m.id === selected.id}
             aria-selected={m.id === selected.id}
             className={`mp-row${m.id === selected.id ? " is-selected" : ""}`}
+            data-locked={locked(m.id) ? "true" : undefined}
             onMouseEnter={() => setHovered(m.id)}
             onFocus={() => setHovered(m.id)}
-            onClick={() => { onChange(m.id); setOpen(false); }}
+            onClick={() => {
+              if (locked(m.id)) { setOpen(false); router.push("/pricing"); return; }
+              onChange(m.id); setOpen(false);
+            }}
           >
             <span className="mp-row-icon"><Rook size={12} /></span>
-            <span>
+            <span className="mp-row-copy">
               <span className="mp-row-name">
-                {m.name}
-                {m.comingSoon ? <span className="mp-tag">Soon</span> : null /* no plan tags: the picker only lists models this account can use */}
+                <span className="mp-row-name-text">{m.name}</span>
+                {m.comingSoon ? <span className="mp-tag">Soon</span> : locked(m.id) ? <span className="mp-tag is-plan" data-testid="mp-plan-tag"><LockMark />{modelTier(m.id) === "max" ? "Max" : "Pro"}</span> : null}
               </span>
-              <span className="mp-row-meta">{m.speed ? (SPEED[m.speed] ?? m.speed) : m.role}</span>
+              <span className="mp-row-meta">{m.role ?? m.summary ?? (m.speed ? (SPEED[m.speed] ?? m.speed) : m.description)}</span>
             </span>
             <Dots n={m.usageDots ?? 3} />
           </button>

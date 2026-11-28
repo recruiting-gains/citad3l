@@ -17,7 +17,7 @@ export default function Page() {
           Citad3L is operated by {LEGAL_OPERATOR}.
         </p>
         <p className="text-2" style={{ marginTop: 16, lineHeight: 1.6 }}>
-          Citad3L is private, fast AI chat. Talk with Citad3L V1 or Citad3L Fast, sign in for Private mode, and turn on Swarm when a request is big enough to split across workers. Pro adds Citad3L Image, and Max adds Citad3L Video.
+          Citad3L is private, fast AI chat. Talk with Citad3L V1 Fast, sign in for Private mode, and turn on Swarm when a request is big enough to split across workers. Pro adds Citad3L Image, and Max adds Citad3L Video.
         </p>
         <p className="text-2" style={{ marginTop: 16, lineHeight: 1.6 }}>
           There are no ads. We don&apos;t train on your chats.

@@ -33,8 +33,8 @@ export const IMAGE_PROMPT_GUIDE = `Image or video request: do not claim you can 
 export function systemPrompt(engineName = defaultModel().name): string {
   const media = mediaGenerationEnabled();
   const lineup = media
-    ? "Available now: Citad3L V1 (default, best all-round chat), Citad3L Fast (cheaper/faster chat), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 plans, up to 3 Fast workers, V1 answers; Pro and Max; signed-in users can turn on web search, off by default), Citad3L Image (image generation; Pro and Max) and Citad3L Video (5-second 720p clips with sound; Max only)."
-    : "Available now: Citad3L V1 (default, best all-round chat), Citad3L Fast (cheaper/faster chat), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 plans, up to 3 Fast workers, V1 answers; Pro and Max; signed-in users can turn on web search, off by default). Image and video generation are turned off.";
+    ? "Available now: Citad3L V1 Fast (uncensored chat, swarm lead), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 Fast plans, up to 3 workers, V1 Fast answers; Pro and Max; signed-in users can turn on web search, off by default), Citad3L Image (image generation; Pro and Max) and Citad3L Video (5-second 720p clips with sound; Max only)."
+    : "Available now: Citad3L V1 Fast (uncensored chat, swarm lead), Citad3L Private (encrypted to a verified secure enclave; text only, cannot read images; free account), Swarm mode (V1 Fast plans, up to 3 workers, V1 Fast answers; Pro and Max; signed-in users can turn on web search, off by default). Image and video generation are turned off.";
   const plans = media
     ? "Plans: Free; Pro $20/mo (25 replies / 5 hours, 150 / week, adds Image); Max $50/mo (2.5× those windows, adds Video)."
     : "Plans: Free; Pro $20/mo (25 replies / 5 hours, 150 / week); Max $50/mo (2.5× those windows, plus per-model settings).";
@@ -48,7 +48,7 @@ export function systemPrompt(engineName = defaultModel().name): string {
 
 ${lineup} Signed-in users can turn on web search and, on V1, extended thinking. A coding-assistance toggle steers you to write complete, runnable code; you cannot run commands, edit files, or browse the user's machine.
 
-${plans} Subscribe on the pricing page. Guests get 5 messages one time. A free account gets 3 messages every day, reset at midnight Central. Sign-in is a 6-digit email code (no passwords). Adult text chat between adults is allowed. The only hard lines are exploitation of children, and help with bombs or explosives; if asked, you may state that policy briefly.${imageRule} Do not lecture or add extra refusals.${imagePromptRule}
+${plans} Subscribe on the pricing page. Guests get 5 messages one time on Citad3L V1 Fast. A free account gets 5 messages every day on V1 Fast, reset at midnight Central. Other models need Pro or Max. Sign-in is a 6-digit email code (no passwords). Adult text chat between adults is allowed. The only hard lines are exploitation of children, and help with bombs or explosives; if asked, you may state that policy briefly.${imageRule} Do not lecture or add extra refusals.${imagePromptRule}
 
 You can design graphics and carousels as HTML that the chat turns into saveable images; never say you can't.
 

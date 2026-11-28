@@ -1,7 +1,7 @@
 import ChatWorkspace from "@/components/chat/ChatWorkspace";
 import { currentUser, labelFor } from "@/lib/session";
 import { providerInfo } from "@/lib/inference";
-import { DEFAULT_MODEL_ID, isGuestModelId, pickerModels } from "@/lib/models";
+import { DEFAULT_MODEL_ID, pickerModels } from "@/lib/models";
 import { GUEST_MODEL_ID } from "@/lib/config";
 import { getUsage } from "@/lib/usage";
 import { prisma } from "@/lib/db";
@@ -17,11 +17,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const { project } = await searchParams;
   const p = u && project ? await prisma.project.findFirst({ where: { id: project, userId: u.id }, select: { id: true } }) : null;
   const usage = u ? await getUsage(u.id) : guestUsageSummary(0);
-  // Guests get Fast only; signed-in accounts see the whole lineup (the server enforces plans: Image Pro/Max, Video Max).
+  // Everyone sees the full lineup. Guests and free accounts can only *use* V1 Fast; the server enforces that.
   const hermes = !!u && isHermesEmail(u.email);
-  const all = [...pickerModels(!!u, !!u && isAdminEmail(u.email)), ...(hermes ? [HERMES_MODEL] : [])];
-  // Guests: Fast only (the server enforces this too).
-  const models = u ? all : all.filter((m) => isGuestModelId(m.id));
+  const models = [...pickerModels(!!u, !!u && isAdminEmail(u.email)), ...(hermes ? [HERMES_MODEL] : [])];
   return (
     <ChatWorkspace
       initialConversationId={null}

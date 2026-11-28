@@ -33,7 +33,7 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
       <main className="page-main">
         <section className={`hero container${showTry ? " hero-try" : ""}`}>
           <h1 className="display hero-title">Private AI. Fast answers.</h1>
-          <p className="hero-sub">No ads. No training on your chats. Try Citad3L Fast right below with no signup, or sign in for Private mode in a verified secure enclave.</p>
+          <p className="hero-sub">No ads. No training on your chats. Try Citad3L V1 Fast right below with no signup, or sign in for Private mode in a verified secure enclave.</p>
           <div className="hero-ctas">
             {signedIn ? (
               <Link href="/chat" className="btn btn-primary btn-lg">Open chat</Link>
@@ -77,7 +77,7 @@ export function HomeView({ signedIn, provider, isAdmin = false, guestUsed = 0, f
                 <h3 id="swarm-title" className="swarm-title">Swarm mode</h3>
               </div>
               <p className="swarm-text">
-                Swarm mode is a chat setting for large requests. Citad3L V1 breaks the request into parts, up to three Fast workers handle those parts in parallel, and V1 puts the answer together. Sign in and tap Swarm in chat to turn it on. A Swarm reply uses 4 replies of allowance.
+                Swarm mode is a chat setting for large requests. Citad3L V1 Fast breaks the request into parts, up to three workers handle those parts in parallel, and V1 Fast puts the answer together. Sign in and tap Swarm in chat to turn it on. A Swarm reply uses 4 replies of allowance.
               </p>
             </div>
             <div className="swarm-diagram" aria-hidden="true">
