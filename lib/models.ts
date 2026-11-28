@@ -339,20 +339,21 @@ export function getPublicModel(id: string | null | undefined): PublicModel | und
 }
 
 /**
- * Which plan a model needs. Guests (no account) get V1 Fast and the Free uncensored models. Private needs an account (any plan), Image needs
- * an active Pro or Max plan, Video needs an active Max plan. Admins (ADMIN_EMAILS) have everything. The server enforces
- * this in every route (lib/access.ts); the client only uses it for labels.
+ * Which plan a model needs. Guests and free accounts can chat with Citad3L V1 Fast only (citad3l-fast stays guest-tier
+ * for Swarm workers). Every other model is on a paid plan and still listed in the picker and on /models with a lock.
+ * Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored, Role Play, Inkling 2 Mini, Qwen 3.8 27B and
+ * Image need Pro or Max. Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro, Kimi K2.7 Code and Video need Max. Admins (ADMIN_EMAILS)
+ * have everything. The server enforces this in every route (lib/access.ts); the client only uses it for labels.
  */
 export type ModelTier = "guest" | "signin" | "pro" | "max";
 export const MODEL_TIER: Record<string, ModelTier> = {
   "citad3l-v1": "guest",
   "citad3l-fast": "guest",
-  "citad3l-private": "signin",
-  // Lineup v2: Free named chat = V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored (Fast merged into V1 Fast; citad3l-fast stays for Swarm workers only). No sign-in wall, no age check.
-  "gemma4-uncensored": "guest",
-  "uncensored-1.2": "guest",
-  "glm5.3-flash-uncensored": "guest",
-  // Pro (8) adds three.
+  "citad3l-private": "pro",
+  "gemma4-uncensored": "pro",
+  "uncensored-1.2": "pro",
+  "glm5.3-flash-uncensored": "pro",
+  // Pro (8) chat models: V1 Fast plus the seven above and the three below. Image is also Pro.
   "roleplay-uncensored": "pro",
   "inkling2-mini": "pro",
   "qwen3.8-27b": "pro",
@@ -389,20 +390,17 @@ export function visibleModels(): PublicModel[] {
 }
 
 /**
- * What the chat picker offers. Guests get V1 Fast and the Free uncensored models; signed-in accounts see the whole lineup (plan locks are
- * enforced by the server with an upgrade message). Admins always get every model, Video included, unless media
+ * What the chat picker offers. Everyone sees the full lineup so they can see what each model is; plan locks are
+ * shown in the UI and enforced by the server. Admins always get every model, Video included, unless media
  * generation is turned off — then nobody can pick Image or Video.
  */
 export function pickerModels(signedIn: boolean, admin = false): PublicModel[] {
   if (!mediaGenerationEnabled()) {
-    const chat = MODELS.filter((m) => isPublicCard(m) && !isGeneratedMediaModality(m.modality));
-    if (admin || signedIn) return chat.slice();
-    return chat.filter((m) => !isMemberModel(m.id));
+    return MODELS.filter((m) => isPublicCard(m) && !isGeneratedMediaModality(m.modality));
   }
   // Media is on. Admins still see Video even if CITAD3L_VIDEO_ENABLED is off. Hidden entries stay out.
   if (admin) return MODELS.filter(isPublicCard);
-  if (signedIn) return visibleModels();
-  return visibleModels().filter((m) => !isMemberModel(m.id));
+  return visibleModels();
 }
 
 /** Public lineup for marketing pages. V1 Fast and Qwen 4 Max lead the grid (top row). Hidden entries stay out. */
@@ -420,7 +418,7 @@ export function modalityLabel(m: PublicModel): string {
   return "Chat";
 }
 
-/** Can this account pick the model? Guests: V1 Fast and the Free uncensored models. Plan checks happen in lib/access.ts.
+/** Is this a real catalog model the picker can list? Plan checks happen in lib/access.ts.
  * Hidden catalog entries (merged Fast) stay routable for Swarm workers and old chats, but are not listed in the picker. */
 export function isSelectableModelId(id: string, signedIn = false, admin = false): boolean {
   if (pickerModels(signedIn, admin).some((m) => m.id === id)) return true;
@@ -430,12 +428,11 @@ export function isSelectableModelId(id: string, signedIn = false, admin = false)
   return modelTier(id) === "guest";
 }
 
-/** Short plan label for a model ("Pro", "Max only"), or null when every account can use it. */
+/** Short plan label for a model ("Pro", "Max only"), or null when free accounts can use it (V1 Fast). */
 export function planLabel(id: string): string | null {
   const t = modelTier(id);
   if (t === "max") return "Max only";
-  if (t === "pro") return "Pro & Max";
-  if (t === "signin") return "Free account";
+  if (t === "pro" || t === "signin") return "Pro & Max";
   return null;
 }
 
@@ -481,19 +478,19 @@ export function parseImageCommand(text: string, imageMode: boolean): { image: bo
   return { image: false, prompt: text };
 }
 
-export const GUEST_MODEL_IDS = ["citad3l-v1", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"] as const;
+export const GUEST_MODEL_IDS = ["citad3l-v1"] as const;
 
 
-/** Chat models in a plan, in lineup order (Free 5, Pro 8, Max 12). Image/Video excluded. */
+/** Chat models in a plan, in lineup order (Free: V1 Fast only, Pro 8, Max 12). Image/Video excluded. */
 export function chatModelsForPlan(plan: "trial" | "pro" | "max"): PublicModel[] {
   return MODELS.filter((m) => isPublicCard(m) && m.modality === "chat" && planIncludesModel(plan, m.id));
 }
 
-/** Does this plan include the model? Free ("trial") gets guest + signin models; Pro adds pro; Max adds max. */
+/** Does this plan include the model? Free ("trial") gets V1 Fast only; Pro adds pro (and leftover signin); Max adds max. */
 export function planIncludesModel(plan: string | null | undefined, id: string): boolean {
   const t = modelTier(id);
-  if (t === "guest" || t === "signin") return true;
-  if (t === "pro") return plan === "pro" || plan === "max";
+  if (t === "guest") return true;
+  if (t === "signin" || t === "pro") return plan === "pro" || plan === "max";
   return plan === "max";
 }
 
@@ -522,8 +519,8 @@ export function modelBadges(model: PublicModel, isAdmin = false): ModelBadge[] {
     if (isMemberModel(model.id)) flags.push({ key: "unlocked", label: "Unlocked for you", tone: "default" });
   } else {
     const t = modelTier(model.id);
-    if (t === "max") flags.push({ key: "max", label: "Max only", tone: "max" });
-    else if (t === "pro") flags.push({ key: "pro", label: "Pro & Max", tone: "max" });
+    if (t === "max") flags.push({ key: "max", label: "Locked · Max", tone: "max" });
+    else if (t === "pro" || t === "signin") flags.push({ key: "pro", label: "Locked · Pro", tone: "max" });
   }
   return flags;
 }

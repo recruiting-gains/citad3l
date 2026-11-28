@@ -35,8 +35,8 @@ describe("public model catalog", () => {
     expect(visibleModels()[0]?.default).toBe(true);
     expect(isSelectableModelId("citad3l-video")).toBe(false);
     expect(isSelectableModelId("citad3l-v1")).toBe(true);
-    // 2026-11-21 public launch: guests get V1/Fast; signed-in accounts can pick everything (server enforces plans).
-    expect(isSelectableModelId("citad3l-private")).toBe(false);
+    // Guests see every model in the picker; the server still refuses paid ones.
+    expect(isSelectableModelId("citad3l-private")).toBe(true);
     expect(isSelectableModelId("citad3l-private", true)).toBe(true);
     expect(isSelectableModelId("citad3l-video", true)).toBe(false);
     expect(isSelectableModelId("citad3l-image", true)).toBe(false);

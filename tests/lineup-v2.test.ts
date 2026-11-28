@@ -6,16 +6,16 @@ import { accessFor } from "@/lib/access";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
-const FREE = ["citad3l-v1", "citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"];
-const PRO_ADDS = ["roleplay-uncensored", "inkling2-mini", "qwen3.8-27b"];
+const FREE = ["citad3l-v1"];
+const PRO_ADDS = ["citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored", "roleplay-uncensored", "inkling2-mini", "qwen3.8-27b"];
 const MAX_ADDS = ["qwen4-max", "grok-4.7", "kimi-k3.1-pro", "kimi-k2.7-code"];
 
 describe("lineup v2 (2026-11-27)", () => {
-  it("Free has 5 named chat models, Pro 8, Max 12 (Fast merged into V1 Fast)", () => {
+  it("Free has V1 Fast only, Pro 8, Max 12 (Fast merged into V1 Fast)", () => {
     expect(chatModelsForPlan("trial").map((m) => m.id)).toEqual(FREE);
     expect(chatModelsForPlan("pro").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS]);
     expect(chatModelsForPlan("max").map((m) => m.id)).toEqual([...FREE, ...PRO_ADDS, ...MAX_ADDS]);
-    expect(chatModelsForPlan("trial")).toHaveLength(5);
+    expect(chatModelsForPlan("trial")).toHaveLength(1);
     expect(chatModelsForPlan("pro")).toHaveLength(8);
     expect(chatModelsForPlan("max")).toHaveLength(12);
     expect(getPublicModel("max-slot-12")).toBeUndefined();
@@ -25,11 +25,11 @@ describe("lineup v2 (2026-11-27)", () => {
     expect(pickerModels(true, true).filter((m) => m.modality === "chat")).toHaveLength(12);
   });
 
-  it("tiers: Free extras open to guests (no sign-in wall), Pro adds need Pro/Max, Max adds need Max", () => {
-    for (const id of ["gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"]) { expect(modelTier(id)).toBe("guest"); expect(isGuestModelId(id)).toBe(true); }
+  it("tiers: only V1 Fast is free; other models need Pro or Max", () => {
+    expect(modelTier("citad3l-v1")).toBe("guest"); expect(isGuestModelId("citad3l-v1")).toBe(true);
+    for (const id of ["citad3l-private", "gemma4-uncensored", "uncensored-1.2", "glm5.3-flash-uncensored"]) { expect(modelTier(id)).toBe("pro"); expect(isGuestModelId(id)).toBe(false); }
     for (const id of PRO_ADDS) expect(modelTier(id)).toBe("pro");
     for (const id of MAX_ADDS) expect(modelTier(id)).toBe("max");
-    expect(modelTier("citad3l-private")).toBe("signin");
     const ctx = (plan: string) => ({ admin: false, plan, paidActive: plan !== "trial" });
     for (const id of PRO_ADDS) {
       expect(accessFor("pro", ctx("trial"))?.code).toBe("upgrade_required");
@@ -43,12 +43,14 @@ describe("lineup v2 (2026-11-27)", () => {
     }
     expect(accessFor("max", ctx("pro"))?.code).toBe("upgrade_required");
     expect(accessFor("max", ctx("max"))).toBeNull();
+    expect(accessFor("swarm", ctx("trial"))?.code).toBe("upgrade_required");
+    expect(accessFor("swarm", ctx("pro"))).toBeNull();
   });
 
   it("every new model maps to its own MODEL_IDS key, reads images, and only Private is E2EE", async () => {
     const { resolveModel } = await import("@/lib/inference/provider-models");
     const ids = new Set<string>();
-    for (const id of [...FREE.filter((id) => id !== "citad3l-v1" && id !== "citad3l-private"), ...PRO_ADDS, ...MAX_ADDS]) {
+    for (const id of [...PRO_ADDS.filter((id) => id !== "citad3l-private"), ...MAX_ADDS]) {
       const r = resolveModel(id, { signedIn: true });
       expect(r.providerModelId, id).toMatch(/^test-/);
       expect(r.supportsVision, id).toBe(true);
@@ -56,7 +58,9 @@ describe("lineup v2 (2026-11-27)", () => {
       ids.add(r.providerModelId);
     }
     expect(ids.size).toBe(10);
-    expect(resolveModel("gemma4-uncensored").publicId).toBe("gemma4-uncensored"); // guests, no sign-in
+    expect(() => resolveModel("gemma4-uncensored")).toThrow();
+    expect(resolveModel("gemma4-uncensored", { signedIn: true }).publicId).toBe("gemma4-uncensored");
+    expect(resolveModel("citad3l-v1").publicId).toBe("citad3l-v1"); // guests, V1 Fast only
     expect(MODELS.filter((m) => m.requiresClientE2EE).map((m) => m.id)).toEqual(["citad3l-private"]);
   });
 
@@ -75,5 +79,12 @@ describe("lineup v2 (2026-11-27)", () => {
     }
     const plans = readFileSync(path.resolve(import.meta.dirname, "../lib/plans.ts"), "utf8");
     expect(plans).not.toMatch(/venice/i);
+  });
+
+  it("MODEL_IDS_V2 fills new slugs and MODEL_IDS wins on a conflict", async () => {
+    const { providerModelIdFor } = await import("@/lib/inference/provider-models");
+    expect(providerModelIdFor("glm5.3-flash-uncensored")).toBe("test-glm5.3-flash-uncensored");
+    expect(providerModelIdFor("v2-only-probe")).toBe("test-v2-only");
+    expect(providerModelIdFor("citad3l-v1")).toBe("test-v1-model");
   });
 });

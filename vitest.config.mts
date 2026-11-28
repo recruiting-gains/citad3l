@@ -24,6 +24,10 @@ const testEnv = {
     "kimi-k3.1-pro": "test-max-extra-c",
     "kimi-k2.7-code": "test-max-extra-d",
   }),
+    MODEL_IDS_V2: JSON.stringify({
+      "glm5.3-flash-uncensored": "test-v2-should-not-win",
+      "v2-only-probe": "test-v2-only",
+    }),
 };
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(import.meta.dirname), "server-only": path.resolve(import.meta.dirname, "tests/server-only-shim.ts") } },

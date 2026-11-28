@@ -8,7 +8,7 @@ export function planCatalog(): PlanCard[] {
   const lineup = media ? "Citad3L V1 Fast and Image" : "Citad3L V1 Fast and Private";
   const privateChat = "Citad3L Private (encrypted, secure enclave)";
   const swarm = "Swarm mode (V1 Fast leads, workers in parallel)";
-  const freeModels = "Free lineup: Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored";
+  const freeModels = "Free lineup: Citad3L V1 Fast only. Other models are listed so you can see what they are, and need Pro or Max to use.";
   const proModels = "Pro models: Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B (8 chat models in all)";
   const maxModels = "Max models: Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code on top of Pro";
   const shared = ["Streaming chat with saved history", "Projects with custom instructions", "Export or delete your data any time"];
@@ -24,10 +24,10 @@ export function planCatalog(): PlanCard[] {
       name: "Free",
       priceUsd: 0,
       blurb: "5 messages to try, then 3 every day with a free account.",
-      allowance: `Guests: ${TRIAL_REPLIES} messages, one time. Free account: ${FREE_DAILY_REPLIES} messages every day, reset at midnight Central.`,
+      allowance: `Guests: ${TRIAL_REPLIES} messages, one time, on Citad3L V1 Fast. Free account: ${FREE_DAILY_REPLIES} messages every day on V1 Fast, reset at midnight Central.`,
       features: [
-        `${TRIAL_REPLIES} guest messages on Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored, no sign-in needed`,
-        `A free account gives you ${FREE_DAILY_REPLIES} messages every day across the Free lineup`,
+        `${TRIAL_REPLIES} guest messages on Citad3L V1 Fast, no sign-in needed`,
+        `A free account gives you ${FREE_DAILY_REPLIES} messages every day on Citad3L V1 Fast`,
         freeModels,
         "Resets at midnight Central. Failed replies never count",
         "Create an account any time to save chats",

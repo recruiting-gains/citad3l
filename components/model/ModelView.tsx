@@ -39,18 +39,15 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
     ? "Every model is unlocked on your admin account"
     : model.comingSoon ? "Every plan, once it ships"
       : tier === "max" ? "Max plan only"
-        : tier === "pro" ? "Pro and Max"
-          : tier === "signin" ? "Free account, Pro and Max"
-            : "Free, Pro and Max";
+        : tier === "pro" || tier === "signin" ? "Pro and Max"
+          : "Free, Pro and Max";
   const plansNote = model.comingSoon
     ? "Not available yet."
     : tier === "max"
       ? model.modality === "video" ? "Not included on Free or Pro. Clips are limited per day to keep the service fair." : "Not included on Free or Pro."
-      : tier === "pro"
-        ? model.modality === "image" ? "Not included on Free. Images are limited per day to keep the service fair." : "Not included on Free."
-        : tier === "signin"
-          ? "Sign in with a free account to use it. Plans differ in allowance."
-          : "Plans differ in allowance. Failed replies are never charged.";
+      : tier === "pro" || tier === "signin"
+        ? model.modality === "image" ? "Not included on Free. Images are limited per day to keep the service fair." : "Not included on Free. The listing stays visible so you can see what it is."
+        : "Free chat uses this model. Failed replies are never charged.";
   const howTo =
     model.modality === "video"
       ? "Pick Citad3L Video in chat and describe a clip. Each clip is 5 seconds at 720p, with a daily clip limit."
@@ -65,18 +62,16 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
       ? `${model.name} is coming soon`
       : tier === "max"
         ? `${model.name} comes with Max`
-        : tier === "pro"
+        : tier === "pro" || tier === "signin"
           ? `${model.name} comes with Pro and Max`
-          : signedIn ? `${model.name} is in your lineup` : tier === "signin" ? `${model.name} is free with an account` : `${model.name} is on every plan`;
+          : signedIn || isAdmin ? `${model.name} is in your lineup` : `${model.name} is free to try`;
   const ctaSub = model.comingSoon
     ? `${model.name} isn't available in chat yet. Chat uses Citad3L V1 or Fast for now.`
     : signedIn || unlocked
       ? howTo
       : tier === "guest"
-        ? "Try 5 messages with no account, or create a free account for 3 every day. No card needed."
-        : tier === "signin"
-          ? "Sign in with your email to use it. No card needed."
-          : `Sign in, then pick ${tier === "max" ? "Max" : "Pro or Max"} on the pricing page to use ${model.name}.`;
+        ? "Try 5 messages with no account, or create a free account for 5 every day on Citad3L V1 Fast. No card needed."
+        : `This model stays listed so you can see what it is. Pick ${tier === "max" ? "Max" : "Pro or Max"} on the pricing page to use it.`;
 
   return (
     <>
@@ -132,15 +127,15 @@ export function ModelView({ provider, signedIn, model, isAdmin = false, showRefe
             <h2 className="model-cta-title">{ctaTitle}</h2>
             <p className="model-cta-sub">{ctaSub}</p>
             <div className="model-cta-actions">
-              {signedIn ? (
+              {unlocked || (tier === "guest" && !model.comingSoon) ? (
                 <>
-                  <Link href={unlocked || chatReady ? `/chat?model=${encodeURIComponent(model.id)}` : "/chat"} className="btn btn-primary">{unlocked ? `Open ${model.name}` : "Go to Chat"}</Link>
+                  <Link href={`/chat?model=${encodeURIComponent(model.id)}`} className="btn btn-primary">{unlocked ? `Open ${model.name}` : "Try V1 Fast"}</Link>
                   <Link href="/pricing" className="btn btn-secondary">See plans</Link>
                 </>
               ) : (
                 <>
-                  <Link href="/login?next=/chat" className="btn btn-primary">Sign up</Link>
-                  <Link href="/pricing" className="btn btn-secondary">See plans</Link>
+                  <Link href="/pricing" className="btn btn-primary">See plans</Link>
+                  <Link href="/chat" className="btn btn-secondary">Try V1 Fast</Link>
                 </>
               )}
             </div>

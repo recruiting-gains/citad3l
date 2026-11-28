@@ -4,11 +4,11 @@ import { ensureEntitlement, isPaidActive, userIsAdmin } from "./usage";
 
 /**
  * Public-launch access rules for the member features. Server-side only; the client just mirrors them for labels.
- *  - Private and Swarm: any signed-in account (Free included; Swarm still costs 4 replies of allowance).
- *  - Image: an active Pro or Max plan.
- *  - Video: an active Max plan.
+ *  - Free (guests and free accounts): Citad3L V1 Fast only.
+ *  - Pro models (including Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored, Image) and Swarm: an active Pro or Max plan.
+ *  - Video and other Max models: an active Max plan.
  *  - Admins (ADMIN_EMAILS) get everything.
- * Kill switch: PUBLIC_FEATURES="admins" puts Private, Image, Video and Swarm back to admin-only without a code change.
+ * Kill switch: PUBLIC_FEATURES="admins" puts paid models and Swarm back to admin-only without a code change.
  */
 export type AccessDenied = { status: 402 | 403; code: "admin_only" | "upgrade_required"; message: string };
 
@@ -25,9 +25,8 @@ export function accessFor(
   name = "This feature",
 ): AccessDenied | null {
   if (ctx.admin || feature === "guest") return null;
-  if (!publicFeaturesOpen()) return { status: 403, code: "admin_only", message: `${name} is paused right now. Citad3L V1 and Fast still work.` };
-  if (feature === "signin" || feature === "swarm") return null;
-  if (feature === "pro") {
+  if (!publicFeaturesOpen()) return { status: 403, code: "admin_only", message: `${name} is paused right now. Citad3L V1 Fast still works.` };
+  if (feature === "pro" || feature === "swarm" || feature === "signin") {
     if (ctx.paidActive && (ctx.plan === "pro" || ctx.plan === "max")) return null;
     return { status: 402, code: "upgrade_required", message: `${name} comes with Pro and Max. Upgrade on the pricing page to use it.` };
   }

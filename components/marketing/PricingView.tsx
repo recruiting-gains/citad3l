@@ -59,17 +59,17 @@ function pricingFaqs(media: boolean) {
   const shared = [
     { q: "What is Swarm mode?", a: "A chat setting. Citad3L V1 Fast splits a large request into parts, workers handle the parts in parallel, and V1 Fast assembles the answer. It uses 4 replies of allowance." },
     { q: "Do failed or stopped replies count?", a: "Never. Only successful replies use your allowance. If a reply errors out or you stop it, nothing is charged." },
-    { q: "How do limits reset?", a: "Guests get 5 messages, one time, with no account. A free account gets 3 messages every day, reset at midnight Central. Paid plans have a rolling 5-hour window and a weekly cap." },
+    { q: "How do limits reset?", a: "Guests get 5 messages, one time, on Citad3L V1 Fast, with no account. A free account gets 5 messages every day on V1 Fast, reset at midnight Central. Paid plans have a rolling 5-hour window and a weekly cap." },
     { q: "Can I change or cancel?", a: "Yes, any time from your account. Cancelling keeps your plan active until the end of the current period." },
   ];
   if (!media) {
     return [
-      { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
+      { q: "Do the plans include different models?", a: "Yes. Free chat is Citad3L V1 Fast only. Every other model stays listed so you can see what it is; a paid plan is required to use it. Pro includes Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored, Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
       ...shared,
     ];
   }
   return [
-    { q: "Do the plans include different models?", a: "Yes. Free includes Citad3L V1 Fast, Private, Gemma 4 Uncensored, Uncensored 1.2 and GLM 5.3 Flash Uncensored. Pro adds Role Play Uncensored, Inkling 2 Mini and Qwen 3.8 27B, plus Citad3L Image. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro and Kimi K2.7 Code, plus Citad3L Video and per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
+    { q: "Do the plans include different models?", a: "Yes. Free chat is Citad3L V1 Fast only. Every other model stays listed so you can see what it is; a paid plan is required to use it. Pro includes Private, Gemma 4 Uncensored, Uncensored 1.2, GLM 5.3 Flash Uncensored, Role Play Uncensored, Inkling 2 Mini, Qwen 3.8 27B and Citad3L Image. Max adds Qwen 4 Max, Grok 4.7, Kimi K3.1 Pro, Kimi K2.7 Code and Citad3L Video, plus per-model settings. Swarm uses 4 replies, so it is on Pro and Max." },
     { q: "What is Citad3L Video?", a: "Video generation for Max subscribers. Clips run 5 seconds at 720p, with sound. There is a daily clip limit to keep the service fast for everyone." },
     { q: "Are there daily limits on images and video?", a: "Yes. On top of your plan's allowance, images and video clips have a daily limit per account so one heavy user can't slow things down for everyone. Limits reset every day at 6 PM Central." },
     ...shared,
@@ -135,11 +135,11 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
               : "Your admin account already has every chat mode unlocked (the whole chat lineup, Swarm and @computer), whatever the plan below says. These plans are for customers."}</p>
           ) : null}
           <h1 className="display hero-title">
-            Free, Pro and Max. <HeroChips /> {media ? "Image with Pro, Video with Max." : "Private is included."}
+            Free, Pro and Max. <HeroChips /> {media ? "Free is V1 Fast. Image with Pro, Video with Max." : "Free is V1 Fast. Other models need Pro or Max."}
           </h1>
           <p className="hero-sub">{media
-            ? "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day across 5 models. Swarm is on Pro and Max. Pro has 8 chat models and Citad3L Image. Max adds 2.5× the Pro allowance, 12 chat models, per-model settings, and Citad3L Video."
-            : "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time. A free account gets 3 messages every day across 5 models. Swarm is on Pro and Max. Pro has 8 chat models. Max adds 2.5× the Pro allowance and per-model settings."}</p>
+            ? "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time on Citad3L V1 Fast. A free account gets 5 messages every day on V1 Fast. Swarm is on Pro and Max. Pro has 8 chat models and Citad3L Image. Max adds 2.5× the Pro allowance, 12 chat models, per-model settings, and Citad3L Video."
+            : "Start free, upgrade when you need more, and change or cancel from your account. Guests get 5 messages one time on Citad3L V1 Fast. A free account gets 5 messages every day on V1 Fast. Swarm is on Pro and Max. Pro has 8 chat models. Max adds 2.5× the Pro allowance and per-model settings."}</p>
           <div className="hero-ctas">
             <Link href="/chat" className="btn btn-primary btn-lg">Start chatting</Link>
             <a href="#plans" className="btn btn-secondary btn-lg">Compare plans <IChevR /></a>
@@ -214,7 +214,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
                     {p.id === "trial" ? (
                       <div className="plan-allowance">
                         <span><strong>Guests:</strong> 5 messages, one time.</span>
-                        <span><strong>Free account:</strong> 3 messages every day, reset at midnight Central.</span>
+                        <span><strong>Free account:</strong> 5 messages every day on Citad3L V1 Fast, reset at midnight Central.</span>
                       </div>
                     ) : (
                       <div className="plan-row"><span className="plan-check"><ICheck /></span><span>Allowance</span><span className="plan-row-value">{p.allowance}</span></div>
@@ -263,7 +263,7 @@ export function PricingView({ plans, signedIn, currentPlan, billingConfigured, b
           <div className="pricing-legend">
             <span className="pricing-legend-line"><Dots n={2} /> Dots show relative allowance. Max is 2.5× Pro.</span>
             <p className="pricing-fine">
-              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 3 messages every day, reset at midnight Central. {media ? "Citad3L Video and per-model settings are included with Max only." : "Per-model settings are included with Max only."}
+              Failed and stopped replies are never charged. Paid allowances refresh every 5 hours, with a weekly cap. Guests get 5 messages one time, no card required. A free account gets 5 messages every day on Citad3L V1 Fast, reset at midnight Central. {media ? "Citad3L Video and per-model settings are included with Max only." : "Per-model settings are included with Max only."}
             </p>
           </div>
         </section>

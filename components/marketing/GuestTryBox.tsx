@@ -199,7 +199,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
         <div className="try-soft-save" role="region" aria-label="Save your chat">
           <div className="try-soft-save-row">
             <p className="try-soft-save-text">
-              <strong>Save your chat</strong> and get 3 messages every day with a free account. No card needed.
+              <strong>Save your chat</strong> and get 5 messages every day on Citad3L V1 Fast with a free account. No card needed.
             </p>
             <div className="try-soft-save-actions">
               {!softSaveOpen && (
@@ -246,7 +246,7 @@ export function GuestTryBox({ freeLimit, initialUsed, mediaEnabled = false }: Gu
             <span className="guest-meter-arrow" />
             <i className="is-daily" /><i className="is-daily" /><i className="is-daily" />
           </span>
-          <p className="try-save-title">Create a free account for 3 messages every day</p>
+          <p className="try-save-title">Create a free account for 5 messages every day on Citad3L V1 Fast</p>
           <p className="try-save-sub">{notice && !/used your/i.test(notice) ? notice : "Keep this chat and come back tomorrow on Fast or Private. We'll email a 6-digit code. No card needed."}</p>
           <div className="try-save-actions">
             <EmailCodeForm callbackUrl="/chat/saved" sendLabel="Save my chat" idPrefix="try" compact beforeRedirect={() => saveGuestChat(turns.filter((t) => t.status !== "error"))} />

@@ -13,7 +13,7 @@ process.env.ADMIN_EMAILS = ADMIN_EMAILS;
 const [OWNER, COUSIN] = [ADMINS[0], ADMINS[1]];
 
 const USERS: Record<string, string> = { "u-cruz": OWNER, "u-cousin": COUSIN, "u-max": "paying.max@example.com", "u-pro": "paying.pro@example.com", "u-trial": "someone@example.com" };
-const PLAN = (id: string) => (id === "u-max" ? "max" : id === "u-pro" ? "pro" : "trial");
+const PLAN = (id: string) => (id === "u-max" ? "max" : id === "u-pro" || id === "u-media" ? "pro" : "trial");
 let userId: string | null = null;
 const calls = { provider: [] as any[], reserve: 0, swarm: 0, swarmWebSearch: undefined as boolean | undefined, image: 0, quote: 0, queue: 0 };
 
@@ -107,7 +107,7 @@ describe("who is an admin", () => {
 });
 
 describe("model lineup and resolution", () => {
-  it("admins and signed-in accounts can pick every model; guests get V1 Fast and the three Free uncensored models", async () => {
+  it("admins and signed-in accounts can pick every model; guests see the full lineup too", async () => {
     const { MODELS, pickerModels, isSelectableModelId } = await import("@/lib/models");
     const { resolveModel, SignInRequired } = await import("@/lib/inference/provider-models");
     const catalog = MODELS.map((m) => m.id);
@@ -118,14 +118,14 @@ describe("model lineup and resolution", () => {
     expect(MODELS.find((m) => m.id === "citad3l-fast")?.hidden).toBe(true);
     expect(pickerModels(true, true).map((m) => m.id).sort()).toEqual([...all].sort());
     expect(pickerModels(true).map((m) => m.id).sort()).toEqual([...all].sort());
-    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(["citad3l-v1", "gemma4-uncensored", "glm5.3-flash-uncensored", "uncensored-1.2"]);
+    expect(pickerModels(false).map((m) => m.id).sort()).toEqual(pickerModels(true).map((m) => m.id).sort());
     for (const id of all) {
       expect(isSelectableModelId(id, true), id).toBe(true);
       expect(resolveModel(id, { admin: true }).providerModelId, id).toBeTruthy();
       expect(resolveModel(id, { signedIn: true }).providerModelId, id).toBeTruthy();
     }
     for (const id of ["citad3l-private", "citad3l-image", "citad3l-video"]) {
-      expect(isSelectableModelId(id), id).toBe(false);
+      expect(isSelectableModelId(id), id).toBe(true); // shown to guests, locked
       expect(() => resolveModel(id), id).toThrow(SignInRequired);
       expect(() => resolveModel(id, { signedIn: false }), id).toThrow(SignInRequired);
     }
@@ -188,14 +188,21 @@ describe("both admins: every model and mode works end to end (server)", () => {
 
 describe("public launch: plan rules are enforced by the server, whatever the client sends", () => {
   for (const uid of ["u-trial", "u-pro", "u-max"]) {
-    it(`${uid}: Private chat and Swarm work on any signed-in plan`, async () => {
+    it(`${uid}: Private chat and Swarm need a paid plan`, async () => {
       userId = uid;
       const r = await chat({ message: "hello", model: "citad3l-private" });
-      expect(r.status).toBe(200);
       const s2 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true });
-      expect(s2.status).toBe(200);
-      await sse(s2);
-      expect(calls.swarm).toBe(1);
+      if (uid === "u-trial") {
+        expect(r.status).toBe(402);
+        expect((await r.json()).error.code).toBe("upgrade_required");
+        expect(s2.status).toBe(402);
+        expect((await s2.json()).error.code).toBe("upgrade_required");
+      } else {
+        expect(r.status).toBe(200);
+        expect(s2.status).toBe(200);
+        await sse(s2);
+        expect(calls.swarm).toBe(1);
+      }
     });
     it(`${uid}: V1 and Fast still work`, async () => {
       userId = uid;
@@ -274,7 +281,7 @@ describe("public launch: plan rules are enforced by the server, whatever the cli
     expect((await getVideo("m1")).status).toBe(401);
     for (const model of ["citad3l-private", "citad3l-image", "citad3l-video"]) {
       const r = await chat({ message: "hello", model });
-      expect([401, 403], model).toContain(r.status);
+      expect([401, 402, 403], model).toContain(r.status);
     }
     expect(calls.provider).toEqual([]);
   });
@@ -316,8 +323,8 @@ describe("2026-11-19 6:05 PM: no plan lock for admins on a trial plan (Owner saw
       expect(admin, m.id).not.toMatch(/Max only|Coming soon|Pro & Max/);
       expect(cust, m.id).not.toMatch(/Coming soon/);
       if (["citad3l-private", "citad3l-image", "citad3l-video"].includes(m.id)) expect(admin, m.id).toMatch(/Unlocked for you/);
-      if (m.id === "citad3l-video") expect(cust).toMatch(/Max only/);
-      if (m.id === "citad3l-image") expect(cust).toMatch(/Pro & Max/);
+      if (m.id === "citad3l-video") expect(cust).toMatch(/Locked · Max|Max only/);
+      if (m.id === "citad3l-image") expect(cust).toMatch(/Locked · Pro|Pro & Max|Pro/);
     }
     expect(readFileSync(new URL("../components/model/LineupCard.tsx", import.meta.url), "utf8")).toContain("modelBadges(model, isAdmin)");
   });
@@ -360,12 +367,15 @@ describe("Swarm web search toggle and allowlist", () => {
       expect(r3.status).toBe(200);
       expect(calls.swarmWebSearch).toBe(true);
 
-      // Regular trial user can also toggle on
+      // Pro user can toggle on; trial users cannot use Swarm
       Object.assign(calls, { swarm: 0, swarmWebSearch: undefined });
-      userId = "u-trial";
+      userId = "u-pro";
       const r4 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
       expect(r4.status).toBe(200);
       expect(calls.swarmWebSearch).toBe(true);
+      userId = "u-trial";
+      const r5 = await chat({ message: "plan a launch", model: "citad3l-v1", swarm: true, skills: { webSearch: true } });
+      expect(r5.status).toBe(402);
     } finally {
       delete USERS["u-media"];
       if (saved === undefined) delete process.env.SWARM_WEB_SEARCH_EMAILS;

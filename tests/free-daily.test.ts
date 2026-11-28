@@ -35,8 +35,8 @@ describe("signed-in free daily allowance", () => {
     expect(poolFor(rolled).limit).toBe(FREE_DAILY_REPLIES);
     expect(poolFor(rolled).used).toBe(2);
     const u = summarize(rolled);
-    expect(u.limit).toBe(3);
-    expect(u.remaining).toBe(1);
+    expect(u.limit).toBe(FREE_DAILY_REPLIES);
+    expect(u.remaining).toBe(FREE_DAILY_REPLIES - 2);
     expect(u.resetAt).toBe(day.end.toISOString());
     expect(u.window?.label).toBe("Free messages today");
     vi.useRealTimers();
@@ -126,7 +126,7 @@ describe("public copy", () => {
     expect(free.allowance).toMatch(/midnight Central/);
     expect(free.features.join(" ")).toMatch(/Swarm uses 4 replies, so it is on Pro and Max/);
     const blob = FAQ_ITEMS.map((i) => i.a).join("\n");
-    expect(blob).toMatch(/Create a free account for 3 messages every day|3 messages every day on Fast and Private|3 messages every day across the 5 Free models/);
+    expect(blob).toMatch(/Create a free account for 5 messages every day|5 messages every day on Citad3L V1 Fast/);
     expect(blob).toMatch(/Guests get 5 free messages, one time/);
     expect(blob).not.toMatch(/keeps that same 5-message try and unlocks Private and Swarm/);
     expect(blob).not.toMatch(/is end-to-end encrypted/i);

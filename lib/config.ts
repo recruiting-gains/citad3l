@@ -14,7 +14,7 @@ export const FREE_MESSAGES = TRIAL_REPLIES;
  * Signed-in Free accounts: successful replies per America/Chicago calendar day, shared across Fast and Private.
  * Override with FREE_DAILY_REPLIES. Set to 0 to pause the daily allowance (kill switch, with FREE_DAILY_GLOBAL_CAP).
  */
-export const FREE_DAILY_REPLIES = Math.max(0, Number(process.env.FREE_DAILY_REPLIES ?? 3) || 0);
+export const FREE_DAILY_REPLIES = Math.max(0, Number(process.env.FREE_DAILY_REPLIES ?? 5) || 0);
 
 /**
  * Site-wide ceiling on attempted Free-account daily messages (every free user combined) per Chicago day.

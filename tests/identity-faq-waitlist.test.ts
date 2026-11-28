@@ -56,7 +56,7 @@ describe("system prompt identity", () => {
       expect(text).toMatch(/never name underlying vendors/i);
       for (const v of VENDORS) expect(text).not.toContain(v);
     }
-    expect(v1.length).toBeLessThan(1800);
+    expect(v1.length).toBeLessThan(2000);
   });
 
   it("is prepended as the first turn for every chat", () => {

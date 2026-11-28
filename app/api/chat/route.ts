@@ -34,7 +34,7 @@ import { noteImagePromptReply } from "@/lib/image-prompt-count";
 import { checkText, checkTexts } from "@/lib/filter";
 import { reviewOrKeyword } from "@/lib/filter-llm";
 import { logFilterRefusal } from "@/lib/filter-log";
-import { getPublicModel, isGuestModelId } from "@/lib/models";
+import { getPublicModel, isGuestModelId, modelTier } from "@/lib/models";
 import { resolveSkills } from "@/lib/skills";
 import { canUseModelSettings, getModelSettings } from "@/lib/model-settings";
 import { loadActiveInstructions } from "@/lib/custom-instructions";
@@ -494,19 +494,27 @@ async function guestChat(req: Request, body: z.infer<typeof Body>, message: stri
   ]);
   if (!glim.ok) return tooMany("Slow down — too many messages right now.", glim.retryAfterSec);
 
-  // Guests run on V1 Fast (or another Free guest model they picked). A missing model, or the old Fast slug after
-  // the merge, maps to GUEST_MODEL_ID. Private, Image, Video and paid models still need an account.
+  // Guests run on V1 Fast only. A missing model, or the old Fast slug after the merge, maps to GUEST_MODEL_ID.
+  // Every other model is shown in the picker but refused here with an upgrade message.
   const wanted = !body.model || body.model === "citad3l-fast" ? GUEST_MODEL_ID : body.model;
+  const guestLocked = (id: string) => !isGuestModelId(id);
+  const upgradeMsg = (id: string) => {
+    const name = getPublicModel(id)?.name ?? "This model";
+    return modelTier(id) === "max"
+      ? `${name} is included with the Max plan. Upgrade on the pricing page to use it.`
+      : `${name} comes with Pro and Max. Upgrade on the pricing page to use it.`;
+  };
+  if (guestLocked(wanted)) return jerr(402, "upgrade_required", upgradeMsg(wanted));
   let resolved;
   try {
     resolved = resolveModel(wanted);
   } catch (e) {
-    if (e instanceof SignInRequired) return jerr(401, "signup_required", "Free messages use Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored. Create an account to use the rest of the lineup.");
+    if (e instanceof SignInRequired) return jerr(402, "upgrade_required", upgradeMsg(wanted));
     if (e instanceof UnknownModel) return jerr(400, "bad_request", e.message);
     throw e;
   }
-  if (!isGuestModelId(resolved.publicId) || resolved.modality !== "chat" || resolved.requiresClientE2EE) {
-    return jerr(401, "signup_required", "Free messages use Citad3L V1 Fast, Gemma 4 Uncensored, Uncensored 1.2 or GLM 5.3 Flash Uncensored. Create an account to use the rest of the lineup.");
+  if (guestLocked(resolved.publicId) || resolved.modality !== "chat" || resolved.requiresClientE2EE) {
+    return jerr(402, "upgrade_required", upgradeMsg(resolved.publicId));
   }
 
   const pub = getPublicModel(resolved.publicId);

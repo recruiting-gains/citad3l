@@ -22,7 +22,7 @@ export function LimitReached({ usage }: { usage: UsageSummary }) {
           <span className="guest-meter-arrow" />
           <i className="is-daily" /><i className="is-daily" /><i className="is-daily" />
         </span>
-        <h2 className="guest-cta-title">Create a free account for 3 messages every day</h2>
+        <h2 className="guest-cta-title">Create a free account for 5 messages every day</h2>
         <p className="guest-cta-body">Keep this chat, come back tomorrow, and use Fast or Private. No card needed.</p>
         <div className="guest-cta-actions">
           <Link href="/login?next=/chat" className="btn btn-primary btn-sm">Create an account</Link>

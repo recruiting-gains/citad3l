@@ -2277,15 +2277,23 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   border-radius: var(--r-sm);
   background: var(--bg);
 }
+.mp-row-copy {
+  min-width: 0;
+  overflow: hidden;
+}
 .mp-row-name {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-size: var(--t-sm);
   line-height: 1.25;
-  white-space: nowrap;
+}
+.mp-row-name-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mp-row-meta {
   font-size: var(--t-xs);
@@ -2301,7 +2309,8 @@ section[aria-labelledby="lineup-title"] { scroll-margin-top: calc(var(--nav-h) +
   color: var(--fg-2);
   background: var(--bg);
 }
-.mp-tag.is-plan { background: var(--surface-2); border-color: transparent; }
+.mp-tag.is-plan { background: var(--surface-2); border-color: transparent; display: inline-flex; align-items: center; gap: 4px; }
+.mp-lock { flex: none; }
 
 /* preview card (right column) */
 .mp-preview {
